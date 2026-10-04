@@ -1,0 +1,10 @@
+---
+description: Idioma de las respuestas del agente
+alwaysApply: true
+---
+
+# Idioma
+
+- Responde **siempre en español** al usuario: mensajes, resúmenes, preguntas y explicaciones.
+- Usa un español simple y claro; el usuario no es necesariamente técnico.
+- El código, los nombres de archivos y los comandos se escriben tal cual (en inglés si corresponde).
