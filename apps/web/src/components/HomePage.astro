@@ -1,0 +1,109 @@
+---
+import { type LocaleCode } from '@antrina/contracts';
+import {
+  CorporateBanner,
+  HeroSection,
+  IntentionCards,
+  NewsletterSignup,
+  ProductGrid,
+  StorySection,
+  Testimonials,
+  ValuePillars,
+  ZodiacGrid,
+} from '@antrina/ui';
+import { getDictionary } from '../i18n/dictionaries';
+import { INTENTIONS, intentionLabel, SIGNS } from '../i18n/taxonomy';
+import StoreLayout from '../layouts/StoreLayout.astro';
+import { getFeaturedProducts } from '../lib/catalog';
+import { homeLocaleOptions } from '../lib/navigation';
+import { routes } from '../lib/routes';
+
+interface Props {
+  locale: LocaleCode;
+}
+
+const { locale } = Astro.props;
+const t = getDictionary(locale);
+const { products } = await getFeaturedProducts(locale);
+---
+
+<StoreLayout
+  locale={locale}
+  title={t.meta.title}
+  description={t.meta.description}
+  locales={homeLocaleOptions(locale)}
+>
+  <HeroSection
+    eyebrow={t.hero.eyebrow}
+    title={t.hero.title}
+    text={t.hero.text}
+    primary={{ label: t.hero.primaryCta, href: routes.intention(locale) }}
+    secondary={{ label: t.hero.secondaryCta, href: routes.createTree(locale) }}
+    imageLabel={t.hero.imageLabel}
+  />
+  <IntentionCards
+    eyebrow={t.intentions.eyebrow}
+    title={t.intentions.title}
+    intro={t.intentions.intro}
+    imageLabel={t.intentions.imageLabel}
+    items={INTENTIONS.map(({ slug, copy }) => ({
+      title: copy[locale].label,
+      stones: copy[locale].stones,
+      text: copy[locale].text,
+      href: routes.intention(locale, slug),
+    }))}
+  />
+  <ProductGrid
+    eyebrow={t.bestsellers.eyebrow}
+    title={t.bestsellers.title}
+    products={products}
+    locale={locale}
+    badgeLabels={t.badges}
+    imagePlaceholderLabel={t.productPhoto}
+    intentionOf={(product) => intentionLabel(locale, product.categorySlug)}
+    productHref={(product) => routes.product(locale, product.slug)}
+    viewAll={{ label: t.bestsellers.viewAll, href: routes.intention(locale) }}
+  />
+  <StorySection
+    eyebrow={t.story.eyebrow}
+    title={t.story.title}
+    paragraphs={t.story.paragraphs}
+    imageLabel={t.story.imageLabel}
+    cta={{ label: t.story.cta, href: routes.story(locale) }}
+  />
+  <ZodiacGrid
+    eyebrow={t.zodiac.eyebrow}
+    title={t.zodiac.title}
+    intro={t.zodiac.intro}
+    signs={SIGNS.map(({ slug, copy }) => ({
+      name: copy[locale].label,
+      dates: copy[locale].dates,
+      stone: copy[locale].stone,
+      href: routes.sign(locale, slug),
+    }))}
+  />
+  <ValuePillars title={t.pillars.title} pillars={t.pillars.items} />
+  <Testimonials
+    eyebrow={t.testimonials.eyebrow}
+    title={t.testimonials.title}
+    photoLabel={t.testimonials.photoLabel}
+    items={t.testimonials.items}
+  />
+  <CorporateBanner
+    eyebrow={t.corporate.eyebrow}
+    title={t.corporate.title}
+    text={t.corporate.text}
+    imageLabel={t.corporate.imageLabel}
+    cta={{ label: t.corporate.cta, href: routes.corporate(locale) }}
+  />
+  <NewsletterSignup
+    eyebrow={t.newsletter.eyebrow}
+    title={t.newsletter.title}
+    text={t.newsletter.text}
+    action={routes.newsletter(locale)}
+    emailLabel={t.newsletter.emailLabel}
+    emailPlaceholder={t.newsletter.emailPlaceholder}
+    submitLabel={t.newsletter.submit}
+    disclaimer={t.newsletter.disclaimer}
+  />
+</StoreLayout>

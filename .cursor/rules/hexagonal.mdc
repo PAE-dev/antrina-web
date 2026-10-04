@@ -1,0 +1,36 @@
+---
+description: Arquitectura hexagonal - puertos, adapters y casos de uso en domain/application/api
+globs: packages/domain/**,packages/application/**,apps/api/src/**
+alwaysApply: false
+---
+
+# Hexagonal: puertos vs adapters
+
+- `packages/domain`: entidades, VOs y **interfaces de puertos**. Cero dependencias externas.
+- `packages/application`: casos de uso; reciben puertos por constructor, devuelven DTOs de `@antrina/contracts`.
+- `apps/api/src/<ctx>/infrastructure`: implementaciones (Prisma, pasarelas, WhatsApp).
+- `apps/api/src/<ctx>/presentation`: controllers delgados.
+
+```ts
+// ❌ Caso de uso acoplado a infraestructura
+export class ListProductsUseCase {
+  constructor(private prisma: PrismaService) {}
+}
+
+// ✅ Depende del puerto; Nest lo cablea con useFactory
+export class ListProductsUseCase {
+  constructor(private readonly products: ProductRepository) {}
+}
+
+// catalog.module.ts
+{
+  provide: ListProductsUseCase,
+  useFactory: (repo: ProductRepository) => new ListProductsUseCase(repo),
+  inject: [PRODUCT_REPOSITORY],
+}
+```
+
+- Tokens de puertos como `Symbol` en `<ctx>.tokens.ts`; inyectar con `@Inject(TOKEN)`.
+- Mapear filas Prisma → entidades en `infrastructure/*.mapper.ts`; jamás devolver modelos Prisma al exterior.
+- Errores de negocio: lanzar `DomainError(message, code)`; el filtro global los convierte en HTTP 422.
+- Imports relativos con extensión `.js` (ESM NodeNext).

@@ -1,0 +1,13 @@
+---
+description: Convenciones generales del monorepo Antrina (siempre activa)
+alwaysApply: true
+---
+
+# Monorepo Antrina
+
+- Lee `AGENTS.md` para el mapa de paquetes y las recetas antes de crear archivos nuevos.
+- pnpm workspaces + Turborepo. Dependencias internas con `workspace:*`.
+- Node 22 (`.nvmrc`), TypeScript ~6.0 estricto, ESM en todo el repo.
+- Nuevas dependencias: instalarlas en el paquete que las usa (`pnpm --filter @antrina/<pkg> add x`), no en la raíz.
+- Cambios de esquema: `apps/api/prisma/schema.prisma` + `pnpm db:migrate`; actualizar el seed si aplica.
+- Verificación mínima: `pnpm typecheck && pnpm lint && pnpm build`.

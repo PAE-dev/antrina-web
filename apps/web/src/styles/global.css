@@ -1,0 +1,6 @@
+@import 'tailwindcss';
+@import '@heroui/styles';
+/* Tokens, tipografía, botones y layout: compartidos con el panel (apps/admin). */
+@import '@antrina/ui/styles/tokens.css';
+
+@source '../../../../packages/ui/src';

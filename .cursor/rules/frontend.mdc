@@ -1,0 +1,39 @@
+---
+description: Frontend Astro + HeroUI v3 y sistema de diseño de Antrina
+globs: apps/web/**,packages/ui/**
+alwaysApply: false
+---
+
+# Frontend: Astro + HeroUI v3
+
+- HeroUI v3 únicamente: `import { Button, Dropdown } from '@heroui/react'`. Sin provider, sin `tailwind.config`.
+- Componentes compuestos con punto: `Dropdown.Menu`, `Drawer.Dialog`. Eventos con `onPress`.
+- Botones solo-icono llevan `isIconOnly` y `aria-label`.
+- Estático por defecto; hidratar solo lo interactivo (`<SiteHeader client:load />`).
+- `packages/ui` no conoce i18n ni rutas: recibe labels y hrefs por props.
+- Copys en `apps/web/src/i18n/dictionaries.ts` (es y en siempre juntos); taxonomía en `taxonomy.ts`.
+- URLs solo vía `routes` (`apps/web/src/lib/routes.ts`), nunca strings a mano.
+- Datos de la API tipados con `@antrina/contracts`; nunca importar `@antrina/domain` en el front.
+- Precios con `formatMoney(money, locale)`; los montos vienen en céntimos.
+
+# Sistema de diseño (tokens en `apps/web/src/styles/global.css`)
+
+```tsx
+// ❌ hex sueltos, paletas Tailwind, sombras, radios grandes, descuentos
+<div className="bg-[#5B3F6E] text-gray-600 shadow-lg rounded-2xl">-20%</div>
+
+// ✅ tokens y clases del sistema
+<p className="type-eyebrow">Abundancia</p>
+<h2 className="type-h2"><Emphasis text="Elige *tu intención*" /></h2>
+<a className="btn-secondary" href={routes.createTree(locale)}>Crea tu árbol</a>
+```
+
+- Colores: `bg-bg`, `bg-bg-alt`, `bg-surface`, `text-text(-secondary|-muted)`, `bg-brand`,
+  `bg-brand-tint`, `bg-brass`, `text-brass-text`, `border-border(-strong)`, `text-sage`.
+- Amatista (`brand`) solo para el botón principal, el logo y estados activos. Latón nunca en cuerpo de texto.
+- `accent` de Tailwind es de HeroUI (= marca); el latón del brief se usa como `brass`.
+- Tipografía: `type-h1|h2|h3|body|eyebrow|button|menu|price`. Solo Cormorant Garamond y Jost.
+- Un único `btn-primary` por vista; lo demás `btn-secondary`.
+- Sin `box-shadow` (salvo foco), sin degradados, sin emojis, `rounded-sm`/`rounded-md` como máximo.
+- Secciones con `.section` + `.container-page`; texto largo con `.measure`.
+- Sin fotos reales: `PhotoPlaceholder`. Nunca ilustraciones genéricas.

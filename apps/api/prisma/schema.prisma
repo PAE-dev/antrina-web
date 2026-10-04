@@ -1,0 +1,189 @@
+generator client {
+  provider               = "prisma-client"
+  output                 = "../src/generated/prisma"
+  moduleFormat           = "esm"
+  importFileExtension    = "js"
+  generatedFileExtension = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Currency {
+  PEN
+  USD
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum ProductBadge {
+  NEW
+  CUSTOMIZABLE
+  LIMITED_EDITION
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+model Category {
+  id           String                @id @default(cuid())
+  slug         String                @unique
+  sortOrder    Int                   @default(0)
+  parentId     String?
+  parent       Category?             @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children     Category[]            @relation("CategoryTree")
+  translations CategoryTranslation[]
+  products     Product[]
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+}
+
+/// locale es un código corto ('es', 'en'). Se valida en el dominio; no es enum para no migrar al sumar idiomas.
+model CategoryTranslation {
+  id         String   @id @default(cuid())
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  locale     String
+  name       String
+
+  @@unique([categoryId, locale])
+}
+
+model Product {
+  id                  String               @id @default(cuid())
+  sku                 String               @unique
+  categoryId          String
+  category            Category             @relation(fields: [categoryId], references: [id])
+  priceCents          Int
+  compareAtPriceCents Int?
+  currency            Currency             @default(PEN)
+  stock               Int                  @default(0)
+  status              ProductStatus        @default(DRAFT)
+  isFeatured          Boolean              @default(false)
+  badge               ProductBadge?
+  origin              String?
+  translations        ProductTranslation[]
+  images              ProductImage[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  @@index([status, isFeatured])
+}
+
+/// Foto de producto guardada en el almacenamiento de objetos (MinIO local / Cloudflare R2).
+/// `storageKey` es la ruta dentro del bucket; la URL pública se construye en la API.
+model ProductImage {
+  id           String                    @id @default(cuid())
+  productId    String
+  product      Product                   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  storageKey   String                    @unique
+  position     Int
+  width        Int
+  height       Int
+  contentType  String
+  sizeBytes    Int
+  translations ProductImageTranslation[]
+  createdAt    DateTime                  @default(now())
+
+  @@index([productId, position])
+}
+
+/// Texto alternativo por idioma (accesibilidad y SEO).
+model ProductImageTranslation {
+  id      String       @id @default(cuid())
+  imageId String
+  image   ProductImage @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  locale  String
+  alt     String
+
+  @@unique([imageId, locale])
+}
+
+model ProductTranslation {
+  id          String  @id @default(cuid())
+  productId   String
+  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  locale      String
+  name        String
+  slug        String
+  description String
+
+  @@unique([productId, locale])
+  @@unique([locale, slug])
+}
+
+enum AdminRole {
+  OWNER
+  EDITOR
+}
+
+/// Personal del panel de administración. Cuentas separadas de los clientes de la tienda.
+model AdminUser {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String
+  passwordHash  String
+  role          AdminRole      @default(EDITOR)
+  /// Secreto TOTP cifrado con AES-256-GCM. Pendiente de confirmar mientras totpEnabledAt sea null.
+  totpSecretEnc String?
+  totpEnabledAt DateTime?
+  failedLogins  Int            @default(0)
+  lockedUntil   DateTime?
+  isActive      Boolean        @default(true)
+  lastLoginAt   DateTime?
+  sessions      AdminSession[]
+  auditLogs     AuditLog[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+/// Sesión del panel. Solo se guarda el hash SHA-256 del token de la cookie.
+model AdminSession {
+  id          String    @id @default(cuid())
+  tokenHash   String    @unique
+  adminUserId String
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+  mfaVerified Boolean   @default(false)
+  expiresAt   DateTime
+  lastSeenAt  DateTime  @default(now())
+  ip          String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
+
+  @@index([adminUserId])
+}
+
+model AuditLog {
+  id          String     @id @default(cuid())
+  adminUserId String?
+  adminUser   AdminUser? @relation(fields: [adminUserId], references: [id], onDelete: SetNull)
+  action      String
+  entityType  String
+  entityId    String?
+  changes     Json?
+  createdAt   DateTime   @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+model Promotion {
+  id           String       @id @default(cuid())
+  code         String?      @unique
+  name         String
+  discountType DiscountType
+  /// Porcentaje (1-100) o céntimos según discountType.
+  value        Int
+  startsAt     DateTime     @default(now())
+  endsAt       DateTime?
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}

@@ -1,0 +1,9 @@
+export const ADMIN_USER_REPOSITORY = Symbol('AdminUserRepository');
+export const ADMIN_SESSION_STORE = Symbol('AdminSessionStore');
+export const PASSWORD_HASHER = Symbol('PasswordHasher');
+export const TOTP_SERVICE = Symbol('TotpService');
+export const SECRET_CIPHER = Symbol('SecretCipher');
+export const SESSION_TOKEN_SERVICE = Symbol('SessionTokenService');
+export const AUDIT_LOG = Symbol('AuditLog');
+export const CLOCK = Symbol('Clock');
+export const ADMIN_AUTH_DEPS = Symbol('AdminAuthDeps');

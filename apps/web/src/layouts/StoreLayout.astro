@@ -1,0 +1,58 @@
+---
+import { type LocaleCode } from '@antrina/contracts';
+import { AnnouncementBar, SiteFooter, SiteHeader, type LocaleOption } from '@antrina/ui';
+import { getDictionary } from '../i18n/dictionaries';
+import { buildFooterColumns, buildMainNavigation, SOCIAL_LINKS } from '../lib/navigation';
+import { routes } from '../lib/routes';
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  locale: LocaleCode;
+  title: string;
+  description: string;
+  path?: string;
+  locales: LocaleOption[];
+}
+
+const { locale, title, description, path, locales } = Astro.props;
+const t = getDictionary(locale);
+---
+
+<BaseLayout locale={locale} title={title} description={description} path={path}>
+  <AnnouncementBar
+    message={t.announcement}
+    highlights={[
+      { label: t.highlights.story, href: routes.story(locale) },
+      { label: t.highlights.shipping, href: routes.shipping(locale) },
+      { label: t.highlights.corporate, href: routes.corporate(locale) },
+    ]}
+    locales={locales}
+    languageLabel={t.header.language}
+  />
+  <SiteHeader
+    client:load
+    homeHref={routes.home(locale)}
+    searchAction={routes.search(locale)}
+    accountHref={routes.account(locale)}
+    cartHref={routes.cart(locale)}
+    cartCount={0}
+    navigation={buildMainNavigation(locale, t)}
+    locales={locales}
+    labels={t.header}
+  />
+  <main>
+    <slot />
+  </main>
+  <SiteFooter
+    homeHref={routes.home(locale)}
+    homeLabel={t.header.home}
+    slogan={t.footer.slogan}
+    tagline={t.footer.tagline}
+    columns={buildFooterColumns(locale, t)}
+    socials={SOCIAL_LINKS}
+    socialLabel={t.footer.socialLabel}
+    locales={locales}
+    languageLabel={t.header.language}
+    rights={t.footer.rights}
+  />
+</BaseLayout>

@@ -1,0 +1,4 @@
+{
+  "extends": "@antrina/config/tsconfig/react.json",
+  "include": ["src"]
+}

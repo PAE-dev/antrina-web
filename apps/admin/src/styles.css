@@ -1,0 +1,6 @@
+@import 'tailwindcss';
+@import '@heroui/styles';
+/* Mismo sistema de diseño que la tienda (apps/web). */
+@import '@antrina/ui/styles/tokens.css';
+
+@source '../../../packages/ui/src';
