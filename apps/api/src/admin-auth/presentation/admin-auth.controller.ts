@@ -10,7 +10,6 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import {
   type AdminPrincipal,
   ConfirmTotpEnrollmentUseCase,
@@ -30,7 +29,12 @@ import {
 } from '@antrina/contracts';
 import { type Request, type Response } from 'express';
 import { APP_ENV, type AppEnv } from '../../config/env.js';
-import { AdminOriginGuard, AdminSessionGuard, CurrentAdmin } from './admin.guards.js';
+import {
+  AdminOriginGuard,
+  AdminSessionGuard,
+  AuthRateLimitGuard,
+  CurrentAdmin,
+} from './admin.guards.js';
 import {
   clearSessionCookie,
   readSessionToken,
@@ -38,15 +42,12 @@ import {
   setSessionCookie,
 } from './admin-session.cookie.js';
 
-/** 10 intentos por minuto e IP en los pasos que aceptan secretos. */
-const AUTH_THROTTLE = { default: { limit: 10, ttl: 60_000 } };
-
 function toMeDto(principal: AdminPrincipal): AdminMeDto {
   return { id: principal.id, email: principal.email, name: principal.name, role: principal.role };
 }
 
 @Controller('admin/auth')
-@UseGuards(AdminOriginGuard, ThrottlerGuard)
+@UseGuards(AdminOriginGuard)
 export class AdminAuthController {
   constructor(
     @Inject(APP_ENV) private readonly env: AppEnv,
@@ -62,7 +63,7 @@ export class AdminAuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @Throttle(AUTH_THROTTLE)
+  @UseGuards(AuthRateLimitGuard)
   async signIn(
     @Body() body: AdminLoginRequest,
     @Req() request: Request,
@@ -79,7 +80,7 @@ export class AdminAuthController {
 
   @Post('mfa/verify')
   @HttpCode(HttpStatus.OK)
-  @Throttle(AUTH_THROTTLE)
+  @UseGuards(AuthRateLimitGuard)
   async verify(
     @Body() body: AdminTotpCodeRequest,
     @Req() request: Request,
@@ -95,14 +96,14 @@ export class AdminAuthController {
 
   @Post('mfa/setup')
   @HttpCode(HttpStatus.OK)
-  @Throttle(AUTH_THROTTLE)
+  @UseGuards(AuthRateLimitGuard)
   setup(@Req() request: Request): Promise<AdminTotpSetupDto> {
     return this.startEnrollment.execute({ sessionToken: readSessionToken(request) });
   }
 
   @Post('mfa/confirm')
   @HttpCode(HttpStatus.OK)
-  @Throttle(AUTH_THROTTLE)
+  @UseGuards(AuthRateLimitGuard)
   async confirm(
     @Body() body: AdminTotpCodeRequest,
     @Req() request: Request,

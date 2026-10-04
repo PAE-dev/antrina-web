@@ -25,6 +25,7 @@ export default tseslint.config(
       '**/node_modules/**',
       '**/dist/**',
       '**/.astro/**',
+      '**/.vercel/**',
       '**/.turbo/**',
       '**/src/generated/**',
       '**/*.astro',

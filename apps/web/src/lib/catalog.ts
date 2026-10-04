@@ -8,7 +8,11 @@ import {
 import { getFallbackProducts } from './fallback-products';
 
 const API_URL = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
-const TIMEOUT_MS = 2500;
+/** Holgura para el arranque en frío de la API serverless. */
+const TIMEOUT_MS = 8000;
+
+/** La CDN sirve la página cacheada 60 s y la renueva en segundo plano: los cambios del panel aparecen en ~1 min. */
+export const CATALOG_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=600';
 
 export interface FeaturedProductsResult {
   products: ProductSummaryDto[];

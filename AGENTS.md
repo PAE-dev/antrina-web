@@ -81,7 +81,8 @@ según el `code`: `auth.locked` → 423, `auth.forbidden` → 403, `auth.*` → 
   path `/admin`); en BD solo su hash SHA-256. Sesión pendiente (sin 2FA) 10 min, completa 8 h,
   cierre por inactividad a los 30 min. Tras el 2FA el token se rota.
 - 5 fallos (contraseña o código) bloquean la cuenta 15 min. Rate limit de 10 req/min por IP en los
-  pasos de acceso (`@nestjs/throttler`).
+  pasos de acceso (`AuthRateLimitGuard`, en memoria; `@nestjs/throttler` es CommonJS y no carga en
+  Vercel con Nest 12 ESM).
 - Mutaciones solo desde `ADMIN_ORIGIN` (`AdminOriginGuard`); CORS con credenciales solo para ese
   origen y rutas `/admin`. Respuestas `/admin` con `Cache-Control: no-store` y `X-Robots-Tag: noindex`.
 - Fotos: el navegador sube directo al bucket con URL firmada (5 min) y la API verifica el objeto

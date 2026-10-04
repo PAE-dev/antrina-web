@@ -1,9 +1,12 @@
 import { type ApiErrorDto } from '@antrina/contracts';
 
-export const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3001').replace(
-  /\/+$/,
-  '',
-);
+/**
+ * En producción el panel llama a `/admin/*` en su propio dominio y Vercel lo reenvía a la API
+ * (ver `vercel.json`): así la cookie SameSite=Strict es de primera parte.
+ */
+export const API_URL = (
+  import.meta.env.VITE_API_URL ?? (import.meta.env.PROD ? '' : 'http://localhost:3001')
+).replace(/\/+$/, '');
 
 export class ApiError extends Error {
   constructor(

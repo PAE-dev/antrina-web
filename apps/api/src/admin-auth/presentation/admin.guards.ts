@@ -2,6 +2,8 @@ import {
   type CanActivate,
   createParamDecorator,
   type ExecutionContext,
+  HttpException,
+  HttpStatus,
   Inject,
   Injectable,
   SetMetadata,
@@ -33,6 +35,48 @@ export class AdminOriginGuard implements CanActivate {
       throw new DomainError('Origen no permitido', 'auth.forbidden');
     }
     return true;
+  }
+}
+
+const AUTH_RATE_LIMIT = 10;
+const AUTH_RATE_WINDOW_MS = 60_000;
+const MAX_TRACKED_KEYS = 10_000;
+
+/**
+ * 10 intentos por minuto, IP y endpoint en los pasos que aceptan secretos.
+ * En memoria por instancia: complementa (no sustituye) el bloqueo de cuenta tras 5 fallos.
+ */
+@Injectable()
+export class AuthRateLimitGuard implements CanActivate {
+  private readonly hits = new Map<string, { count: number; resetAt: number }>();
+
+  canActivate(context: ExecutionContext): boolean {
+    const request = context.switchToHttp().getRequest<AdminRequest>();
+    const now = Date.now();
+    const key = `${request.ip ?? 'unknown'}:${context.getClass().name}.${context.getHandler().name}`;
+    const entry = this.hits.get(key);
+
+    if (!entry || entry.resetAt <= now) {
+      if (this.hits.size >= MAX_TRACKED_KEYS) this.prune(now);
+      this.hits.set(key, { count: 1, resetAt: now + AUTH_RATE_WINDOW_MS });
+      return true;
+    }
+    entry.count += 1;
+    if (entry.count > AUTH_RATE_LIMIT) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.TOO_MANY_REQUESTS,
+          code: 'auth.rate_limited',
+          message: 'Demasiados intentos. Espera un minuto y vuelve a intentarlo.',
+        },
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+    return true;
+  }
+
+  private prune(now: number): void {
+    for (const [key, entry] of this.hits) if (entry.resetAt <= now) this.hits.delete(key);
   }
 }
 

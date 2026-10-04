@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ThrottlerModule } from '@nestjs/throttler';
 import {
   type AdminAuthDeps,
   ConfirmTotpEnrollmentUseCase,
@@ -44,7 +43,11 @@ import {
   PrismaAuditLog,
 } from './infrastructure/prisma-admin.repositories.js';
 import { AdminAuthController } from './presentation/admin-auth.controller.js';
-import { AdminOriginGuard, AdminSessionGuard } from './presentation/admin.guards.js';
+import {
+  AdminOriginGuard,
+  AdminSessionGuard,
+  AuthRateLimitGuard,
+} from './presentation/admin.guards.js';
 
 const authUseCase = <T>(UseCase: new (deps: AdminAuthDeps) => T) => ({
   provide: UseCase,
@@ -53,7 +56,6 @@ const authUseCase = <T>(UseCase: new (deps: AdminAuthDeps) => T) => ({
 });
 
 @Module({
-  imports: [ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 120 }])],
   controllers: [AdminAuthController],
   providers: [
     { provide: ADMIN_USER_REPOSITORY, useClass: PrismaAdminUserRepository },
@@ -113,6 +115,7 @@ const authUseCase = <T>(UseCase: new (deps: AdminAuthDeps) => T) => ({
     },
     AdminOriginGuard,
     AdminSessionGuard,
+    AuthRateLimitGuard,
   ],
   exports: [GetCurrentAdminUseCase, AdminOriginGuard, AdminSessionGuard, AUDIT_LOG],
 })

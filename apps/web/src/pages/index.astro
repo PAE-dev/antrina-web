@@ -1,5 +1,9 @@
 ---
 import HomePage from '../components/HomePage.astro';
+import { CATALOG_CACHE_CONTROL } from '../lib/catalog';
+
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', CATALOG_CACHE_CONTROL);
 ---
 
 <HomePage locale="es" />
