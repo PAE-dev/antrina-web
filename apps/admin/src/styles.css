@@ -1,6 +1,100 @@
 @import 'tailwindcss';
 @import '@heroui/styles';
-/* Mismo sistema de diseño que la tienda (apps/web). */
+/* Marca compartida con la tienda (amatista, latón); el panel ajusta abajo superficies y tipografía. */
 @import '@antrina/ui/styles/tokens.css';
 
-@source '../../../packages/ui/src';
+/*
+ * Capa propia del panel: herramienta de trabajo densa y neutra.
+ * Geist en todo (sin serif ni versalitas), grises cálidos, amatista solo para acción y estado activo.
+ */
+:root {
+  --color-bg: #f7f7f6;
+  --color-bg-alt: #efeeec;
+  --color-surface: #ffffff;
+  --color-text: #1c1a19;
+  --color-text-secondary: #57534e;
+  --color-text-muted: #8a8580;
+  --color-border: #e8e6e3;
+  --color-border-strong: #d6d3cf;
+  --color-success: #17803d;
+  --color-success-tint: #eaf6ee;
+  --color-warning: #a8530b;
+  --color-warning-tint: #fdf3e4;
+  --color-danger: #b42318;
+  --color-danger-tint: #fdeceb;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+
+  --accent-foreground: var(--color-surface);
+  --success: var(--color-success);
+  --warning: var(--color-warning);
+  --danger: var(--color-danger);
+  --field-border: var(--color-border-strong);
+  --overlay-shadow:
+    0 24px 48px -12px color-mix(in srgb, var(--color-text) 18%, transparent),
+    0 0 0 1px var(--color-border);
+  --backdrop: color-mix(in srgb, var(--color-text) 28%, transparent);
+}
+
+@theme inline {
+  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
+  --font-display: var(--font-sans);
+  --font-serif: var(--font-sans);
+
+  --color-success: var(--color-success);
+  --color-success-tint: var(--color-success-tint);
+  --color-warning: var(--color-warning);
+  --color-warning-tint: var(--color-warning-tint);
+  --color-danger: var(--color-danger);
+  --color-danger-tint: var(--color-danger-tint);
+}
+
+@layer base {
+  body {
+    font-size: 14px;
+    line-height: 1.5;
+    letter-spacing: -0.003em;
+    font-feature-settings: 'ss01', 'cv11';
+  }
+
+  @media (min-width: 48rem) {
+    body {
+      font-size: 14px;
+    }
+  }
+}
+
+@layer components {
+  .panel-title {
+    font-size: 22px;
+    line-height: 28px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--color-text);
+  }
+
+  .panel-heading {
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--color-text);
+  }
+
+  .panel-meta {
+    font-size: 12.5px;
+    line-height: 18px;
+    color: var(--color-text-muted);
+  }
+
+  .panel-num {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .panel-card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+}

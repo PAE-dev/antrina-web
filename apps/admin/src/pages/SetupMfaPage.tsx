@@ -55,8 +55,11 @@ export function SetupMfaPage() {
   };
 
   return (
-    <AuthCard eyebrow="Primer acceso" title="Protege tu cuenta">
-      <ol className="type-body flex list-decimal flex-col gap-2 pl-5 text-[15px]">
+    <AuthCard
+      title="Activa la verificación en dos pasos"
+      description="Es obligatoria para entrar al panel. Solo se hace una vez."
+    >
+      <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-[13.5px] text-text-secondary marker:text-text-muted">
         <li>Instala una app autenticadora (Google Authenticator, 1Password, Authy…).</li>
         <li>Escanea el código QR o escribe la clave manualmente.</li>
         <li>Introduce el código de 6 dígitos que te muestra la app.</li>
@@ -69,7 +72,7 @@ export function SetupMfaPage() {
       )}
       <ErrorNotice error={setup.error} title="No se pudo generar el código QR" />
       {setup.error && (
-        <Link to="/login" className="btn-secondary self-center">
+        <Link to="/login" className="self-center text-[13px] text-text-secondary hover:text-text">
           Volver a iniciar sesión
         </Link>
       )}
@@ -80,18 +83,18 @@ export function SetupMfaPage() {
             <img
               src={setup.data.qrDataUrl}
               alt="Código QR para la app autenticadora"
-              width={200}
-              height={200}
-              className="rounded-sm border border-border bg-surface p-2"
+              width={176}
+              height={176}
+              className="rounded-md border border-border bg-surface p-2"
             />
             <div className="flex w-full flex-col items-center gap-1 text-center">
-              <span className="text-[13px] text-text-muted">Clave manual</span>
-              <code className="break-all rounded-sm bg-bg-alt px-3 py-2 font-sans text-[14px] tracking-[0.12em] text-text">
+              <span className="panel-meta">Clave manual</span>
+              <code className="break-all rounded-md bg-bg-alt px-3 py-2 font-mono text-[13px] tracking-[0.08em] text-text">
                 {setup.data.secret}
               </code>
             </div>
           </div>
-          <Form className="flex flex-col items-center gap-5" onSubmit={onSubmit}>
+          <Form className="flex flex-col gap-4" onSubmit={onSubmit}>
             <OtpField
               value={code}
               onChange={setCode}
@@ -104,7 +107,6 @@ export function SetupMfaPage() {
               type="submit"
               variant="primary"
               fullWidth
-              className="type-button h-12"
               isDisabled={code.length !== 6}
               isPending={confirm.isPending}
             >

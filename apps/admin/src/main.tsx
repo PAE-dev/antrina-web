@@ -1,7 +1,5 @@
-import '@fontsource/cormorant-garamond/500.css';
-import '@fontsource/cormorant-garamond/500-italic.css';
-import '@fontsource/jost/400.css';
-import '@fontsource/jost/500.css';
+import '@fontsource-variable/geist';
+import '@fontsource-variable/geist-mono';
 import './styles.css';
 
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -11,7 +9,7 @@ import { createBrowserRouter, Navigate, RouterProvider } from 'react-router';
 import { AdminLayout } from './components/AdminLayout';
 import { isUnauthorized } from './lib/api';
 import { LoginPage } from './pages/LoginPage';
-import { ProductEditorPage } from './pages/ProductEditorPage';
+import { ProductDrawer } from './pages/ProductDrawer';
 import { ProductsPage } from './pages/ProductsPage';
 import { SetupMfaPage } from './pages/SetupMfaPage';
 import { VerifyMfaPage } from './pages/VerifyMfaPage';
@@ -40,9 +38,11 @@ const router = createBrowserRouter([
   {
     element: <AdminLayout />,
     children: [
-      { path: '/productos', element: <ProductsPage /> },
-      { path: '/productos/nuevo', element: <ProductEditorPage /> },
-      { path: '/productos/:id', element: <ProductEditorPage /> },
+      {
+        path: '/productos',
+        element: <ProductsPage />,
+        children: [{ path: ':id', element: <ProductDrawer /> }],
+      },
     ],
   },
   { path: '*', element: <Navigate to="/productos" replace /> },

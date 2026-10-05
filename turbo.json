@@ -19,7 +19,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "env": ["PUBLIC_API_URL", "VITE_API_URL"],
+      "env": ["PUBLIC_API_URL", "VITE_API_URL", "VITE_STORE_URL"],
       "outputs": ["dist/**"]
     },
     "typecheck": {

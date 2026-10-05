@@ -35,8 +35,8 @@ export function LoginPage() {
   };
 
   return (
-    <AuthCard eyebrow="Panel de administración" title="Acceso al taller">
-      <Form className="flex flex-col gap-5" onSubmit={onSubmit}>
+    <AuthCard title="Inicia sesión" description="Panel de administración de Antrina.">
+      <Form className="flex flex-col gap-4" onSubmit={onSubmit}>
         <TextField
           name="email"
           type="email"
@@ -46,7 +46,7 @@ export function LoginPage() {
           onChange={setEmail}
         >
           <Label>Correo</Label>
-          <Input className="h-11" />
+          <Input />
         </TextField>
         <TextField
           name="password"
@@ -57,22 +57,19 @@ export function LoginPage() {
           onChange={setPassword}
         >
           <Label>Contraseña</Label>
-          <Input className="h-11" />
+          <Input />
         </TextField>
         <ErrorNotice error={login.error} title="No pudimos iniciar sesión" />
         <Button
           type="submit"
           variant="primary"
           fullWidth
-          className="type-button h-12"
+          className="mt-1"
           isPending={login.isPending}
         >
           Continuar
         </Button>
       </Form>
-      <p className="text-center text-[13px] text-text-muted">
-        Acceso restringido. Tras la contraseña se pide un código de tu app autenticadora.
-      </p>
     </AuthCard>
   );
 }

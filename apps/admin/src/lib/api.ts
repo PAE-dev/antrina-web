@@ -8,6 +8,11 @@ export const API_URL = (
   import.meta.env.VITE_API_URL ?? (import.meta.env.PROD ? '' : 'http://localhost:3001')
 ).replace(/\/+$/, '');
 
+/** Tienda pública para el enlace "Ver tienda"; vacío si no está configurada. */
+export const STORE_URL = (
+  import.meta.env.VITE_STORE_URL ?? (import.meta.env.PROD ? '' : 'http://localhost:4321')
+).replace(/\/+$/, '');
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,

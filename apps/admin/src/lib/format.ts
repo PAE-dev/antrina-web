@@ -34,6 +34,12 @@ export function centsToInput(cents: number): string {
   return cents % 100 === 0 ? String(cents / 100) : (cents / 100).toFixed(2);
 }
 
+export function formatShortDate(iso: string): string {
+  return new Intl.DateTimeFormat('es-PE', { day: 'numeric', month: 'short', year: 'numeric' })
+    .format(new Date(iso))
+    .replace('.', '');
+}
+
 export function formatDate(iso: string): string {
   return new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short' }).format(
     new Date(iso),

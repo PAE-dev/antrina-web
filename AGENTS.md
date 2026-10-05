@@ -114,13 +114,14 @@ según el `code`: `auth.locked` → 423, `auth.forbidden` → 403, `auth.*` → 
   (`/intencion/amor` ↔ `/en/intention/amor`), `es` sin prefijo y `en` bajo `/en`.
 - Páginas de tienda envueltas en `StoreLayout.astro` (barras superiores, header, footer).
 - Panel (`apps/admin`): SPA solo en español, rutas en español (`/productos`, `/configurar-2fa`),
-  `noindex` + `robots.txt` que lo bloquea todo. Mismo sistema de diseño que la tienda.
+  `noindex` + `robots.txt` que lo bloquea todo. Comparte la marca con la tienda pero tiene su propia
+  capa visual de herramienta de trabajo (ver "Panel" abajo).
 
 ### Sistema de diseño (obligatorio)
 
 Fuente única: `packages/ui/src/styles/tokens.css` (variables en `:root` + `@theme inline`, clases
-de tipografía, botones y layout). `apps/web/src/styles/global.css` y `apps/admin/src/styles.css`
-solo importan Tailwind, HeroUI y ese archivo.
+de tipografía, botones y layout). `apps/web/src/styles/global.css` solo importa Tailwind, HeroUI y
+ese archivo; `apps/admin/src/styles.css` lo importa y sobrescribe lo indicado en "Panel".
 
 - **Color:** solo tokens. Nada de hex sueltos, paletas de Tailwind (`red-500`…), degradados ni
   opacidades inventadas. Proporción ~80% hueso/arena, 15% carbón, 5% amatista + latón.
@@ -145,6 +146,21 @@ solo importan Tailwind, HeroUI y ese archivo.
 - **Imágenes:** mientras no haya fotos reales, `PhotoPlaceholder` (rectángulo `bg-bg-alt` + texto).
   Nunca ilustraciones genéricas ni recortes sobre blanco puro.
 - **Iconos:** línea fina, `strokeWidth` 1.5, color `text`. Sin emojis en la UI.
+
+#### Panel (`apps/admin`)
+
+Lo anterior es para la tienda. El panel es una herramienta densa y neutra; sus excepciones viven
+solo en `apps/admin/src/styles.css`:
+
+- **Tipografía:** Geist Variable en todo (Geist Mono para SKU, URL y claves). Sin serif, sin
+  versalitas con tracking ni `type-*`/`.btn-*`/`.accent-rule`. Clases `panel-title`, `panel-heading`,
+  `panel-meta`, `panel-num` (cifras tabulares) y `panel-card`. Base 14px.
+- **Color:** superficies grises cálidas y blanco; amatista solo en acción principal y estado activo.
+  Estados con `success`/`warning`/`danger` (+ `-tint`) vía `StatusBadge`.
+- **Formas:** radios 6/8px; sombra solo en overlays (drawer, modal, popover).
+- **Patrones:** lista en tabla compacta (lista simple en móvil); crear/editar en `Drawer` lateral sobre
+  la lista (`/productos/:id`, `nuevo` para alta) con pestañas y pie fijo; confirmaciones con
+  `ConfirmDialog`; feedback con `toast`. Iconos en `components/icons.tsx`.
 
 ## Comandos
 

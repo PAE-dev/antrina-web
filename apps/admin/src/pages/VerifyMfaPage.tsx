@@ -41,12 +41,11 @@ export function VerifyMfaPage() {
     ['auth.unauthorized', 'auth.locked'].includes(verify.error.code);
 
   return (
-    <AuthCard eyebrow="Verificación en dos pasos" title="Introduce tu código">
-      <p className="type-body text-center">
-        Abre tu app autenticadora (Google Authenticator, 1Password, Authy…) y escribe el código de
-        Antrina.
-      </p>
-      <Form className="flex flex-col items-center gap-5" onSubmit={onSubmit}>
+    <AuthCard
+      title="Verificación en dos pasos"
+      description="Escribe el código de Antrina que muestra tu app autenticadora."
+    >
+      <Form className="flex flex-col gap-4" onSubmit={onSubmit}>
         <OtpField
           value={code}
           onChange={setCode}
@@ -59,14 +58,13 @@ export function VerifyMfaPage() {
           type="submit"
           variant="primary"
           fullWidth
-          className="type-button h-12"
           isDisabled={code.length !== 6}
           isPending={verify.isPending}
         >
           Entrar al panel
         </Button>
       </Form>
-      <Link to="/login" className="btn-secondary self-center">
+      <Link to="/login" className="self-center text-[13px] text-text-secondary hover:text-text">
         {sessionLost ? 'Volver a iniciar sesión' : 'Usar otra cuenta'}
       </Link>
     </AuthCard>
