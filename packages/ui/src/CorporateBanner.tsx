@@ -1,8 +1,8 @@
 import { ButtonLink } from './ButtonLink';
 import { Emphasis } from './Emphasis';
-import { PhotoPlaceholder } from './PhotoPlaceholder';
+import { Photo } from './Photo';
 import { SectionIndex } from './SectionHeading';
-import { type CallToAction } from './types';
+import { type CallToAction, type ImageSource } from './types';
 
 interface CorporateBannerProps {
   label: string;
@@ -10,6 +10,7 @@ interface CorporateBannerProps {
   title: string;
   text: string;
   imageLabel: string;
+  image?: ImageSource;
   cta: CallToAction;
 }
 
@@ -19,6 +20,7 @@ export function CorporateBanner({
   title,
   text,
   imageLabel,
+  image,
   cta,
 }: CorporateBannerProps) {
   return (
@@ -37,7 +39,8 @@ export function CorporateBanner({
               </ButtonLink>
             </div>
           </div>
-          <PhotoPlaceholder
+          <Photo
+            image={image}
             label={imageLabel}
             aspect="aspect-[4/3] md:aspect-auto"
             className="bg-surface md:h-full"

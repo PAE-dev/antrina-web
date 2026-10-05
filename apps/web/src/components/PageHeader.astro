@@ -1,0 +1,32 @@
+---
+import { Emphasis, SectionIndex } from '@antrina/ui';
+import { type Crumb } from '../lib/structured-data';
+import Breadcrumbs from './Breadcrumbs.astro';
+
+interface Props {
+  crumbs: Crumb[];
+  crumbsLabel: string;
+  label: string;
+  /** H1; `*palabras*` en color marca. */
+  title: string;
+  intro?: string;
+}
+
+const { crumbs, crumbsLabel, label, title, intro } = Astro.props;
+---
+
+<header class="pb-12 pt-8 md:pb-20 md:pt-12">
+  <div class="container-page flex flex-col gap-10 md:gap-14">
+    <Breadcrumbs items={crumbs} label={crumbsLabel} />
+    <div class="grid gap-8 lg:grid-cols-12 lg:items-end lg:gap-8">
+      <div class="flex flex-col gap-6 lg:col-span-8">
+        <SectionIndex label={label} />
+        <h1 class="type-h1 max-w-[18ch]">
+          <Emphasis text={title} />
+        </h1>
+      </div>
+      {intro && <p class="type-body measure lg:col-span-4 lg:pb-2">{intro}</p>}
+    </div>
+    <slot />
+  </div>
+</header>

@@ -1,0 +1,43 @@
+---
+import { type LocaleCode, type ProductSummaryDto } from '@antrina/contracts';
+import { getPageCopy } from '../../i18n/pages';
+import { SIZES, type SizeEntry } from '../../i18n/taxonomy';
+import { alternatesFor, routes } from '../../lib/routes';
+import LinkPills from '../LinkPills.astro';
+import CollectionView from './CollectionView.astro';
+
+interface Props {
+  locale: LocaleCode;
+  entry: SizeEntry;
+  products: ProductSummaryDto[];
+}
+
+const { locale, entry, products } = Astro.props;
+const copy = getPageCopy(locale);
+const text = entry.copy[locale];
+---
+
+<CollectionView
+  locale={locale}
+  alternates={alternatesFor((code) => routes.size(code, entry.slug[code]))}
+  metaTitle={copy.size.metaTitle(text.label)}
+  metaDescription={copy.size.metaDescription(text.label, text.text)}
+  crumbs={[
+    { name: copy.sizeIndex.label, path: routes.size(locale) },
+    { name: text.label, path: routes.size(locale, entry.slug[locale]) },
+  ]}
+  label={copy.sizeIndex.label}
+  title={copy.size.title(text.label)}
+  intro={text.text}
+  products={products}
+>
+  <LinkPills
+    slot="header"
+    label={copy.sizeIndex.label}
+    links={SIZES.map((other) => ({
+      label: other.copy[locale].label,
+      href: routes.size(locale, other.slug[locale]),
+      isActive: other.code === entry.code,
+    }))}
+  />
+</CollectionView>

@@ -1,9 +1,10 @@
 import { type LocaleCode } from '@antrina/contracts';
-import { localePath } from '../i18n/config';
+import { LOCALES, localePath } from '../i18n/config';
 
-/** Segmentos de URL traducidos; los slugs de intención, signo y tamaño son los mismos en todos los idiomas. */
+/** Segmentos de URL traducidos; los slugs de cada entrada vienen traducidos de `taxonomy.ts` y `stones.ts`. */
 const SEGMENTS = {
   es: {
+    catalog: 'arboles',
     intention: 'intencion',
     sign: 'signo',
     size: 'tamano',
@@ -20,6 +21,7 @@ const SEGMENTS = {
     cart: 'carrito',
   },
   en: {
+    catalog: 'trees',
     intention: 'intention',
     sign: 'sign',
     size: 'size',
@@ -47,6 +49,7 @@ const collection = (section: Section) => (locale: LocaleCode, slug?: string) =>
 
 export const routes = {
   home: (locale: LocaleCode) => localePath(locale, '/'),
+  catalog: page('catalog'),
   intention: collection('intention'),
   sign: collection('sign'),
   size: collection('size'),
@@ -62,3 +65,15 @@ export const routes = {
   account: page('account'),
   cart: page('cart'),
 };
+
+/** Ruta equivalente en cada idioma, para hreflang y el selector de idioma. */
+export type Alternates = Partial<Record<LocaleCode, string>>;
+
+export function alternatesFor(build: (locale: LocaleCode) => string | null): Alternates {
+  return Object.fromEntries(
+    LOCALES.flatMap((locale) => {
+      const path = build(locale);
+      return path ? [[locale, path]] : [];
+    }),
+  );
+}

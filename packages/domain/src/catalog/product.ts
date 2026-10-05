@@ -12,10 +12,39 @@ export const PRODUCT_BADGES = ['NEW', 'CUSTOMIZABLE', 'LIMITED_EDITION'] as cons
 
 export type ProductBadge = (typeof PRODUCT_BADGES)[number];
 
+export const PRODUCT_SIZES = ['MINI', 'STANDARD', 'LARGE', 'SIGNATURE'] as const;
+
+export type ProductSize = (typeof PRODUCT_SIZES)[number];
+
+export const ZODIAC_SIGNS = [
+  'ARIES',
+  'TAURUS',
+  'GEMINI',
+  'CANCER',
+  'LEO',
+  'VIRGO',
+  'LIBRA',
+  'SCORPIO',
+  'SAGITTARIUS',
+  'CAPRICORN',
+  'AQUARIUS',
+  'PISCES',
+] as const;
+
+export type ZodiacSign = (typeof ZODIAC_SIGNS)[number];
+
+export function isZodiacSign(value: unknown): value is ZodiacSign {
+  return typeof value === 'string' && (ZODIAC_SIGNS as readonly string[]).includes(value);
+}
+
 export interface ProductContent {
   name: string;
   slug: string;
   description: string;
+  /** Para buscadores; null = se usa el nombre. */
+  metaTitle: string | null;
+  /** Para buscadores; null = se usa la descripción. */
+  metaDescription: string | null;
 }
 
 export interface ProductProps {
@@ -31,6 +60,8 @@ export interface ProductProps {
   status: ProductStatus;
   isFeatured: boolean;
   badge: ProductBadge | null;
+  size: ProductSize | null;
+  signs: readonly ZodiacSign[];
   /** Origen artesanal (ej. "Taller Antrina, Lima"). */
   origin: string | null;
   content: Localized<ProductContent>;
@@ -112,6 +143,19 @@ export class Product {
 
   get badge(): ProductBadge | null {
     return this.props.badge;
+  }
+
+  get size(): ProductSize | null {
+    return this.props.size;
+  }
+
+  get signs(): readonly ZodiacSign[] {
+    return this.props.signs;
+  }
+
+  /** Locales con traducción propia (no fallback). */
+  get locales(): Locale[] {
+    return (Object.keys(this.props.content) as Locale[]).filter((l) => this.props.content[l]);
   }
 
   isPurchasable(): boolean {

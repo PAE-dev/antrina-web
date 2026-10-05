@@ -1,0 +1,9 @@
+---
+import NotFoundView from '../components/views/NotFoundView.astro';
+
+export const prerender = false;
+const locale = /^\/en(\/|$)/.test(Astro.url.pathname) ? 'en' : 'es';
+Astro.response.status = 404;
+---
+
+<NotFoundView locale={locale} />

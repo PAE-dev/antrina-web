@@ -2,6 +2,7 @@ import { type ProductBadgeCode, type ProductSummaryDto } from '@antrina/contract
 import { Chip } from '@heroui/react';
 import { formatMoney } from './format';
 import { PhotoPlaceholder } from './PhotoPlaceholder';
+import { type ImageLoader } from './types';
 
 export type BadgeLabels = Record<ProductBadgeCode, string>;
 
@@ -13,6 +14,8 @@ interface ProductCardProps {
   intention: string;
   badgeLabels: BadgeLabels;
   imagePlaceholderLabel: string;
+  /** URLs optimizadas para la foto; sin él se usa la original. */
+  imageLoader?: ImageLoader;
 }
 
 /** Sin descuentos visibles: nunca mostrar precio tachado ni porcentajes. */
@@ -23,17 +26,26 @@ export function ProductCard({
   intention,
   badgeLabels,
   imagePlaceholderLabel,
+  imageLoader,
 }: ProductCardProps) {
+  const image = product.imageUrl
+    ? (imageLoader?.(product.imageUrl) ?? { src: product.imageUrl })
+    : null;
   return (
     <article className="group flex flex-col gap-4">
       <div className="relative overflow-hidden rounded-md bg-bg-alt">
         <a href={href} tabIndex={-1} aria-hidden="true" className="block">
           <div className="transition-transform duration-[400ms] ease-out group-hover:scale-[1.03]">
-            {product.imageUrl ? (
+            {image ? (
               <img
-                src={product.imageUrl}
+                src={image.src}
+                srcSet={image.srcSet}
+                sizes={image.sizes}
                 alt={product.imageAlt ?? ''}
+                width={800}
+                height={1000}
                 loading="lazy"
+                decoding="async"
                 className="aspect-[4/5] w-full object-cover"
               />
             ) : (

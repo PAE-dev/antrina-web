@@ -1,0 +1,66 @@
+---
+import { type LocaleCode, type ProductSummaryDto } from '@antrina/contracts';
+import { ArrowLink } from '@antrina/ui';
+import { stoneById } from '../../content/stones';
+import { getPageCopy } from '../../i18n/pages';
+import { INTENTIONS, type IntentionEntry } from '../../i18n/taxonomy';
+import { alternatesFor, routes } from '../../lib/routes';
+import LinkPills from '../LinkPills.astro';
+import CollectionView from './CollectionView.astro';
+
+interface Props {
+  locale: LocaleCode;
+  entry: IntentionEntry;
+  products: ProductSummaryDto[];
+}
+
+const { locale, entry, products } = Astro.props;
+const copy = getPageCopy(locale);
+const text = entry.copy[locale];
+const stones = entry.stones.flatMap((id) => stoneById(id) ?? []);
+---
+
+<CollectionView
+  locale={locale}
+  alternates={alternatesFor((code) => routes.intention(code, entry.slug[code]))}
+  metaTitle={text.title.replaceAll('*', '')}
+  metaDescription={copy.intention.metaDescription(text.label, text.stones)}
+  crumbs={[
+    { name: copy.intentionIndex.label, path: routes.intention(locale) },
+    { name: text.label, path: routes.intention(locale, entry.slug[locale]) },
+  ]}
+  label={text.stones}
+  title={text.title}
+  intro={text.intro}
+  products={products}
+>
+  <LinkPills
+    slot="header"
+    label={copy.intentionIndex.label}
+    links={INTENTIONS.map((other) => ({
+      label: other.copy[locale].label,
+      href: routes.intention(locale, other.slug[locale]),
+      isActive: other.category === entry.category,
+    }))}
+  />
+  <section class="section border-t border-border">
+    <div class="container-page flex flex-col gap-10">
+      <h2 class="type-h2">{copy.intention.stonesLabel}</h2>
+      <ul class="grid gap-px overflow-hidden rounded-md border border-border bg-border md:grid-cols-2">
+        {stones.map((stone) => (
+          <li class="flex flex-col gap-4 bg-bg p-6 md:p-8">
+            <p class="type-label inline-flex items-center gap-2">
+              <span aria-hidden="true" class="size-1.5 rounded-full bg-clay" />
+              {stone.copy[locale].color}
+            </p>
+            <h3 class="type-h3">{stone.copy[locale].name}</h3>
+            <p class="type-body">{stone.copy[locale].summary}</p>
+            <ArrowLink href={routes.meanings(locale, stone.slug[locale])}>
+              {copy.intention.readMeaning}
+            </ArrowLink>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+</CollectionView>

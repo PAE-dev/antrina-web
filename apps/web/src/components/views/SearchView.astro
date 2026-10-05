@@ -1,0 +1,110 @@
+---
+import { type LocaleCode, type ProductSummaryDto } from '@antrina/contracts';
+import { STONES } from '../../content/stones';
+import { getPageCopy } from '../../i18n/pages';
+import { INTENTIONS, SIGNS, intentionByCategory } from '../../i18n/taxonomy';
+import StoreLayout from '../../layouts/StoreLayout.astro';
+import { alternatesFor, routes } from '../../lib/routes';
+import LinkPills from '../LinkPills.astro';
+import ProductCollection from '../ProductCollection.astro';
+
+interface Props {
+  locale: LocaleCode;
+  query: string;
+  products: ProductSummaryDto[];
+}
+
+const { locale, query, products } = Astro.props;
+const copy = getPageCopy(locale);
+
+const normalize = (text: string) =>
+  text
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase();
+const terms = normalize(query).split(/\s+/).filter(Boolean);
+const matches = (...texts: string[]) => {
+  const haystack = normalize(texts.join(' '));
+  return terms.every((term) => haystack.includes(term));
+};
+
+const results = terms.length
+  ? products.filter((product) => {
+      const intention = intentionByCategory(product.categorySlug);
+      return matches(
+        product.name,
+        product.description,
+        intention?.copy[locale].label ?? '',
+        intention?.copy[locale].stones ?? '',
+      );
+    })
+  : [];
+const links = terms.length
+  ? [
+      ...INTENTIONS.filter((entry) =>
+        matches(entry.copy[locale].label, entry.copy[locale].stones),
+      ).map((entry) => ({
+        label: entry.copy[locale].label,
+        href: routes.intention(locale, entry.slug[locale]),
+      })),
+      ...SIGNS.filter((entry) => matches(entry.copy[locale].label)).map((entry) => ({
+        label: entry.copy[locale].label,
+        href: routes.sign(locale, entry.slug[locale]),
+      })),
+      ...STONES.filter((stone) => matches(stone.copy[locale].name)).map((stone) => ({
+        label: stone.copy[locale].name,
+        href: routes.meanings(locale, stone.slug[locale]),
+      })),
+    ]
+  : [];
+---
+
+<StoreLayout
+  locale={locale}
+  title={query ? `${copy.search.title}: ${query}` : copy.search.title}
+  description={copy.search.hint}
+  alternates={alternatesFor((code) => routes.search(code))}
+  noindex
+>
+  <header class="pb-10 pt-10 md:pb-14 md:pt-16">
+    <div class="container-page flex flex-col gap-8">
+      <h1 class="type-h1">{copy.search.title}</h1>
+      <form
+        action={routes.search(locale)}
+        method="get"
+        role="search"
+        class="flex max-w-[720px] gap-2"
+      >
+        <label for="q" class="sr-only">
+          {copy.search.label}
+        </label>
+        <input
+          id="q"
+          name="q"
+          type="search"
+          value={query}
+          placeholder={copy.search.placeholder}
+          autocomplete="off"
+          class="h-12 min-w-0 flex-1 rounded-md border border-border-strong bg-surface px-4 text-[16px] text-text placeholder:text-text-muted focus:border-text focus:outline-none"
+        />
+        <button
+          type="submit"
+          class="h-12 rounded-full bg-text px-6 text-[15px] font-medium text-on-dark transition-colors hover:bg-brand"
+        >
+          {copy.search.submit}
+        </button>
+      </form>
+      {terms.length > 0 ? (
+        <p class="type-label" role="status">
+          {results.length > 0
+            ? copy.search.results(results.length, query)
+            : copy.search.empty(query)}
+        </p>
+      ) : (
+        <p class="type-body measure">{copy.search.hint}</p>
+      )}
+      {links.length > 0 && <LinkPills label={copy.search.label} links={links} />}
+    </div>
+  </header>
+  {results.length > 0 && <ProductCollection locale={locale} products={results} />}
+</StoreLayout>

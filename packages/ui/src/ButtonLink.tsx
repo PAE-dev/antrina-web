@@ -10,6 +10,8 @@ interface ButtonLinkProps {
    */
   variant?: 'primary' | 'secondary' | 'inverse';
   withArrow?: boolean;
+  /** Abre en otra pestaña (WhatsApp, enlaces fuera de la tienda). */
+  external?: boolean;
   className?: string;
   children: ReactNode;
 }
@@ -37,12 +39,14 @@ export function ButtonLink({
   href,
   variant = 'secondary',
   withArrow = false,
+  external = false,
   className = '',
   children,
 }: ButtonLinkProps) {
   return (
     <a
       href={href}
+      {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
       className={`${VARIANT_CLASS[variant]} group/btn h-12 px-6 text-[15px] tracking-[-0.01em] md:h-12 ${className}`.trim()}
     >
       {children}

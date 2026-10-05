@@ -5,6 +5,7 @@ import {
   type ImageAlt,
   isImageContentType,
   isLocale,
+  isZodiacSign,
   type Locale,
   type Localized,
   Money,
@@ -69,6 +70,8 @@ export function toDomainProduct(record: ProductRecord): Product {
     name: row.name,
     slug: row.slug,
     description: row.description,
+    metaTitle: row.metaTitle,
+    metaDescription: row.metaDescription,
   }));
 
   return Product.create({
@@ -86,6 +89,8 @@ export function toDomainProduct(record: ProductRecord): Product {
     status: record.status,
     isFeatured: record.isFeatured,
     badge: record.badge,
+    size: record.size,
+    signs: record.signs.filter(isZodiacSign),
     origin: record.origin,
     content,
     updatedAt: record.updatedAt,

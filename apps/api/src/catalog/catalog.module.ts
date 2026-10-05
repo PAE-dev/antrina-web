@@ -1,5 +1,10 @@
 import { Module } from '@nestjs/common';
-import { ListCategoriesUseCase, ListProductsUseCase } from '@antrina/application';
+import {
+  GetProductUseCase,
+  ListCategoriesUseCase,
+  ListProductIndexUseCase,
+  ListProductsUseCase,
+} from '@antrina/application';
 import {
   type CategoryRepository,
   type ImageStorage,
@@ -33,6 +38,18 @@ import { CatalogController } from './presentation/catalog.controller.js';
       provide: ListProductsUseCase,
       useFactory: (products: ProductRepository, storage: ImageStorage) =>
         new ListProductsUseCase(products, storage),
+      inject: [PRODUCT_REPOSITORY, IMAGE_STORAGE],
+    },
+    {
+      provide: GetProductUseCase,
+      useFactory: (products: ProductRepository, storage: ImageStorage) =>
+        new GetProductUseCase(products, storage),
+      inject: [PRODUCT_REPOSITORY, IMAGE_STORAGE],
+    },
+    {
+      provide: ListProductIndexUseCase,
+      useFactory: (products: ProductRepository, storage: ImageStorage) =>
+        new ListProductIndexUseCase(products, storage),
       inject: [PRODUCT_REPOSITORY, IMAGE_STORAGE],
     },
     {

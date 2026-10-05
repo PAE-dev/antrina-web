@@ -1,0 +1,62 @@
+---
+import { type LocaleCode, type ProductSummaryDto } from '@antrina/contracts';
+import { ArrowLink } from '@antrina/ui';
+import { stoneById } from '../../content/stones';
+import { getPageCopy } from '../../i18n/pages';
+import { SIGNS, type SignEntry } from '../../i18n/taxonomy';
+import { alternatesFor, routes } from '../../lib/routes';
+import LinkPills from '../LinkPills.astro';
+import CollectionView from './CollectionView.astro';
+
+interface Props {
+  locale: LocaleCode;
+  entry: SignEntry;
+  products: ProductSummaryDto[];
+}
+
+const { locale, entry, products } = Astro.props;
+const copy = getPageCopy(locale);
+const text = entry.copy[locale];
+const stone = stoneById(entry.stone);
+---
+
+<CollectionView
+  locale={locale}
+  alternates={alternatesFor((code) => routes.sign(code, entry.slug[code]))}
+  metaTitle={copy.sign.metaTitle(text.label, text.stone)}
+  metaDescription={copy.sign.metaDescription(text.label, text.stone)}
+  crumbs={[
+    { name: copy.signIndex.label, path: routes.sign(locale) },
+    { name: text.label, path: routes.sign(locale, entry.slug[locale]) },
+  ]}
+  label={text.dates}
+  title={copy.sign.title(text.label)}
+  intro={copy.sign.intro(text.label, text.dates, text.stone)}
+  products={products}
+>
+  <LinkPills
+    slot="header"
+    label={copy.signIndex.label}
+    links={SIGNS.map((other) => ({
+      label: other.copy[locale].label,
+      href: routes.sign(locale, other.slug[locale]),
+      isActive: other.code === entry.code,
+    }))}
+  />
+  {stone && (
+    <section class="section border-t border-border">
+      <div class="container-page grid gap-8 lg:grid-cols-12">
+        <div class="flex flex-col gap-4 lg:col-span-5">
+          <p class="type-label">{copy.sign.stoneLabel}</p>
+          <h2 class="type-h2">{stone.copy[locale].name}</h2>
+        </div>
+        <div class="flex flex-col items-start gap-6 lg:col-span-6 lg:col-start-7">
+          <p class="type-body measure">{stone.copy[locale].summary}</p>
+          <ArrowLink href={routes.meanings(locale, stone.slug[locale])}>
+            {copy.intention.readMeaning}
+          </ArrowLink>
+        </div>
+      </div>
+    </section>
+  )}
+</CollectionView>

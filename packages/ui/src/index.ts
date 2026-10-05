@@ -8,6 +8,7 @@ export * from './icons';
 export * from './IntentionCards';
 export * from './Logo';
 export * from './NewsletterSignup';
+export * from './Photo';
 export * from './PhotoPlaceholder';
 export * from './ProductCard';
 export * from './ProductGrid';

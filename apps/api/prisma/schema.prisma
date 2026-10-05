@@ -27,6 +27,13 @@ enum ProductBadge {
   LIMITED_EDITION
 }
 
+enum ProductSize {
+  MINI
+  STANDARD
+  LARGE
+  SIGNATURE
+}
+
 enum DiscountType {
   PERCENTAGE
   FIXED_AMOUNT
@@ -68,6 +75,9 @@ model Product {
   status              ProductStatus        @default(DRAFT)
   isFeatured          Boolean              @default(false)
   badge               ProductBadge?
+  size                ProductSize?
+  /// Códigos de signo zodiacal ('ARIES', 'TAURUS'…). Se validan en el dominio.
+  signs               String[]             @default([])
   origin              String?
   translations        ProductTranslation[]
   images              ProductImage[]
@@ -107,16 +117,42 @@ model ProductImageTranslation {
 }
 
 model ProductTranslation {
-  id          String  @id @default(cuid())
-  productId   String
-  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  locale      String
-  name        String
-  slug        String
-  description String
+  id              String  @id @default(cuid())
+  productId       String
+  product         Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  locale          String
+  name            String
+  slug            String
+  description     String
+  /// Título y descripción para buscadores; si faltan se usan el nombre y la descripción.
+  metaTitle       String?
+  metaDescription String?
 
   @@unique([productId, locale])
   @@unique([locale, slug])
+}
+
+/// Fotos editoriales de la tienda (portada, historia…), una por `slot`.
+model SiteImage {
+  id           String                 @id @default(cuid())
+  slot         String                 @unique
+  storageKey   String                 @unique
+  width        Int
+  height       Int
+  contentType  String
+  sizeBytes    Int
+  translations SiteImageTranslation[]
+  updatedAt    DateTime               @updatedAt
+}
+
+model SiteImageTranslation {
+  id      String    @id @default(cuid())
+  imageId String
+  image   SiteImage @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  locale  String
+  alt     String
+
+  @@unique([imageId, locale])
 }
 
 enum AdminRole {

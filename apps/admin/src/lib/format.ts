@@ -1,4 +1,31 @@
-import { type ProductBadgeCode, type ProductStatusCode } from '@antrina/contracts';
+import {
+  type ProductBadgeCode,
+  type ProductSizeCode,
+  type ProductStatusCode,
+  type ZodiacSignCode,
+} from '@antrina/contracts';
+
+export const SIZE_LABELS: Record<ProductSizeCode, string> = {
+  MINI: 'Mini',
+  STANDARD: 'Estándar',
+  LARGE: 'Grande',
+  SIGNATURE: 'Edición Firma',
+};
+
+export const SIGN_LABELS: Record<ZodiacSignCode, string> = {
+  ARIES: 'Aries',
+  TAURUS: 'Tauro',
+  GEMINI: 'Géminis',
+  CANCER: 'Cáncer',
+  LEO: 'Leo',
+  VIRGO: 'Virgo',
+  LIBRA: 'Libra',
+  SCORPIO: 'Escorpio',
+  SAGITTARIUS: 'Sagitario',
+  CAPRICORN: 'Capricornio',
+  AQUARIUS: 'Acuario',
+  PISCES: 'Piscis',
+};
 
 export const STATUS_LABELS: Record<ProductStatusCode, string> = {
   DRAFT: 'Borrador',

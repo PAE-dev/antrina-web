@@ -1,0 +1,88 @@
+---
+import { type LocaleCode } from '@antrina/contracts';
+import { IntentionCardList, ZodiacList } from '@antrina/ui';
+import { getPageCopy } from '../../i18n/pages';
+import { INTENTIONS, SIGNS, SIZES } from '../../i18n/taxonomy';
+import StoreLayout from '../../layouts/StoreLayout.astro';
+import { alternatesFor, routes } from '../../lib/routes';
+import { breadcrumbs, type Crumb } from '../../lib/structured-data';
+import PageHeader from '../PageHeader.astro';
+
+interface Props {
+  locale: LocaleCode;
+  kind: 'intention' | 'sign' | 'size';
+}
+
+const { locale, kind } = Astro.props;
+const copy = getPageCopy(locale);
+const text = {
+  intention: copy.intentionIndex,
+  sign: copy.signIndex,
+  size: copy.sizeIndex,
+}[kind];
+const route = routes[kind];
+const trail: Crumb[] = [
+  { name: copy.home, path: routes.home(locale) },
+  { name: text.label, path: route(locale) },
+];
+---
+
+<StoreLayout
+  locale={locale}
+  title={text.title.replaceAll('*', '')}
+  description={text.metaDescription}
+  alternates={alternatesFor((code) => route(code))}
+  jsonLd={[breadcrumbs(trail)]}
+>
+  <PageHeader
+    crumbs={trail}
+    crumbsLabel={copy.breadcrumb}
+    label={text.label}
+    title={text.title}
+    intro={text.intro}
+  />
+  <section class="border-t border-border pb-20 pt-10 md:pb-32 md:pt-12">
+    <div class="container-page">
+      {kind === 'intention' && (
+        <IntentionCardList
+          items={INTENTIONS.map((entry) => ({
+            title: entry.copy[locale].label,
+            stones: entry.copy[locale].stones,
+            text: entry.copy[locale].text,
+            href: routes.intention(locale, entry.slug[locale]),
+          }))}
+        />
+      )}
+      {kind === 'sign' && (
+        <ZodiacList
+          signs={SIGNS.map((entry) => ({
+            name: entry.copy[locale].label,
+            dates: entry.copy[locale].dates,
+            stone: entry.copy[locale].stone,
+            href: routes.sign(locale, entry.slug[locale]),
+          }))}
+        />
+      )}
+      {kind === 'size' && (
+        <ul class="grid gap-px overflow-hidden rounded-md border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
+          {SIZES.map((entry, position) => (
+            <li class="bg-bg">
+              <a
+                href={routes.size(locale, entry.slug[locale])}
+                class="flex h-full flex-col gap-10 p-6 transition-colors duration-300 hover:bg-quartz md:p-8"
+              >
+                <span class="type-label">{String(position + 1).padStart(2, '0')}</span>
+                <span class="flex flex-col gap-3">
+                  <span class="type-h3">{entry.copy[locale].label}</span>
+                  <span class="text-[14.5px] leading-relaxed text-text-secondary">
+                    {entry.copy[locale].text}
+                  </span>
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  </section>
+</StoreLayout>

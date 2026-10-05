@@ -1,0 +1,13 @@
+---
+import NotFoundView from '../../components/views/NotFoundView.astro';
+import SignView from '../../components/views/SignView.astro';
+import { CATALOG_CACHE_CONTROL } from '../../lib/catalog';
+import { loadSign } from '../../lib/page-data';
+
+export const prerender = false;
+const data = await loadSign('es', Astro.params.slug);
+if (data) Astro.response.headers.set('Cache-Control', CATALOG_CACHE_CONTROL);
+else Astro.response.status = 404;
+---
+
+{data ? <SignView locale="es" {...data} /> : <NotFoundView locale="es" />}

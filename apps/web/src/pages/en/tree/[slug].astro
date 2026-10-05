@@ -1,0 +1,40 @@
+---
+import MessageView from '../../../components/views/MessageView.astro';
+import NotFoundView from '../../../components/views/NotFoundView.astro';
+import ProductView from '../../../components/views/ProductView.astro';
+import { getPageCopy } from '../../../i18n/pages';
+import { CATALOG_CACHE_CONTROL } from '../../../lib/catalog';
+import { loadProduct } from '../../../lib/page-data';
+import { alternatesFor, routes } from '../../../lib/routes';
+
+export const prerender = false;
+const slug = Astro.params.slug ?? '';
+const data = await loadProduct('en', slug);
+const copy = getPageCopy('en');
+
+if (data.status === 'ok') {
+  const ownSlug = data.product.slugs.en;
+  if (ownSlug && ownSlug !== slug) return Astro.redirect(routes.product('en', ownSlug), 301);
+  Astro.response.headers.set('Cache-Control', CATALOG_CACHE_CONTROL);
+} else if (data.status === 'not_found') {
+  Astro.response.status = 404;
+} else {
+  Astro.response.status = 503;
+  Astro.response.headers.set('Retry-After', '60');
+}
+---
+
+{data.status === 'ok' ? (
+  <ProductView locale="en" product={data.product} related={data.related} />
+) : data.status === 'not_found' ? (
+  <NotFoundView locale="en" />
+) : (
+  <MessageView
+    locale="en"
+    alternates={alternatesFor((code) => routes.catalog(code))}
+    label="503"
+    title={copy.product.unavailableTitle}
+    text={copy.product.unavailableText}
+    cta={{ label: copy.notFound.cta, href: routes.catalog('en') }}
+  />
+)}

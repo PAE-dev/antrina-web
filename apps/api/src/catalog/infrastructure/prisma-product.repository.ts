@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   type AdminProductCriteria,
   DomainError,
+  type Locale,
   type Product,
   type ProductCriteria,
   type ProductDraft,
@@ -21,6 +22,8 @@ function translationRows(draft: ProductDraft) {
             name: content.name.trim(),
             slug: content.slug,
             description: content.description,
+            metaTitle: content.metaTitle,
+            metaDescription: content.metaDescription,
           },
         ]
       : [],
@@ -37,6 +40,8 @@ function scalarData(draft: ProductDraft) {
     status: draft.status,
     isFeatured: draft.isFeatured,
     badge: draft.badge,
+    size: draft.size,
+    signs: [...draft.signs],
     origin: draft.origin,
   };
 }
@@ -71,12 +76,31 @@ export class PrismaProductRepository implements ProductRepository {
         status: 'ACTIVE',
         ...(criteria.featuredOnly ? { isFeatured: true } : {}),
         ...(criteria.categorySlug ? { category: { slug: criteria.categorySlug } } : {}),
+        ...(criteria.size ? { size: criteria.size } : {}),
+        ...(criteria.sign ? { signs: { has: criteria.sign } } : {}),
       },
       include: productInclude,
       orderBy: [{ isFeatured: 'desc' }, { createdAt: 'asc' }],
       ...(criteria.limit ? { take: criteria.limit } : {}),
     });
     return records.map(toDomainProduct);
+  }
+
+  async findActiveBySlug(slug: string, locales: readonly Locale[]): Promise<Product | null> {
+    const records = await this.prisma.product.findMany({
+      where: { status: 'ACTIVE', translations: { some: { slug, locale: { in: [...locales] } } } },
+      include: productInclude,
+      take: locales.length,
+    });
+    const match = (locale: Locale) =>
+      records.find((record) =>
+        record.translations.some((t) => t.locale === locale && t.slug === slug),
+      );
+    for (const locale of locales) {
+      const record = match(locale);
+      if (record) return toDomainProduct(record);
+    }
+    return null;
   }
 
   async findById(id: string): Promise<Product | null> {
@@ -138,7 +162,13 @@ export class PrismaProductRepository implements ProductRepository {
             upsert: rows.map((row) => ({
               where: { productId_locale: { productId: id, locale: row.locale } },
               create: row,
-              update: { name: row.name, slug: row.slug, description: row.description },
+              update: {
+                name: row.name,
+                slug: row.slug,
+                description: row.description,
+                metaTitle: row.metaTitle,
+                metaDescription: row.metaDescription,
+              },
             })),
           },
         },

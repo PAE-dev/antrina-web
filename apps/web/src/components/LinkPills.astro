@@ -1,0 +1,40 @@
+---
+interface Props {
+  label: string;
+  links: Array<{ label: string; href: string; detail?: string; isActive?: boolean }>;
+}
+
+const { label, links } = Astro.props;
+---
+
+<nav aria-label={label} class="flex flex-col gap-3">
+  <p class="type-label">{label}</p>
+  <ul class="flex flex-wrap gap-2">
+    {links.map((link) => (
+      <li>
+        <a
+          href={link.href}
+          aria-current={link.isActive ? 'page' : undefined}
+          class:list={[
+            'inline-flex h-10 items-center gap-2 rounded-full border px-4 text-[14px] font-medium transition-colors',
+            link.isActive
+              ? 'border-text bg-text text-on-dark'
+              : 'border-border-strong text-text hover:border-text hover:bg-surface',
+          ]}
+        >
+          {link.label}
+          {link.detail && (
+            <span
+              class:list={[
+                'font-mono text-[12px]',
+                link.isActive ? 'text-on-dark-muted' : 'text-text-muted',
+              ]}
+            >
+              {link.detail}
+            </span>
+          )}
+        </a>
+      </li>
+    ))}
+  </ul>
+</nav>

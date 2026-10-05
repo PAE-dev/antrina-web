@@ -1,0 +1,13 @@
+---
+import NotFoundView from '../../components/views/NotFoundView.astro';
+import StoneView from '../../components/views/StoneView.astro';
+import { CATALOG_CACHE_CONTROL } from '../../lib/catalog';
+import { loadStone } from '../../lib/page-data';
+
+export const prerender = false;
+const data = await loadStone('es', Astro.params.slug);
+if (data) Astro.response.headers.set('Cache-Control', CATALOG_CACHE_CONTROL);
+else Astro.response.status = 404;
+---
+
+{data ? <StoneView locale="es" {...data} /> : <NotFoundView locale="es" />}

@@ -1,0 +1,47 @@
+---
+import { type LocaleCode, type ProductSummaryDto } from '@antrina/contracts';
+import { getDictionary } from '../../i18n/dictionaries';
+import { getPageCopy } from '../../i18n/pages';
+import { INTENTIONS, SIZES } from '../../i18n/taxonomy';
+import { alternatesFor, routes } from '../../lib/routes';
+import LinkPills from '../LinkPills.astro';
+import CollectionView from './CollectionView.astro';
+
+interface Props {
+  locale: LocaleCode;
+  products: ProductSummaryDto[];
+}
+
+const { locale, products } = Astro.props;
+const t = getDictionary(locale);
+const copy = getPageCopy(locale);
+---
+
+<CollectionView
+  locale={locale}
+  alternates={alternatesFor((code) => routes.catalog(code))}
+  metaTitle={copy.catalog.metaTitle}
+  metaDescription={copy.catalog.metaDescription}
+  crumbs={[{ name: copy.catalog.label, path: routes.catalog(locale) }]}
+  label={copy.catalog.label}
+  title={copy.catalog.title}
+  intro={copy.catalog.intro}
+  products={products}
+>
+  <div slot="header" class="flex flex-col gap-6 md:flex-row md:gap-12">
+    <LinkPills
+      label={t.nav.intention}
+      links={INTENTIONS.map((entry) => ({
+        label: entry.copy[locale].label,
+        href: routes.intention(locale, entry.slug[locale]),
+      }))}
+    />
+    <LinkPills
+      label={t.nav.size}
+      links={SIZES.map((entry) => ({
+        label: entry.copy[locale].label,
+        href: routes.size(locale, entry.slug[locale]),
+      }))}
+    />
+  </div>
+</CollectionView>

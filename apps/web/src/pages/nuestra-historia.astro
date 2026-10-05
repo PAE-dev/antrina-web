@@ -1,0 +1,10 @@
+---
+import ContentView from '../components/views/ContentView.astro';
+import { CATALOG_CACHE_CONTROL, getSiteImages } from '../lib/catalog';
+
+export const prerender = false;
+const images = await getSiteImages('es');
+Astro.response.headers.set('Cache-Control', CATALOG_CACHE_CONTROL);
+---
+
+<ContentView locale="es" page="story" image={images.story} />

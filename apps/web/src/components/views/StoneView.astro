@@ -1,0 +1,151 @@
+---
+import { type LocaleCode, type ProductSummaryDto } from '@antrina/contracts';
+import { ArrowLink, ProductList } from '@antrina/ui';
+import { STONES, type StoneEntry } from '../../content/stones';
+import { getDictionary } from '../../i18n/dictionaries';
+import { getPageCopy } from '../../i18n/pages';
+import { intentionByCategory, intentionLabel, SIGNS } from '../../i18n/taxonomy';
+import StoreLayout from '../../layouts/StoreLayout.astro';
+import { cardImage } from '../../lib/images';
+import { alternatesFor, routes } from '../../lib/routes';
+import { article, breadcrumbs, type Crumb } from '../../lib/structured-data';
+import LinkPills from '../LinkPills.astro';
+import PageHeader from '../PageHeader.astro';
+
+interface Props {
+  locale: LocaleCode;
+  stone: StoneEntry;
+  products: ProductSummaryDto[];
+}
+
+const { locale, stone, products } = Astro.props;
+const t = getDictionary(locale);
+const copy = getPageCopy(locale);
+const text = stone.copy[locale];
+const intention = intentionByCategory(stone.intention);
+const signs = SIGNS.filter((sign) => sign.stone === stone.id);
+const path = routes.meanings(locale, stone.slug[locale]);
+const trail: Crumb[] = [
+  { name: copy.home, path: routes.home(locale) },
+  { name: copy.stones.label, path: routes.meanings(locale) },
+  { name: text.name, path },
+];
+const facts = [
+  { label: copy.stones.color, value: text.color },
+  { label: copy.stones.chakra, value: text.chakra },
+  ...(intention
+    ? [
+        {
+          label: copy.stones.intention,
+          value: intention.copy[locale].label,
+          href: routes.intention(locale, intention.slug[locale]),
+        },
+      ]
+    : []),
+  ...signs.map((sign) => ({
+    label: copy.stones.signs,
+    value: sign.copy[locale].label,
+    href: routes.sign(locale, sign.slug[locale]),
+  })),
+];
+---
+
+<StoreLayout
+  locale={locale}
+  title={copy.stones.metaTitleOf(text.name)}
+  description={text.summary}
+  alternates={alternatesFor((code) => routes.meanings(code, stone.slug[code]))}
+  type="article"
+  jsonLd={[
+    breadcrumbs(trail),
+    article({
+      headline: copy.stones.metaTitleOf(text.name),
+      description: text.summary,
+      path,
+      locale,
+    }),
+  ]}
+>
+  <PageHeader
+    crumbs={trail}
+    crumbsLabel={copy.breadcrumb}
+    label={copy.stones.label}
+    title={copy.stones.meaningOf(text.name)}
+    intro={text.summary}
+  />
+
+  <section class="border-t border-border pb-20 pt-10 md:pb-28 md:pt-14">
+    <div class="container-page grid gap-12 lg:grid-cols-12">
+      <dl class="grid h-fit grid-cols-[auto_1fr] gap-x-8 gap-y-3 text-[14.5px] lg:col-span-4">
+        {facts.map((fact) => (
+          <>
+            <dt class="type-label">{fact.label}</dt>
+            <dd>
+              {'href' in fact && fact.href ? (
+                <a
+                  href={fact.href}
+                  class="underline decoration-border-strong underline-offset-4 hover:decoration-current"
+                >
+                  {fact.value}
+                </a>
+              ) : (
+                fact.value
+              )}
+            </dd>
+          </>
+        ))}
+      </dl>
+      <div class="flex flex-col gap-10 lg:col-span-7 lg:col-start-6">
+        <div class="measure flex flex-col gap-5">
+          {text.meaning.map((paragraph) => (
+            <p class="type-body">{paragraph}</p>
+          ))}
+        </div>
+        <div class="measure flex flex-col gap-3 border-t border-border pt-8">
+          <h2 class="type-h3">{copy.stones.care}</h2>
+          <p class="type-body">{text.care}</p>
+        </div>
+        <p class="measure text-[13.5px] leading-relaxed text-text-muted">
+          {copy.stones.disclaimer}
+        </p>
+      </div>
+    </div>
+  </section>
+
+  {products.length > 0 && (
+    <section class="section border-t border-border">
+      <div class="container-page flex flex-col gap-10 md:gap-12">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <h2 class="type-h2">{copy.stones.treesWith(text.name)}</h2>
+          {intention && (
+            <ArrowLink href={routes.intention(locale, intention.slug[locale])}>
+              {intention.copy[locale].title.replaceAll('*', '')}
+            </ArrowLink>
+          )}
+        </div>
+        <ProductList
+          products={products}
+          locale={locale}
+          badgeLabels={t.badges}
+          imagePlaceholderLabel={t.productPhoto}
+          intentionOf={(item) => intentionLabel(locale, item.categorySlug)}
+          productHref={(item) => routes.product(locale, item.slug)}
+          imageLoader={cardImage}
+        />
+      </div>
+    </section>
+  )}
+
+  <section class="border-t border-border py-12 md:py-16">
+    <div class="container-page">
+      <LinkPills
+        label={copy.stones.all}
+        links={STONES.map((other) => ({
+          label: other.copy[locale].name,
+          href: routes.meanings(locale, other.slug[locale]),
+          isActive: other.id === stone.id,
+        }))}
+      />
+    </div>
+  </section>
+</StoreLayout>

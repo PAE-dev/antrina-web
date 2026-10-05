@@ -2,8 +2,11 @@ import { type UpsertProductRequest } from '@antrina/contracts';
 import {
   DomainError,
   type ImageAlt,
+  META_DESCRIPTION_MAX,
+  META_TITLE_MAX,
   Money,
   PRODUCT_BADGES,
+  PRODUCT_SIZES,
   PRODUCT_STATUSES,
   type Product,
   type ProductContent,
@@ -11,6 +14,8 @@ import {
   SUPPORTED_CURRENCIES,
   SUPPORTED_LOCALES,
   validateProductDraft,
+  ZODIAC_SIGNS,
+  type ZodiacSign,
 } from '@antrina/domain';
 import {
   optionalString,
@@ -31,7 +36,21 @@ function parseContent(value: unknown, locale: string): ProductContent {
     name: requireString(raw.name, `content.${locale}.name`, 200).trim(),
     slug: requireString(raw.slug, `content.${locale}.slug`, 200).trim().toLowerCase(),
     description: requireString(raw.description ?? '', `content.${locale}.description`).trim(),
+    metaTitle:
+      optionalString(raw.metaTitle, `content.${locale}.metaTitle`, META_TITLE_MAX)?.trim() || null,
+    metaDescription:
+      optionalString(
+        raw.metaDescription,
+        `content.${locale}.metaDescription`,
+        META_DESCRIPTION_MAX,
+      )?.trim() || null,
   };
+}
+
+function parseSigns(value: unknown): ZodiacSign[] {
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value)) throw new DomainError('Signos inválidos', 'input.invalid');
+  return value.map((sign) => requireOneOf(sign, ZODIAC_SIGNS, 'signs'));
 }
 
 /** Convierte el body HTTP (no confiable) en un borrador de dominio validado. */
@@ -57,6 +76,11 @@ export function toProductDraft(input: UpsertProductRequest): ProductDraft {
     status: requireOneOf(input.status, PRODUCT_STATUSES, 'status'),
     isFeatured: requireBoolean(input.isFeatured, 'isFeatured'),
     badge: input.badge === null ? null : requireOneOf(input.badge, PRODUCT_BADGES, 'badge'),
+    size:
+      input.size === null || input.size === undefined
+        ? null
+        : requireOneOf(input.size, PRODUCT_SIZES, 'size'),
+    signs: parseSigns(input.signs),
     origin: optionalString(input.origin, 'origin', 200)?.trim() || null,
     content: { es: parseContent(rawContent.es, 'es'), ...(en ? { en } : {}) },
   };
@@ -72,6 +96,8 @@ export function draftFromProduct(product: Product): ProductDraft {
     status: product.status,
     isFeatured: product.isFeatured,
     badge: product.badge,
+    size: product.size,
+    signs: product.signs,
     origin: product.origin,
     content: product.content,
   };

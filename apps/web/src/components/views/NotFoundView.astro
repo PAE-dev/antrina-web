@@ -1,0 +1,22 @@
+---
+import { type LocaleCode } from '@antrina/contracts';
+import { getPageCopy } from '../../i18n/pages';
+import { alternatesFor, routes } from '../../lib/routes';
+import MessageView from './MessageView.astro';
+
+interface Props {
+  locale: LocaleCode;
+}
+
+const { locale } = Astro.props;
+const copy = getPageCopy(locale).notFound;
+---
+
+<MessageView
+  locale={locale}
+  alternates={alternatesFor((code) => routes.home(code))}
+  label={copy.label}
+  title={copy.title}
+  text={copy.text}
+  cta={{ label: copy.cta, href: routes.catalog(locale) }}
+/>

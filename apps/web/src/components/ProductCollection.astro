@@ -1,0 +1,42 @@
+---
+import { type LocaleCode, type ProductSummaryDto } from '@antrina/contracts';
+import { ButtonLink, ProductList } from '@antrina/ui';
+import { getDictionary } from '../i18n/dictionaries';
+import { getPageCopy } from '../i18n/pages';
+import { intentionLabel } from '../i18n/taxonomy';
+import { cardImage } from '../lib/images';
+import { routes } from '../lib/routes';
+
+interface Props {
+  locale: LocaleCode;
+  products: ProductSummaryDto[];
+}
+
+const { locale, products } = Astro.props;
+const t = getDictionary(locale);
+const copy = getPageCopy(locale);
+---
+
+<section class="border-t border-border pb-20 pt-10 md:pb-32 md:pt-12">
+  <div class="container-page flex flex-col gap-10">
+    <p class="type-label">{copy.catalog.count(products.length)}</p>
+    {products.length > 0 ? (
+      <ProductList
+        products={products}
+        locale={locale}
+        badgeLabels={t.badges}
+        imagePlaceholderLabel={t.productPhoto}
+        intentionOf={(product) => intentionLabel(locale, product.categorySlug)}
+        productHref={(product) => routes.product(locale, product.slug)}
+        imageLoader={cardImage}
+      />
+    ) : (
+      <div class="flex flex-col items-start gap-6 rounded-md bg-bg-alt p-8 md:p-12">
+        <p class="type-body measure">{copy.collection.empty}</p>
+        <ButtonLink href={routes.createTree(locale)} withArrow>
+          {copy.collection.emptyCta}
+        </ButtonLink>
+      </div>
+    )}
+  </div>
+</section>

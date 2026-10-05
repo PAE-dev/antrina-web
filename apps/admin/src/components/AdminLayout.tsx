@@ -6,7 +6,7 @@ import { useCurrentAdmin, useLogout } from '../auth/session';
 import { STORE_URL } from '../lib/api';
 import { BrandMark } from './BrandMark';
 import { ErrorNotice } from './ErrorNotice';
-import { IconBox, IconExternal, IconLogout } from './icons';
+import { IconBox, IconExternal, IconImage, IconLogout } from './icons';
 
 const ROLE_LABELS: Record<AdminMeDto['role'], string> = {
   OWNER: 'Propietario',
@@ -85,6 +85,12 @@ export function AdminLayout() {
               Productos
             </NavItem>
           </div>
+          <div className="flex flex-col gap-0.5">
+            <p className="px-2.5 pb-1.5 text-[12px] font-medium text-text-muted">Contenido</p>
+            <NavItem to="/portada" icon={<IconImage />}>
+              Portada
+            </NavItem>
+          </div>
           {STORE_URL && (
             <div className="flex flex-col gap-0.5">
               <p className="px-2.5 pb-1.5 text-[12px] font-medium text-text-muted">Tienda</p>
@@ -132,12 +138,20 @@ export function AdminLayout() {
             <Dropdown.Menu
               aria-label="Cuenta"
               onAction={(key) => {
+                if (key === 'products') void navigate('/productos');
+                if (key === 'site') void navigate('/portada');
                 if (key === 'store') window.open(STORE_URL, '_blank', 'noreferrer');
                 if (key === 'logout') signOut();
               }}
             >
               <Dropdown.Item id="who" textValue={admin.email} isDisabled>
                 <span className="text-[12px] text-text-muted">{admin.email}</span>
+              </Dropdown.Item>
+              <Dropdown.Item id="products" textValue="Productos">
+                Productos
+              </Dropdown.Item>
+              <Dropdown.Item id="site" textValue="Portada">
+                Portada
               </Dropdown.Item>
               {STORE_URL ? (
                 <Dropdown.Item id="store" textValue="Ver tienda">

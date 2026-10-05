@@ -1,7 +1,13 @@
 import { DomainError } from '../shared/domain-error.js';
 import { DEFAULT_LOCALE, type Localized, SUPPORTED_LOCALES } from '../shared/locale.js';
 import { type Money } from '../shared/money.js';
-import { type ProductBadge, type ProductContent, type ProductStatus } from './product.js';
+import {
+  type ProductBadge,
+  type ProductContent,
+  type ProductSize,
+  type ProductStatus,
+  type ZodiacSign,
+} from './product.js';
 
 /** Datos editables de un producto desde el panel de administración. */
 export interface ProductDraft {
@@ -12,9 +18,15 @@ export interface ProductDraft {
   status: ProductStatus;
   isFeatured: boolean;
   badge: ProductBadge | null;
+  size: ProductSize | null;
+  signs: readonly ZodiacSign[];
   origin: string | null;
   content: Localized<ProductContent>;
 }
+
+/** Límites duros; el panel recomienda ~60 y ~155 caracteres, lo que Google muestra. */
+export const META_TITLE_MAX = 80;
+export const META_DESCRIPTION_MAX = 200;
 
 const SKU_PATTERN = /^[A-Z0-9]+(?:-[A-Z0-9]+)*$/;
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -49,6 +61,16 @@ export function validateProductDraft(draft: ProductDraft): ProductDraft {
     if (content.description.length > 4000) {
       invalid(`La descripción (${locale}) tiene máximo 4000 caracteres`, 'description');
     }
+    if (content.metaTitle !== null && content.metaTitle.length > META_TITLE_MAX) {
+      invalid(`El título SEO (${locale}) tiene máximo ${META_TITLE_MAX} caracteres`, 'meta');
+    }
+    if (content.metaDescription !== null && content.metaDescription.length > META_DESCRIPTION_MAX) {
+      invalid(
+        `La descripción SEO (${locale}) tiene máximo ${META_DESCRIPTION_MAX} caracteres`,
+        'meta',
+      );
+    }
   }
+  if (new Set(draft.signs).size !== draft.signs.length) invalid('Signos repetidos', 'signs');
   return draft;
 }

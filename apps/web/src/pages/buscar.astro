@@ -1,0 +1,11 @@
+---
+import SearchView from '../components/views/SearchView.astro';
+import { listProducts } from '../lib/catalog';
+
+export const prerender = false;
+const query = (Astro.url.searchParams.get('q') ?? '').trim().slice(0, 80);
+const products = query ? await listProducts({ locale: 'es' }) : [];
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=600');
+---
+
+<SearchView locale="es" query={query} products={products} />

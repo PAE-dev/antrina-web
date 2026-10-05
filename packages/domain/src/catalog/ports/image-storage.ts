@@ -20,8 +20,9 @@ export interface ImageUrlResolver {
 
 /** Almacenamiento de objetos (MinIO en local, Cloudflare R2 en producción). */
 export interface ImageStorage extends ImageUrlResolver {
+  /** `prefix` es la carpeta dentro del bucket (`products/<id>`, `site/<slot>`). */
   createUploadTarget(input: {
-    productId: string;
+    prefix: string;
     contentType: ImageContentType;
     sizeBytes: number;
   }): Promise<ImageUploadTarget>;

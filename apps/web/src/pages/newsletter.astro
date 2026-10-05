@@ -1,0 +1,18 @@
+---
+import MessageView from '../components/views/MessageView.astro';
+import { getPageCopy } from '../i18n/pages';
+import { alternatesFor, routes } from '../lib/routes';
+
+export const prerender = false;
+
+const copy = getPageCopy('es').comingSoon;
+---
+
+<MessageView
+  locale="es"
+  alternates={alternatesFor((code) => routes.newsletter(code))}
+  label={copy.newsletter.title}
+  title={copy.newsletter.title}
+  text={copy.newsletter.text}
+  cta={{ label: copy.cta, href: routes.catalog('es') }}
+/>

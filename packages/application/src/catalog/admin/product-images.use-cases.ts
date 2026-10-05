@@ -57,7 +57,7 @@ export class RequestImageUploadUseCase {
     }
 
     const target = await this.deps.storage.createUploadTarget({
-      productId,
+      prefix: `products/${productId}`,
       contentType,
       sizeBytes,
     });

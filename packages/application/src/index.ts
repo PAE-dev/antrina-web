@@ -1,6 +1,10 @@
 export * from './catalog/catalog.mappers.js';
+export * from './catalog/get-product.use-case.js';
 export * from './catalog/list-categories.use-case.js';
+export * from './catalog/list-product-index.use-case.js';
 export * from './catalog/list-products.use-case.js';
+
+export * from './site/site-images.use-cases.js';
 
 export * from './catalog/admin/admin-catalog.mappers.js';
 export * from './catalog/admin/admin-products.use-cases.js';

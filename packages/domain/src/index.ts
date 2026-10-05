@@ -11,6 +11,9 @@ export * from './catalog/ports/image-storage.js';
 export * from './catalog/ports/product.repository.js';
 export * from './catalog/ports/product-image.repository.js';
 
+export * from './site/site-image.js';
+export * from './site/ports/site-image.repository.js';
+
 export * from './admin/admin-session.js';
 export * from './admin/admin-user.js';
 export * from './admin/ports/admin-session.store.js';

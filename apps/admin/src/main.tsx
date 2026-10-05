@@ -12,6 +12,7 @@ import { LoginPage } from './pages/LoginPage';
 import { ProductDrawer } from './pages/ProductDrawer';
 import { ProductsPage } from './pages/ProductsPage';
 import { SetupMfaPage } from './pages/SetupMfaPage';
+import { SiteImagesPage } from './pages/SiteImagesPage';
 import { VerifyMfaPage } from './pages/VerifyMfaPage';
 import { ME_QUERY_KEY } from './auth/session';
 
@@ -43,6 +44,7 @@ const router = createBrowserRouter([
         element: <ProductsPage />,
         children: [{ path: ':id', element: <ProductDrawer /> }],
       },
+      { path: '/portada', element: <SiteImagesPage /> },
     ],
   },
   { path: '*', element: <Navigate to="/productos" replace /> },

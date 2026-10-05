@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client.js';
-import { type ProductBadge } from '../src/generated/prisma/enums.js';
+import { type ProductBadge, type ProductSize } from '../src/generated/prisma/enums.js';
 
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
@@ -23,13 +23,24 @@ interface SeedProduct {
   stock: number;
   featured?: boolean;
   badge?: ProductBadge;
+  /** Signos cuya piedra lleva el árbol. */
+  signs: string[];
   es: { name: string; slug: string; description: string };
   en: { name: string; slug: string; description: string };
 }
 
+/** El sufijo del SKU indica el tamaño. */
+const SIZE_BY_SUFFIX: Record<string, ProductSize> = {
+  MIN: 'MINI',
+  STD: 'STANDARD',
+  GRA: 'LARGE',
+  FIR: 'SIGNATURE',
+};
+
 const products: SeedProduct[] = [
   {
     sku: 'BON-CIT-STD',
+    signs: ['GEMINI'],
     category: 'abundancia',
     priceCents: 28900,
     stock: 10,
@@ -47,6 +58,7 @@ const products: SeedProduct[] = [
   },
   {
     sku: 'BON-ROS-STD',
+    signs: ['TAURUS'],
     category: 'amor',
     priceCents: 28900,
     stock: 12,
@@ -65,6 +77,7 @@ const products: SeedProduct[] = [
   },
   {
     sku: 'BON-TUR-STD',
+    signs: ['CAPRICORN', 'AQUARIUS'],
     category: 'proteccion',
     priceCents: 31900,
     stock: 8,
@@ -83,6 +96,7 @@ const products: SeedProduct[] = [
   },
   {
     sku: 'BON-CHK-FIR',
+    signs: [],
     category: 'mixto',
     priceCents: 89000,
     stock: 3,
@@ -101,6 +115,7 @@ const products: SeedProduct[] = [
   },
   {
     sku: 'BON-COR-STD',
+    signs: ['ARIES'],
     category: 'felicidad',
     priceCents: 27900,
     stock: 10,
@@ -117,6 +132,7 @@ const products: SeedProduct[] = [
   },
   {
     sku: 'BON-AME-MIN',
+    signs: ['AQUARIUS'],
     category: 'proteccion',
     priceCents: 14900,
     stock: 20,
@@ -133,6 +149,7 @@ const products: SeedProduct[] = [
   },
   {
     sku: 'BON-ROS-MIN',
+    signs: ['TAURUS'],
     category: 'amor',
     priceCents: 14900,
     stock: 20,
@@ -149,6 +166,7 @@ const products: SeedProduct[] = [
   },
   {
     sku: 'BON-PIR-GRA',
+    signs: [],
     category: 'abundancia',
     priceCents: 46900,
     stock: 5,
@@ -200,6 +218,8 @@ async function main(): Promise<void> {
       isFeatured: product.featured ?? false,
       badge: product.badge ?? null,
       origin: 'Taller Antrina, Lima',
+      size: SIZE_BY_SUFFIX[product.sku.split('-').at(-1) ?? ''] ?? null,
+      signs: product.signs,
     };
 
     const saved = await prisma.product.upsert({

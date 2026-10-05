@@ -8,7 +8,8 @@ import {
 import { LOCALE_LABEL, LOCALES, localePath } from '../i18n/config';
 import { type Dictionary } from '../i18n/dictionaries';
 import { INTENTIONS, SIGNS, SIZES } from '../i18n/taxonomy';
-import { routes } from './routes';
+import { type Alternates, routes } from './routes';
+import { WHATSAPP_NUMBER } from './site';
 
 export function buildMainNavigation(locale: LocaleCode, t: Dictionary): NavCategory[] {
   return [
@@ -17,7 +18,7 @@ export function buildMainNavigation(locale: LocaleCode, t: Dictionary): NavCateg
       href: routes.intention(locale),
       items: INTENTIONS.map(({ slug, copy }) => ({
         label: copy[locale].label,
-        href: routes.intention(locale, slug),
+        href: routes.intention(locale, slug[locale]),
         detail: copy[locale].stones,
       })),
     },
@@ -26,7 +27,7 @@ export function buildMainNavigation(locale: LocaleCode, t: Dictionary): NavCateg
       href: routes.sign(locale),
       items: SIGNS.map(({ slug, copy }) => ({
         label: copy[locale].label,
-        href: routes.sign(locale, slug),
+        href: routes.sign(locale, slug[locale]),
         detail: copy[locale].stone,
       })),
     },
@@ -35,7 +36,7 @@ export function buildMainNavigation(locale: LocaleCode, t: Dictionary): NavCateg
       href: routes.size(locale),
       items: SIZES.map(({ slug, copy }) => ({
         label: copy[locale].label,
-        href: routes.size(locale, slug),
+        href: routes.size(locale, slug[locale]),
       })),
     },
     { label: t.nav.createTree, href: routes.createTree(locale), items: [], isHighlighted: true },
@@ -88,12 +89,21 @@ export function buildLocaleOptions(
   }));
 }
 
-export const homeLocaleOptions = (current: LocaleCode) =>
-  buildLocaleOptions(current, (code) => localePath(code, '/'));
+/** Si una página no existe en otro idioma, ese idioma lleva a su portada. */
+export const localeOptionsFor = (current: LocaleCode, alternates: Alternates) =>
+  buildLocaleOptions(current, (code) => alternates[code] ?? localePath(code, '/'));
 
 /** Pendiente: reemplazar por las cuentas oficiales de Antrina. */
 export const SOCIAL_LINKS: SocialLink[] = [
   { network: 'instagram', label: 'Instagram', href: 'https://instagram.com' },
   { network: 'facebook', label: 'Facebook', href: 'https://facebook.com' },
-  { network: 'whatsapp', label: 'WhatsApp', href: 'https://wa.me/' },
+  ...(WHATSAPP_NUMBER
+    ? [
+        {
+          network: 'whatsapp' as const,
+          label: 'WhatsApp',
+          href: `https://wa.me/${WHATSAPP_NUMBER}`,
+        },
+      ]
+    : []),
 ];

@@ -48,11 +48,11 @@ export class S3ImageStorage implements ImageStorage {
   }
 
   async createUploadTarget(input: {
-    productId: string;
+    prefix: string;
     contentType: ImageContentType;
     sizeBytes: number;
   }): Promise<ImageUploadTarget> {
-    const storageKey = `products/${input.productId}/${randomUUID()}.${EXTENSIONS[input.contentType]}`;
+    const storageKey = `${input.prefix}/${randomUUID()}.${EXTENSIONS[input.contentType]}`;
     const command = new PutObjectCommand({
       Bucket: this.config.bucket,
       Key: storageKey,

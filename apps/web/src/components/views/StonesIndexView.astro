@@ -1,0 +1,63 @@
+---
+import { type LocaleCode } from '@antrina/contracts';
+import { STONES } from '../../content/stones';
+import { getPageCopy } from '../../i18n/pages';
+import { intentionLabel } from '../../i18n/taxonomy';
+import StoreLayout from '../../layouts/StoreLayout.astro';
+import { alternatesFor, routes } from '../../lib/routes';
+import { breadcrumbs, type Crumb } from '../../lib/structured-data';
+import PageHeader from '../PageHeader.astro';
+
+interface Props {
+  locale: LocaleCode;
+}
+
+const { locale } = Astro.props;
+const copy = getPageCopy(locale);
+const trail: Crumb[] = [
+  { name: copy.home, path: routes.home(locale) },
+  { name: copy.stones.label, path: routes.meanings(locale) },
+];
+---
+
+<StoreLayout
+  locale={locale}
+  title={copy.stones.metaTitle}
+  description={copy.stones.metaDescription}
+  alternates={alternatesFor((code) => routes.meanings(code))}
+  jsonLd={[breadcrumbs(trail)]}
+>
+  <PageHeader
+    crumbs={trail}
+    crumbsLabel={copy.breadcrumb}
+    label={copy.stones.label}
+    title={copy.stones.title}
+    intro={copy.stones.intro}
+  />
+  <section class="border-t border-border pb-20 pt-10 md:pb-32 md:pt-12">
+    <div class="container-page flex flex-col gap-10">
+      <ul class="grid gap-px overflow-hidden rounded-md border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
+        {STONES.map((stone) => (
+          <li class="bg-bg">
+            <a
+              href={routes.meanings(locale, stone.slug[locale])}
+              class="flex h-full flex-col gap-8 p-6 transition-colors duration-300 hover:bg-quartz md:p-8"
+            >
+              <span class="type-label inline-flex items-center gap-2">
+                <span aria-hidden="true" class="size-1.5 rounded-full bg-clay" />
+                {intentionLabel(locale, stone.intention)}
+              </span>
+              <span class="flex flex-col gap-3">
+                <span class="type-h3">{stone.copy[locale].name}</span>
+                <span class="text-[14.5px] leading-relaxed text-text-secondary">
+                  {stone.copy[locale].summary}
+                </span>
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+      <p class="measure text-[13.5px] leading-relaxed text-text-muted">{copy.stones.disclaimer}</p>
+    </div>
+  </section>
+</StoreLayout>

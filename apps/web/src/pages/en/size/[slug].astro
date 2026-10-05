@@ -1,0 +1,13 @@
+---
+import NotFoundView from '../../../components/views/NotFoundView.astro';
+import SizeView from '../../../components/views/SizeView.astro';
+import { CATALOG_CACHE_CONTROL } from '../../../lib/catalog';
+import { loadSize } from '../../../lib/page-data';
+
+export const prerender = false;
+const data = await loadSize('en', Astro.params.slug);
+if (data) Astro.response.headers.set('Cache-Control', CATALOG_CACHE_CONTROL);
+else Astro.response.status = 404;
+---
+
+{data ? <SizeView locale="en" {...data} /> : <NotFoundView locale="en" />}

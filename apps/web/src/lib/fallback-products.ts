@@ -10,6 +10,8 @@ const ORIGIN = 'Taller Antrina, Lima';
 const SEED: FallbackSeed[] = [
   {
     id: 'fallback-1',
+    size: 'STANDARD',
+    signs: ['GEMINI'],
     sku: 'BON-CIT-STD',
     categorySlug: 'abundancia',
     origin: ORIGIN,
@@ -27,6 +29,8 @@ const SEED: FallbackSeed[] = [
   },
   {
     id: 'fallback-2',
+    size: 'STANDARD',
+    signs: ['TAURUS'],
     sku: 'BON-ROS-STD',
     categorySlug: 'amor',
     origin: ORIGIN,
@@ -44,6 +48,8 @@ const SEED: FallbackSeed[] = [
   },
   {
     id: 'fallback-3',
+    size: 'STANDARD',
+    signs: ['CAPRICORN', 'AQUARIUS'],
     sku: 'BON-TUR-STD',
     categorySlug: 'proteccion',
     origin: ORIGIN,
@@ -61,6 +67,8 @@ const SEED: FallbackSeed[] = [
   },
   {
     id: 'fallback-4',
+    size: 'SIGNATURE',
+    signs: [],
     sku: 'BON-CHK-FIR',
     categorySlug: 'mixto',
     origin: ORIGIN,

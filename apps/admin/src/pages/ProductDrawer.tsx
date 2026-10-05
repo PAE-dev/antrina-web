@@ -10,6 +10,8 @@ import {
   Skeleton,
   Switch,
   Tabs,
+  Tag,
+  TagGroup,
   TextArea,
   TextField,
   toast,
@@ -21,9 +23,10 @@ import {
   type AdminCategoryDto,
   type AdminProductDto,
   type ProductBadgeCode,
-  type ProductContentDto,
+  type ProductSizeCode,
   type ProductStatusCode,
   type UpsertProductRequest,
+  type ZodiacSignCode,
 } from '@antrina/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from 'react';
@@ -32,22 +35,38 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ErrorNotice } from '../components/ErrorNotice';
 import { PhotoManager } from '../components/PhotoManager';
 import { StatusBadge } from '../components/StatusBadge';
-import { api } from '../lib/api';
+import { api, STORE_URL } from '../lib/api';
 import {
   BADGE_LABELS,
   centsToInput,
   formatDate,
   parsePriceToCents,
+  SIGN_LABELS,
+  SIZE_LABELS,
   slugify,
   STATUS_LABELS,
 } from '../lib/format';
 
 type Lang = 'es' | 'en';
-type Tab = 'detalles' | 'fotos';
+type Tab = 'detalles' | 'fotos' | 'google';
+
+const TABS: readonly Tab[] = ['detalles', 'fotos', 'google'];
+/** Lo que Google suele mostrar antes de cortar con "…". */
+const META_TITLE_IDEAL = 60;
+const META_DESCRIPTION_IDEAL = 155;
 
 const NEW_ID = 'nuevo';
 const CLOSE_ANIMATION_MS = 220;
 const STORE_PATH: Record<Lang, string> = { es: '/arbol/', en: '/en/tree/' };
+const STORE_HOST = STORE_URL.replace(/^https?:\/\//, '') || 'antrina.vercel.app';
+
+interface ContentForm {
+  name: string;
+  slug: string;
+  description: string;
+  metaTitle: string;
+  metaDescription: string;
+}
 
 interface FormState {
   sku: string;
@@ -57,13 +76,38 @@ interface FormState {
   status: ProductStatusCode;
   isFeatured: boolean;
   badge: ProductBadgeCode | 'NONE';
+  size: ProductSizeCode | 'NONE';
+  signs: ZodiacSignCode[];
   origin: string;
-  content: Record<Lang, ProductContentDto>;
+  content: Record<Lang, ContentForm>;
   /** Mientras no se edite a mano, el slug sigue al nombre. */
   slugEdited: Record<Lang, boolean>;
 }
 
-const EMPTY_CONTENT: ProductContentDto = { name: '', slug: '', description: '' };
+const EMPTY_CONTENT: ContentForm = {
+  name: '',
+  slug: '',
+  description: '',
+  metaTitle: '',
+  metaDescription: '',
+};
+
+function contentForm(content: AdminProductDto['content']['es'] | null): ContentForm {
+  if (!content) return { ...EMPTY_CONTENT };
+  return {
+    ...content,
+    metaTitle: content.metaTitle ?? '',
+    metaDescription: content.metaDescription ?? '',
+  };
+}
+
+function contentRequest(content: ContentForm) {
+  return {
+    ...content,
+    metaTitle: content.metaTitle.trim() || null,
+    metaDescription: content.metaDescription.trim() || null,
+  };
+}
 
 function initialState(product?: AdminProductDto): FormState {
   if (!product) {
@@ -75,6 +119,8 @@ function initialState(product?: AdminProductDto): FormState {
       status: 'DRAFT',
       isFeatured: false,
       badge: 'NONE',
+      size: 'NONE',
+      signs: [],
       origin: 'Taller Antrina, Lima',
       content: { es: { ...EMPTY_CONTENT }, en: { ...EMPTY_CONTENT } },
       slugEdited: { es: false, en: false },
@@ -88,8 +134,10 @@ function initialState(product?: AdminProductDto): FormState {
     status: product.status,
     isFeatured: product.isFeatured,
     badge: product.badge ?? 'NONE',
+    size: product.size ?? 'NONE',
+    signs: [...product.signs],
     origin: product.origin ?? '',
-    content: { es: { ...product.content.es }, en: { ...(product.content.en ?? EMPTY_CONTENT) } },
+    content: { es: contentForm(product.content.es), en: contentForm(product.content.en) },
     slugEdited: { es: true, en: Boolean(product.content.en) },
   };
 }
@@ -120,8 +168,10 @@ function toRequest(state: FormState): UpsertProductRequest | string {
     status: state.status,
     isFeatured: state.isFeatured,
     badge: state.badge === 'NONE' ? null : state.badge,
+    size: state.size === 'NONE' ? null : state.size,
+    signs: state.signs,
     origin: state.origin.trim() || null,
-    content: { es, en: en.name.trim() ? en : null },
+    content: { es: contentRequest(es), en: en.name.trim() ? contentRequest(en) : null },
   };
 }
 
@@ -241,6 +291,42 @@ function Section({
   );
 }
 
+function CharCount({ value, ideal }: { value: string; ideal: number }) {
+  const length = value.trim().length;
+  return (
+    <Description className={length > ideal ? 'text-warning' : undefined}>
+      <span className="panel-num">
+        {length}/{ideal}
+      </span>
+      {length > ideal ? ' · Google lo cortará' : ' caracteres recomendados'}
+    </Description>
+  );
+}
+
+function SearchPreview({
+  url,
+  title,
+  description,
+}: {
+  url: string;
+  title: string;
+  description: string;
+}) {
+  const clip = (text: string, max: number) =>
+    text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
+  return (
+    <div className="flex flex-col gap-1 rounded-md border border-border bg-surface p-4">
+      <span className="truncate font-mono text-[12px] text-text-muted">{url}</span>
+      <span className="text-[17px] leading-snug text-brand">
+        {clip(`${title} · Antrina`, META_TITLE_IDEAL + 10)}
+      </span>
+      <span className="text-[13px] leading-relaxed text-text-secondary">
+        {clip(description, META_DESCRIPTION_IDEAL)}
+      </span>
+    </div>
+  );
+}
+
 function ProductEditor({
   product,
   categories,
@@ -255,7 +341,8 @@ function ProductEditor({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
-  const tab: Tab = product && searchParams.get('tab') === 'fotos' ? 'fotos' : 'detalles';
+  const requestedTab = TABS.find((value) => value === searchParams.get('tab')) ?? 'detalles';
+  const tab: Tab = requestedTab === 'fotos' && !product ? 'detalles' : requestedTab;
   const [state, setState] = useState<FormState>(() => initialState(product));
   const [baseline, setBaseline] = useState(() => snapshot(initialState(product)));
   const [lang, setLang] = useState<Lang>('es');
@@ -268,7 +355,7 @@ function ProductEditor({
   }, [isDirty, onDirtyChange]);
 
   const setTab = (next: Tab) =>
-    setSearchParams(next === 'fotos' ? { tab: 'fotos' } : {}, { replace: true });
+    setSearchParams(next === 'detalles' ? {} : { tab: next }, { replace: true });
 
   const save = useMutation({
     mutationFn: (body: UpsertProductRequest) =>
@@ -308,7 +395,7 @@ function ProductEditor({
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setState((current) => ({ ...current, [key]: value }));
 
-  const setContent = (field: keyof ProductContentDto, value: string) =>
+  const setContent = (field: keyof ContentForm, value: string) =>
     setState((current) => {
       const content = { ...current.content[lang], [field]: value };
       const slugEdited = { ...current.slugEdited };
@@ -334,6 +421,27 @@ function ProductEditor({
 
   const content = state.content[lang];
   const enIsEmpty = !state.content.en.name.trim();
+  const langToggle = (
+    <ToggleButtonGroup
+      size="sm"
+      selectionMode="single"
+      disallowEmptySelection
+      selectedKeys={[lang]}
+      onSelectionChange={(keys) => {
+        const [next] = [...keys];
+        if (next === 'es' || next === 'en') setLang(next);
+      }}
+      aria-label="Idioma del contenido"
+    >
+      <ToggleButton id="es" className="text-[12.5px]">
+        Español
+      </ToggleButton>
+      <ToggleButton id="en" className="text-[12.5px]">
+        English
+        {enIsEmpty && <span className="text-text-muted"> · opcional</span>}
+      </ToggleButton>
+    </ToggleButtonGroup>
+  );
 
   return (
     <>
@@ -375,6 +483,10 @@ function ProductEditor({
               )}
               <Tabs.Indicator />
             </Tabs.Tab>
+            <Tabs.Tab id="google" className="w-auto px-3 text-[13px]">
+              Google
+              <Tabs.Indicator />
+            </Tabs.Tab>
           </Tabs.List>
         </Tabs.ListContainer>
 
@@ -387,30 +499,7 @@ function ProductEditor({
               <ErrorNotice error={save.error} title="No se pudo guardar" />
               <ErrorNotice error={archive.error} title="No se pudo archivar" />
 
-              <Section
-                title="Contenido"
-                aside={
-                  <ToggleButtonGroup
-                    size="sm"
-                    selectionMode="single"
-                    disallowEmptySelection
-                    selectedKeys={[lang]}
-                    onSelectionChange={(keys) => {
-                      const [next] = [...keys];
-                      if (next === 'es' || next === 'en') setLang(next);
-                    }}
-                    aria-label="Idioma del contenido"
-                  >
-                    <ToggleButton id="es" className="text-[12.5px]">
-                      Español
-                    </ToggleButton>
-                    <ToggleButton id="en" className="text-[12.5px]">
-                      English
-                      {enIsEmpty && <span className="text-text-muted"> · opcional</span>}
-                    </ToggleButton>
-                  </ToggleButtonGroup>
-                }
-              >
+              <Section title="Contenido" aside={langToggle}>
                 <TextField
                   key={`${lang}-name`}
                   isRequired={lang === 'es'}
@@ -564,11 +653,59 @@ function ProductEditor({
                       </ListBox>
                     </Select.Popover>
                   </Select>
+                  <Select
+                    selectedKey={state.size}
+                    onSelectionChange={(key) => set('size', key as FormState['size'])}
+                  >
+                    <Label>Tamaño</Label>
+                    <Select.Trigger>
+                      <Select.Value />
+                      <Select.Indicator />
+                    </Select.Trigger>
+                    <Select.Popover>
+                      <ListBox>
+                        <ListBox.Item id="NONE" textValue="Sin tamaño">
+                          Sin tamaño
+                        </ListBox.Item>
+                        {(Object.keys(SIZE_LABELS) as ProductSizeCode[]).map((code) => (
+                          <ListBox.Item key={code} id={code} textValue={SIZE_LABELS[code]}>
+                            {SIZE_LABELS[code]}
+                          </ListBox.Item>
+                        ))}
+                      </ListBox>
+                    </Select.Popover>
+                  </Select>
                   <TextField value={state.origin} onChange={(value) => set('origin', value)}>
                     <Label>Origen</Label>
                     <Input maxLength={120} />
                   </TextField>
                 </div>
+                <TagGroup
+                  selectionMode="multiple"
+                  selectedKeys={state.signs}
+                  onSelectionChange={(keys) =>
+                    set(
+                      'signs',
+                      (Object.keys(SIGN_LABELS) as ZodiacSignCode[]).filter((code) =>
+                        keys === 'all' ? true : keys.has(code),
+                      ),
+                    )
+                  }
+                  size="sm"
+                  className="flex flex-col gap-2"
+                >
+                  <Label>Signos</Label>
+                  <TagGroup.List className="flex flex-wrap gap-1.5">
+                    {(Object.keys(SIGN_LABELS) as ZodiacSignCode[]).map((code) => (
+                      <Tag key={code} id={code} textValue={SIGN_LABELS[code]}>
+                        {SIGN_LABELS[code]}
+                      </Tag>
+                    ))}
+                  </TagGroup.List>
+                  <Description>
+                    Signos cuya piedra lleva el árbol. Aparece en la página de cada signo.
+                  </Description>
+                </TagGroup>
                 <Switch
                   isSelected={state.isFeatured}
                   onChange={(value) => set('isFeatured', value)}
@@ -589,6 +726,47 @@ function ProductEditor({
 
           <Tabs.Panel id="fotos" className="p-0">
             {product && <PhotoManager productId={product.id} images={product.images} />}
+          </Tabs.Panel>
+
+          <Tabs.Panel id="google" className="p-0">
+            <div className="flex flex-col gap-6">
+              <Section title="Cómo se ve en Google" aside={langToggle}>
+                <SearchPreview
+                  url={`${STORE_HOST}${STORE_PATH[lang]}${content.slug || '…'}`}
+                  title={content.metaTitle.trim() || content.name.trim() || 'Nombre del árbol'}
+                  description={
+                    content.metaDescription.trim() ||
+                    content.description.trim() ||
+                    'Describe el árbol en una o dos frases.'
+                  }
+                />
+                <TextField
+                  key={`${lang}-metaTitle`}
+                  value={content.metaTitle}
+                  onChange={(value) => setContent('metaTitle', value)}
+                >
+                  <Label>Título para Google</Label>
+                  <Input
+                    maxLength={80}
+                    placeholder={content.name || 'Árbol de cuarzo rosa hecho a mano'}
+                  />
+                  <CharCount value={content.metaTitle} ideal={META_TITLE_IDEAL} />
+                </TextField>
+                <TextField
+                  key={`${lang}-metaDescription`}
+                  value={content.metaDescription}
+                  onChange={(value) => setContent('metaDescription', value)}
+                >
+                  <Label>Descripción para Google</Label>
+                  <TextArea rows={3} maxLength={200} />
+                  <CharCount value={content.metaDescription} ideal={META_DESCRIPTION_IDEAL} />
+                </TextField>
+                <p className="panel-meta">
+                  Opcional. Si los dejas vacíos se usan el nombre y la descripción. Incluye lo que
+                  la gente busca: piedra, intención y “hecho a mano en Lima”.
+                </p>
+              </Section>
+            </div>
           </Tabs.Panel>
         </Drawer.Body>
       </Tabs>

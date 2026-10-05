@@ -1,0 +1,10 @@
+---
+import CatalogView from '../../components/views/CatalogView.astro';
+import { CATALOG_CACHE_CONTROL, listProducts } from '../../lib/catalog';
+
+export const prerender = false;
+const products = await listProducts({ locale: 'es' });
+Astro.response.headers.set('Cache-Control', CATALOG_CACHE_CONTROL);
+---
+
+<CatalogView locale="es" products={products} />

@@ -1,4 +1,4 @@
-import { type ProductBadgeCode } from './catalog.js';
+import { type ProductBadgeCode, type ProductSizeCode, type ZodiacSignCode } from './catalog.js';
 import { type CurrencyCode, type LocaleCode, type MoneyDto } from './common.js';
 
 export type ProductStatusCode = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
@@ -9,6 +9,10 @@ export interface ProductContentDto {
   name: string;
   slug: string;
   description: string;
+  /** Título para Google; null = se usa el nombre. */
+  metaTitle: string | null;
+  /** Descripción para Google; null = se usa la descripción. */
+  metaDescription: string | null;
 }
 
 /** El español es obligatorio; el inglés es opcional mientras no se traduzca. */
@@ -53,6 +57,8 @@ export interface AdminProductDto {
   status: ProductStatusCode;
   isFeatured: boolean;
   badge: ProductBadgeCode | null;
+  size: ProductSizeCode | null;
+  signs: ZodiacSignCode[];
   origin: string | null;
   content: ProductContentByLocaleDto;
   images: ProductImageDto[];
@@ -83,6 +89,8 @@ export interface UpsertProductRequest {
   status: ProductStatusCode;
   isFeatured: boolean;
   badge: ProductBadgeCode | null;
+  size: ProductSizeCode | null;
+  signs: ZodiacSignCode[];
   origin: string | null;
   content: ProductContentByLocaleDto;
 }

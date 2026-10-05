@@ -1,0 +1,40 @@
+---
+import { type LocaleCode } from '@antrina/contracts';
+import { ButtonLink, Emphasis, SectionIndex } from '@antrina/ui';
+import StoreLayout from '../../layouts/StoreLayout.astro';
+import { type Alternates } from '../../lib/routes';
+
+/** Páginas breves sin valor para Google (404, carrito, cuenta…): siempre `noindex`. */
+interface Props {
+  locale: LocaleCode;
+  alternates: Alternates;
+  label: string;
+  title: string;
+  text: string;
+  cta: { label: string; href: string };
+}
+
+const { locale, alternates, label, title, text, cta } = Astro.props;
+---
+
+<StoreLayout
+  locale={locale}
+  title={title.replaceAll('*', '')}
+  description={text}
+  alternates={alternates}
+  noindex
+>
+  <section class="section">
+    <div class="container-page flex min-h-[40vh] flex-col items-start justify-center gap-8">
+      <SectionIndex label={label} />
+      <h1 class="type-h1 max-w-[16ch]">
+        <Emphasis text={title} />
+      </h1>
+      <p class="type-body measure">{text}</p>
+      <ButtonLink href={cta.href} variant="primary" withArrow>
+        {cta.label}
+      </ButtonLink>
+      <slot />
+    </div>
+  </section>
+</StoreLayout>

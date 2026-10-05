@@ -11,9 +11,17 @@ const base: UpsertProductRequest = {
   status: 'DRAFT',
   isFeatured: false,
   badge: null,
+  size: 'STANDARD',
+  signs: ['TAURUS'],
   origin: '  Taller Antrina, Lima ',
   content: {
-    es: { name: 'Árbol del amor', slug: 'Arbol-Del-Amor', description: 'Cuarzo rosa.' },
+    es: {
+      name: 'Árbol del amor',
+      slug: 'Arbol-Del-Amor',
+      description: 'Cuarzo rosa.',
+      metaTitle: '  Árbol de cuarzo rosa hecho a mano ',
+      metaDescription: '',
+    },
     en: null,
   },
 };
@@ -26,6 +34,22 @@ describe('borrador de producto desde el panel', () => {
     expect(draft.content.en).toBeUndefined();
     expect(draft.origin).toBe('Taller Antrina, Lima');
     expect(draft.price.amountInCents).toBe(45000);
+    expect(draft.content.es.metaTitle).toBe('Árbol de cuarzo rosa hecho a mano');
+    expect(draft.content.es.metaDescription).toBeNull();
+    expect(draft.size).toBe('STANDARD');
+    expect(draft.signs).toEqual(['TAURUS']);
+  });
+
+  it('rechaza signos y tamaños desconocidos o repetidos', () => {
+    expect(() => toProductDraft({ ...base, signs: ['OPHIUCHUS' as never] })).toThrow(
+      expect.objectContaining({ code: 'input.invalid' }),
+    );
+    expect(() => toProductDraft({ ...base, signs: ['LEO', 'LEO'] })).toThrow(
+      expect.objectContaining({ code: 'product.invalid_signs' }),
+    );
+    expect(() => toProductDraft({ ...base, size: 'XL' as never })).toThrow(
+      expect.objectContaining({ code: 'input.invalid' }),
+    );
   });
 
   it('rechaza valores fuera de catálogo o inválidos', () => {

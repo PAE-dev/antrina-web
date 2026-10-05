@@ -1,0 +1,16 @@
+---
+import MessageView from '../../components/views/MessageView.astro';
+import { getPageCopy } from '../../i18n/pages';
+import { alternatesFor, routes } from '../../lib/routes';
+
+const copy = getPageCopy('en').comingSoon;
+---
+
+<MessageView
+  locale="en"
+  alternates={alternatesFor((code) => routes.cart(code))}
+  label={copy.cart.title}
+  title={copy.cart.title}
+  text={copy.cart.text}
+  cta={{ label: copy.cta, href: routes.catalog('en') }}
+/>

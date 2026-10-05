@@ -1,0 +1,145 @@
+---
+import { type LocaleCode, type PublicImageDto } from '@antrina/contracts';
+import { ButtonLink, Emphasis, Photo } from '@antrina/ui';
+import { type ContentAction, type ContentPageId, getContentPage } from '../../content/pages';
+import { getPageCopy } from '../../i18n/pages';
+import StoreLayout from '../../layouts/StoreLayout.astro';
+import { SIZES, toImageSource } from '../../lib/images';
+import { alternatesFor, routes } from '../../lib/routes';
+import { CONTACT_EMAIL, whatsappUrl } from '../../lib/site';
+import { article, breadcrumbs, type Crumb, faq, type JsonLd } from '../../lib/structured-data';
+import PageHeader from '../PageHeader.astro';
+
+interface Props {
+  locale: LocaleCode;
+  page: ContentPageId;
+  image?: PublicImageDto;
+}
+
+const { locale, page, image } = Astro.props;
+const copy = getPageCopy(locale);
+const content = getContentPage(locale, page);
+const path = routes[page](locale);
+const trail: Crumb[] = [
+  { name: copy.home, path: routes.home(locale) },
+  { name: content.label, path },
+];
+
+function actionHref(action: ContentAction, message = ''): string | null {
+  switch (action) {
+    case 'catalog':
+      return routes.catalog(locale);
+    case 'intentions':
+      return routes.intention(locale);
+    case 'meanings':
+      return routes.meanings(locale);
+    case 'contact':
+      return routes.contact(locale);
+    case 'order': {
+      const whatsapp = whatsappUrl(message);
+      if (whatsapp) return whatsapp;
+      if (CONTACT_EMAIL) return `mailto:${CONTACT_EMAIL}`;
+      return page === 'contact' ? null : routes.contact(locale);
+    }
+  }
+}
+
+const ctaHref = actionHref(content.cta.action, content.cta.message);
+const photo = toImageSource(image, SIZES.half, content.label);
+const jsonLd: JsonLd[] = [breadcrumbs(trail)];
+if (page === 'story') {
+  jsonLd.push(
+    article({
+      headline: content.metaTitle,
+      description: content.metaDescription,
+      path,
+      locale,
+      ...(image ? { image: image.url } : {}),
+    }),
+  );
+}
+if (content.faq) jsonLd.push(faq(content.faq));
+---
+
+<StoreLayout
+  locale={locale}
+  title={content.metaTitle}
+  description={content.metaDescription}
+  alternates={alternatesFor((code) => routes[page](code))}
+  image={
+    image ? { url: image.url, width: image.width, height: image.height, alt: image.alt } : undefined
+  }
+  type={page === 'story' ? 'article' : 'website'}
+  jsonLd={jsonLd}
+>
+  <PageHeader
+    crumbs={trail}
+    crumbsLabel={copy.breadcrumb}
+    label={content.label}
+    title={content.title}
+    intro={content.intro}
+  />
+
+  {photo && (
+    <div class="container-page pb-12 md:pb-20">
+      <Photo image={photo} label={content.label} aspect="aspect-[4/3] md:aspect-[21/9]" priority />
+    </div>
+  )}
+
+  <section class="border-t border-border pb-20 pt-4 md:pb-28">
+    <div class="container-page">
+      {content.sections.map((section) => (
+        <div class="grid gap-4 border-b border-border py-10 md:py-14 lg:grid-cols-12 lg:gap-8">
+          <h2 class="type-h3 lg:col-span-4">{section.heading}</h2>
+          <div class="measure flex flex-col gap-4 lg:col-span-7 lg:col-start-6">
+            {section.paragraphs.map((paragraph) => (
+              <p class="type-body">{paragraph}</p>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  {content.faq && (
+    <section class="section border-t border-border bg-bg-alt">
+      <div class="container-page grid gap-10 lg:grid-cols-12">
+        <h2 class="type-h2 lg:col-span-4">{copy.faq}</h2>
+        <div class="border-t border-border lg:col-span-7 lg:col-start-6">
+          {content.faq.map((item) => (
+            <details class="group border-b border-border">
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-6 py-5 text-[15px] font-medium [&::-webkit-details-marker]:hidden">
+                {item.question}
+                <span
+                  aria-hidden="true"
+                  class="font-mono text-text-muted transition-transform duration-300 group-open:rotate-45"
+                >
+                  +
+                </span>
+              </summary>
+              <p class="type-body pb-6">{item.answer}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  {ctaHref && (
+    <section class="section border-t border-border">
+      <div class="container-page flex flex-col items-start gap-8 md:flex-row md:items-end md:justify-between">
+        <h2 class="type-h2 max-w-[16ch]">
+          <Emphasis text={content.cta.title} />
+        </h2>
+        <ButtonLink
+          href={ctaHref}
+          variant="primary"
+          withArrow
+          external={ctaHref.startsWith('https://')}
+        >
+          {content.cta.label}
+        </ButtonLink>
+      </div>
+    </section>
+  )}
+</StoreLayout>

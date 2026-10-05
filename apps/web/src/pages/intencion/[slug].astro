@@ -1,0 +1,13 @@
+---
+import NotFoundView from '../../components/views/NotFoundView.astro';
+import IntentionView from '../../components/views/IntentionView.astro';
+import { CATALOG_CACHE_CONTROL } from '../../lib/catalog';
+import { loadIntention } from '../../lib/page-data';
+
+export const prerender = false;
+const data = await loadIntention('es', Astro.params.slug);
+if (data) Astro.response.headers.set('Cache-Control', CATALOG_CACHE_CONTROL);
+else Astro.response.status = 404;
+---
+
+{data ? <IntentionView locale="es" {...data} /> : <NotFoundView locale="es" />}

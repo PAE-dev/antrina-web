@@ -30,6 +30,18 @@ export interface HeaderLabels {
   language: string;
 }
 
+/** Foto lista para `<img>`: la app decide URLs optimizadas (`srcSet`) y el texto alternativo. */
+export interface ImageSource {
+  src: string;
+  srcSet?: string;
+  sizes?: string;
+  alt: string;
+  width?: number;
+  height?: number;
+}
+
+export type ImageLoader = (url: string) => { src: string; srcSet?: string; sizes?: string };
+
 export interface CallToAction {
   label: string;
   href: string;

@@ -1,7 +1,7 @@
 import { ArrowLink, ButtonLink } from './ButtonLink';
 import { Emphasis } from './Emphasis';
-import { PhotoPlaceholder } from './PhotoPlaceholder';
-import { type CallToAction } from './types';
+import { Photo } from './Photo';
+import { type CallToAction, type ImageSource } from './types';
 
 interface HeroSectionProps {
   eyebrow: string;
@@ -10,6 +10,8 @@ interface HeroSectionProps {
   primary: CallToAction;
   secondary: CallToAction;
   imageLabel: string;
+  /** Foto subida desde el panel (Portada); sin ella se muestra el hueco. */
+  image?: ImageSource;
   /** Pie de foto en mono, p. ej. "Amatista y cuarzo rosa · 32 cm". */
   caption: string;
 }
@@ -21,6 +23,7 @@ export function HeroSection({
   primary,
   secondary,
   imageLabel,
+  image,
   caption,
 }: HeroSectionProps) {
   return (
@@ -46,7 +49,7 @@ export function HeroSection({
         </div>
 
         <figure className="flex flex-col gap-3 lg:col-span-5">
-          <PhotoPlaceholder label={imageLabel} aspect="aspect-[4/5]" />
+          <Photo image={image} label={imageLabel} aspect="aspect-[4/5]" priority />
           <figcaption className="type-label flex items-center justify-between gap-4">
             <span className="shrink-0">N.º&nbsp;001</span>
             <span className="text-right">{caption}</span>

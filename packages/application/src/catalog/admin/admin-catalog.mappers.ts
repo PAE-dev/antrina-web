@@ -59,6 +59,8 @@ export function toAdminProductDto(product: Product, imageUrls: ImageUrlResolver)
     status: product.status,
     isFeatured: product.isFeatured,
     badge: product.badge,
+    size: product.size,
+    signs: [...product.signs],
     origin: product.origin,
     content: {
       es: { ...product.content.es },

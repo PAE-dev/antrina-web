@@ -4,16 +4,65 @@ import '@fontsource-variable/geist';
 import '@fontsource-variable/geist-mono';
 import '../styles/global.css';
 import { type LocaleCode } from '@antrina/contracts';
-import { HTML_LANG, LOCALES, localePath } from '../i18n/config';
+import { HREFLANG, HTML_LANG, LOCALES } from '../i18n/config';
+import { type Alternates } from '../lib/routes';
+import { absoluteUrl, BRAND, GOOGLE_SITE_VERIFICATION } from '../lib/site';
+import { type JsonLd, serializeJsonLd } from '../lib/structured-data';
+
+export interface SeoImage {
+  url: string;
+  width?: number;
+  height?: number;
+  alt?: string;
+}
 
 interface Props {
   locale: LocaleCode;
+  /** Sin la marca: se añade " · Antrina" salvo que ya la incluya. */
   title: string;
   description: string;
-  path?: string;
+  /** Ruta de esta página en cada idioma que exista; la del idioma actual es la canónica. */
+  alternates: Alternates;
+  /** Canónica distinta de la ruta actual (p. ej. ficha sin traducir → versión en español). */
+  canonical?: string;
+  image?: SeoImage;
+  type?: 'website' | 'product' | 'article';
+  noindex?: boolean;
+  jsonLd?: JsonLd[];
 }
 
-const { locale, title, description, path = '/' } = Astro.props;
+const {
+  locale,
+  title,
+  description,
+  alternates,
+  canonical,
+  image,
+  type = 'website',
+  noindex = false,
+  jsonLd = [],
+} = Astro.props;
+
+const fullTitle = title.includes(BRAND.name) ? title : `${title} · ${BRAND.name}`;
+const plainTitle = fullTitle.replaceAll('*', '');
+const canonicalPath = canonical ?? alternates[locale] ?? Astro.url.pathname;
+const canonicalUrl = absoluteUrl(canonicalPath);
+const isCanonical = canonical === undefined || canonical === alternates[locale];
+const hreflangs = isCanonical
+  ? LOCALES.flatMap((code) => {
+      const path = alternates[code];
+      return path ? [{ hreflang: HREFLANG[code], href: absoluteUrl(path) }] : [];
+    })
+  : [];
+const defaultPath = alternates.es;
+const ogImage = image ?? {
+  url: absoluteUrl('/og-default.jpg'),
+  width: 1200,
+  height: 630,
+  alt: BRAND.name,
+};
+const otherOgLocales = LOCALES.filter((code) => code !== locale && alternates[code]);
+const robots = noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large';
 ---
 
 <!doctype html>
@@ -21,14 +70,46 @@ const { locale, title, description, path = '/' } = Astro.props;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{plainTitle}</title>
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#f3f1ed" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    {LOCALES.map((code) => (
-      <link rel="alternate" hreflang={HTML_LANG[code]} href={localePath(code, path)} />
+    <meta name="robots" content={robots} />
+    <link rel="canonical" href={canonicalUrl} />
+    {hreflangs.map((link) => (
+      <link rel="alternate" hreflang={link.hreflang} href={link.href} />
     ))}
-    <link rel="alternate" hreflang="x-default" href={localePath('es', path)} />
-    <title>{title}</title>
+    {isCanonical && defaultPath && (
+      <link rel="alternate" hreflang="x-default" href={absoluteUrl(defaultPath)} />
+    )}
+
+    <meta property="og:site_name" content={BRAND.name} />
+    <meta property="og:type" content={type === 'product' ? 'product' : type} />
+    <meta property="og:title" content={plainTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:locale" content={BRAND.ogLocale[locale]} />
+    {otherOgLocales.map((code) => (
+      <meta property="og:locale:alternate" content={BRAND.ogLocale[code]} />
+    ))}
+    <meta property="og:image" content={ogImage.url} />
+    {ogImage.width && <meta property="og:image:width" content={String(ogImage.width)} />}
+    {ogImage.height && <meta property="og:image:height" content={String(ogImage.height)} />}
+    {ogImage.alt && <meta property="og:image:alt" content={ogImage.alt} />}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={plainTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage.url} />
+
+    <meta name="theme-color" content="#f3f1ed" />
+    <meta name="format-detection" content="telephone=no" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    {GOOGLE_SITE_VERIFICATION && (
+      <meta name="google-site-verification" content={GOOGLE_SITE_VERIFICATION} />
+    )}
+    {jsonLd.map((data) => (
+      <script type="application/ld+json" set:html={serializeJsonLd(data)} />
+    ))}
   </head>
   <body>
     <slot />

@@ -1,0 +1,51 @@
+---
+import { type LocaleCode, type ProductSummaryDto } from '@antrina/contracts';
+import { getPageCopy } from '../../i18n/pages';
+import StoreLayout from '../../layouts/StoreLayout.astro';
+import { type Alternates, routes } from '../../lib/routes';
+import { breadcrumbs, type Crumb, itemList } from '../../lib/structured-data';
+import PageHeader from '../PageHeader.astro';
+import ProductCollection from '../ProductCollection.astro';
+
+interface Props {
+  locale: LocaleCode;
+  alternates: Alternates;
+  metaTitle: string;
+  metaDescription: string;
+  /** Sin "Inicio": se antepone solo. */
+  crumbs: Crumb[];
+  label: string;
+  title: string;
+  intro: string;
+  products: ProductSummaryDto[];
+}
+
+const { locale, alternates, metaTitle, metaDescription, crumbs, label, title, intro, products } =
+  Astro.props;
+const copy = getPageCopy(locale);
+const trail: Crumb[] = [{ name: copy.home, path: routes.home(locale) }, ...crumbs];
+const plainTitle = title.replaceAll('*', '');
+---
+
+<StoreLayout
+  locale={locale}
+  title={metaTitle}
+  description={metaDescription}
+  alternates={alternates}
+  jsonLd={[
+    breadcrumbs(trail),
+    itemList(plainTitle, products, (product) => routes.product(locale, product.slug)),
+  ]}
+>
+  <PageHeader
+    crumbs={trail}
+    crumbsLabel={copy.breadcrumb}
+    label={label}
+    title={title}
+    intro={intro}
+  >
+    <slot name="header" />
+  </PageHeader>
+  <ProductCollection locale={locale} products={products} />
+  <slot />
+</StoreLayout>

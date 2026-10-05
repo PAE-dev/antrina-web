@@ -39,6 +39,12 @@ Contextos actuales:
 - `admin-auth`: login con contraseña + 2FA TOTP, sesiones, guards (`AdminOriginGuard`,
   `AdminSessionGuard`, `@RequirePermission`, `@CurrentAdmin`) y `AuditLog`. Exporta guards y auditoría.
 - `admin-catalog`: endpoints `/admin/products`, `/admin/products/:id/images`, `/admin/categories`.
+- `site`: fotos editoriales de la tienda (`SiteImage`, una por hueco: `hero`, `story`, `corporate`),
+  lectura pública en `GET /site/images?locale=`. `admin-site`: `/admin/site/images/:slot` (Portada del
+  panel; clave `site/<slot>/<uuid>.webp`, la foto anterior se borra del bucket al reemplazarla).
+- Catálogo público para SEO: `GET /catalog/products/:slug?locale=` (ficha; acepta el slug del idioma
+  o el español), filtros `category`/`size`/`sign` en `/catalog/products` y `GET /catalog/product-index`
+  (todos los activos con contenido por idioma: sitemap y feed de Google).
 - `checkout` (puerto `PaymentGateway`, adapter que rechaza todo) y `notification` (puerto
   `OrderNotifier`, stub de WhatsApp que solo loguea).
 
@@ -108,11 +114,35 @@ según el `code`: `auth.locked` → 423, `auth.forbidden` → 403, `auth.*` → 
   sin `tailwind.config.*`, sin paquetes `@nextui-org/*` ni `@heroui/theme` (v2).
 - Componentes compuestos (`Card.Content`, `Dropdown.Menu`) y `onPress` en vez de `onClick`.
 - Solo se hidrata lo interactivo (`client:load`/`client:visible`); lo demás se renderiza estático.
-- Textos de UI en `apps/web/src/i18n/dictionaries.ts`; intenciones, signos y tamaños en
-  `apps/web/src/i18n/taxonomy.ts`. Los componentes de `ui` reciben labels y hrefs por props.
-- Rutas siempre con `routes` (`apps/web/src/lib/routes.ts`): segmentos traducidos
-  (`/intencion/amor` ↔ `/en/intention/amor`), `es` sin prefijo y `en` bajo `/en`.
+- Textos de UI de la portada en `apps/web/src/i18n/dictionaries.ts`, de las páginas internas en
+  `i18n/pages.ts`; intenciones, signos y tamaños (con slug traducido) en `i18n/taxonomy.ts`;
+  significados de piedras en `content/stones.ts` y páginas largas (historia, envíos…) en
+  `content/pages.ts`. Los componentes de `ui` reciben labels y hrefs por props.
+- Rutas siempre con `routes` (`apps/web/src/lib/routes.ts`): segmentos y slugs traducidos
+  (`/intencion/amor` ↔ `/en/intention/love`, `/arbol/<slug>` ↔ `/en/tree/<slug>`), `es` sin prefijo
+  y `en` bajo `/en`.
+- Cada página en `src/pages/` es un envoltorio fino por idioma (es y `en/`) que carga datos
+  (`lib/page-data.ts`), fija el estado HTTP (404 si el slug no existe, 503 si la API falla, 301 al slug
+  propio del idioma) y renderiza una vista de `components/views/`.
 - Páginas de tienda envueltas en `StoreLayout.astro` (franja superior, header, footer).
+
+### SEO (obligatorio en toda página nueva)
+
+- `StoreLayout` exige `title` (sin la marca; se añade " · Antrina"), `description` (~155 caracteres)
+  y `alternates` (`alternatesFor(...)`, la ruta en cada idioma que exista): genera canonical,
+  hreflang (`es`, `en`, `x-default`), Open Graph y Twitter. Imagen social por defecto
+  `public/og-default.jpg`; pasa `image` si la página tiene foto propia.
+- Un solo `h1` por página. Datos estructurados con `lib/structured-data.ts` (`breadcrumbs`,
+  `product`, `itemList`, `article`, `faq`, `organization`/`website` en la portada) vía `jsonLd`.
+- Páginas sin valor para Google (búsqueda, carrito, cuenta, 404) con `noindex`; las de producto sin
+  traducción propia también (canonical a la española). Las nuevas páginas indexables van en
+  `pages/sitemap.xml.ts`.
+- `robots.txt`, `sitemap.xml` y `feeds/google-merchant.xml` (solo productos con foto) se generan
+  en `src/pages/`. Dominio en `PUBLIC_SITE_URL` (todas las URLs absolutas salen de `lib/site.ts`).
+- Fotos con `toImageSource`/`cardImage` (`lib/images.ts`): `srcset` vía el optimizador de Vercel
+  (solo hosts de `MEDIA_HOST`), `width`/`height` siempre y `priority` solo en la foto principal.
+- Textos de piedras en tono de tradición ("se asocia con"); nunca promesas de salud (Merchant
+  Center las rechaza).
 - Panel (`apps/admin`): SPA solo en español, rutas en español (`/productos`, `/configurar-2fa`),
   `noindex` + `robots.txt` que lo bloquea todo. Comparte la marca con la tienda pero tiene su propia
   capa visual de herramienta de trabajo (ver "Panel" abajo).
@@ -190,6 +220,8 @@ pnpm build | pnpm typecheck | pnpm lint | pnpm test | pnpm format
 ```
 
 Variables: copiar `.env.example` a `apps/api/.env`, `apps/web/.env` y `apps/admin/.env`.
+En la web: `PUBLIC_SITE_URL` (dominio canónico), `PUBLIC_WHATSAPP_NUMBER` (sin "+", activa los botones
+de pedido), `PUBLIC_CONTACT_EMAIL` y `PUBLIC_GOOGLE_SITE_VERIFICATION` (Search Console).
 `ADMIN_ENCRYPTION_KEY` es obligatoria (`openssl rand -base64 32`). Variables nuevas: añadirlas
 también a `globalPassThroughEnv` en `turbo.json`.
 
