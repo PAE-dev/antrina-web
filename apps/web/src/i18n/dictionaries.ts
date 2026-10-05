@@ -2,13 +2,14 @@ import { type LocaleCode, type ProductBadgeCode } from '@antrina/contracts';
 import { type HeaderLabels, type Pillar, type Testimonial } from '@antrina/ui';
 
 /**
- * Copys de la tienda. En títulos, `*palabras*` se muestra en Cormorant itálica color marca:
- * úsalo en 1–2 palabras clave y solo en títulos importantes. Sin emojis ni descuentos.
+ * Copys de la tienda. En títulos, `*palabras*` se muestra en color marca: úsalo en 1–2 palabras
+ * clave y solo en títulos importantes. `label` es la etiqueta corta del índice de sección
+ * ("01 — Intenciones"). Sin emojis ni descuentos.
  */
 export interface Dictionary {
   meta: { title: string; description: string };
   announcement: string;
-  highlights: { story: string; shipping: string; corporate: string };
+  shippingNote: string;
   header: HeaderLabels;
   nav: {
     intention: string;
@@ -26,18 +27,19 @@ export interface Dictionary {
     primaryCta: string;
     secondaryCta: string;
     imageLabel: string;
+    caption: string;
   };
-  intentions: { eyebrow: string; title: string; intro: string; imageLabel: string };
-  bestsellers: { eyebrow: string; title: string; viewAll: string };
+  intentions: { label: string; title: string; intro: string };
+  bestsellers: { label: string; title: string; viewAll: string };
   productPhoto: string;
   badges: Record<ProductBadgeCode, string>;
-  story: { eyebrow: string; title: string; paragraphs: string[]; imageLabel: string; cta: string };
-  zodiac: { eyebrow: string; title: string; intro: string };
-  pillars: { title: string; items: Pillar[] };
-  testimonials: { eyebrow: string; title: string; photoLabel: string; items: Testimonial[] };
-  corporate: { eyebrow: string; title: string; text: string; imageLabel: string; cta: string };
+  story: { label: string; title: string; paragraphs: string[]; imageLabel: string; cta: string };
+  zodiac: { label: string; title: string; intro: string };
+  pillars: { label: string; title: string; items: Pillar[] };
+  testimonials: { label: string; title: string; items: Testimonial[] };
+  corporate: { label: string; title: string; text: string; imageLabel: string; cta: string };
   newsletter: {
-    eyebrow: string;
+    label: string;
     title: string;
     text: string;
     emailLabel: string;
@@ -65,11 +67,7 @@ const es: Dictionary = {
       'Bonsáis de cuarzo armados piedra por piedra en nuestro taller familiar de Lima. Elige tu intención o crea tu árbol. Envíos a todo el mundo.',
   },
   announcement: 'Hecho a mano en Lima, Perú · Envíos a todo el mundo',
-  highlights: {
-    story: 'Nuestra historia',
-    shipping: 'Envío gratis en Lima desde S/ 150',
-    corporate: 'Regalos corporativos',
-  },
+  shippingNote: 'Envío gratis en Lima desde S/ 150',
   header: {
     search: 'Buscar',
     searchPlaceholder: 'Busca por piedra, intención o signo…',
@@ -91,28 +89,28 @@ const es: Dictionary = {
     story: 'Nuestra historia',
   },
   hero: {
-    eyebrow: 'Hecho a mano en Perú',
+    eyebrow: 'Taller familiar en Lima, Perú',
     title: 'Arraigado en *tu intención*',
     text: 'Árboles de cuarzo armados piedra por piedra en nuestro taller familiar de Lima. Cada uno es único.',
     primaryCta: 'Elige tu intención',
     secondaryCta: 'Crea tu árbol',
     imageLabel: 'Foto de producto',
+    caption: 'Amatista y cuarzo rosa · Pieza única',
   },
   intentions: {
-    eyebrow: 'Por intención',
+    label: 'Intenciones',
     title: 'Elige *tu intención*',
     intro: 'Cada piedra acompaña un propósito. Elige el tuyo y lo armamos a mano, rama por rama.',
-    imageLabel: 'Foto de producto',
   },
   bestsellers: {
-    eyebrow: 'Los favoritos',
+    label: 'Favoritos',
     title: 'Más vendidos',
     viewAll: 'Ver todos los árboles',
   },
   productPhoto: 'Foto de producto',
   badges: { NEW: 'Nuevo', CUSTOMIZABLE: 'Personalizable', LIMITED_EDITION: 'Edición limitada' },
   story: {
-    eyebrow: 'Nuestro taller',
+    label: 'Taller',
     title: 'Hecho a mano *en Lima*',
     paragraphs: [
       'Antrina nació en la mesa de nuestra casa, en Lima. Allí, en familia, elegimos cada piedra, enrollamos el alambre a mano y damos forma a cada rama, sin moldes ni prisas.',
@@ -122,12 +120,13 @@ const es: Dictionary = {
     cta: 'Conoce nuestra historia',
   },
   zodiac: {
-    eyebrow: 'Por signo',
+    label: 'Signos',
     title: 'Encuentra *tu signo*',
     intro:
       'Cada signo tiene una piedra afín. Descubre la tuya y regálate un árbol que te represente.',
   },
   pillars: {
+    label: 'Oficio',
     title: 'Lo que hay detrás de cada árbol',
     items: [
       {
@@ -149,9 +148,8 @@ const es: Dictionary = {
   },
   /* Testimonios de muestra: reemplazar por reseñas reales (con permiso y foto del cliente). */
   testimonials: {
-    eyebrow: 'Testimonios',
+    label: 'Clientes',
     title: 'Lo que dicen quienes ya tienen el suyo',
-    photoLabel: 'Foto de cliente',
     items: [
       {
         quote:
@@ -177,14 +175,14 @@ const es: Dictionary = {
     ],
   },
   corporate: {
-    eyebrow: 'Para empresas',
+    label: 'Empresas',
     title: 'Regalos *corporativos*',
     text: 'Árboles personalizados con la piedra y el mensaje de tu marca, para clientes, equipos y eventos. Cotizamos desde 10 unidades.',
     imageLabel: 'Foto de producto',
     cta: 'Solicitar cotización',
   },
   newsletter: {
-    eyebrow: 'Newsletter',
+    label: 'Carta mensual',
     title: 'Recibe el significado de *tu piedra del mes*',
     text: 'Una carta breve al mes: la piedra protagonista, su historia y cómo acompañarte con ella.',
     emailLabel: 'Correo electrónico',
@@ -212,11 +210,7 @@ const en: Dictionary = {
       'Quartz bonsai trees built stone by stone in our family workshop in Lima. Choose your intention or create your own tree. Worldwide shipping.',
   },
   announcement: 'Handmade in Lima, Peru · Worldwide shipping',
-  highlights: {
-    story: 'Our story',
-    shipping: 'Free shipping in Lima over S/ 150',
-    corporate: 'Corporate gifts',
-  },
+  shippingNote: 'Free shipping in Lima over S/ 150',
   header: {
     search: 'Search',
     searchPlaceholder: 'Search by stone, intention or sign…',
@@ -238,29 +232,29 @@ const en: Dictionary = {
     story: 'Our story',
   },
   hero: {
-    eyebrow: 'Handmade in Peru',
+    eyebrow: 'Family workshop in Lima, Peru',
     title: 'Rooted in *intention*',
     text: 'Quartz trees built stone by stone in our family workshop in Lima. Each one is unique.',
     primaryCta: 'Choose your intention',
     secondaryCta: 'Create your tree',
     imageLabel: 'Product photo',
+    caption: 'Amethyst and rose quartz · One of a kind',
   },
   intentions: {
-    eyebrow: 'By intention',
+    label: 'Intentions',
     title: 'Choose *your intention*',
     intro:
       'Every stone carries a purpose. Choose yours and we will build it by hand, branch by branch.',
-    imageLabel: 'Product photo',
   },
   bestsellers: {
-    eyebrow: 'Customer favorites',
+    label: 'Favorites',
     title: 'Best sellers',
     viewAll: 'View all trees',
   },
   productPhoto: 'Product photo',
   badges: { NEW: 'New', CUSTOMIZABLE: 'Customizable', LIMITED_EDITION: 'Limited edition' },
   story: {
-    eyebrow: 'Our workshop',
+    label: 'Workshop',
     title: 'Handmade *in Lima*',
     paragraphs: [
       'Antrina was born at our kitchen table in Lima. There, as a family, we choose every stone, wrap the wire by hand and shape each branch, with no molds and no hurry.',
@@ -270,12 +264,13 @@ const en: Dictionary = {
     cta: 'Read our story',
   },
   zodiac: {
-    eyebrow: 'By sign',
+    label: 'Signs',
     title: 'Find *your sign*',
     intro:
       'Every sign has a kindred stone. Discover yours and gift yourself a tree that reflects you.',
   },
   pillars: {
+    label: 'Craft',
     title: 'What lies behind every tree',
     items: [
       {
@@ -296,9 +291,8 @@ const en: Dictionary = {
     ],
   },
   testimonials: {
-    eyebrow: 'Testimonials',
+    label: 'Customers',
     title: 'From those who already have theirs',
-    photoLabel: 'Customer photo',
     items: [
       {
         quote:
@@ -324,14 +318,14 @@ const en: Dictionary = {
     ],
   },
   corporate: {
-    eyebrow: 'For companies',
+    label: 'Companies',
     title: 'Corporate *gifts*',
     text: 'Custom trees with your brand’s stone and message, for clients, teams and events. Quotes from 10 units.',
     imageLabel: 'Product photo',
     cta: 'Request a quote',
   },
   newsletter: {
-    eyebrow: 'Newsletter',
+    label: 'Monthly letter',
     title: 'Receive the meaning of *your stone of the month*',
     text: 'A short letter each month: the featured stone, its story and how to live with it.',
     emailLabel: 'Email address',

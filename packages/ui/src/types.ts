@@ -1,6 +1,8 @@
 export interface NavLink {
   label: string;
   href: string;
+  /** Dato secundario en mono (piedras, fechas) para los menús desplegables. */
+  detail?: string;
 }
 
 export interface NavCategory extends NavLink {

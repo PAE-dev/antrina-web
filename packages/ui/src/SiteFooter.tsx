@@ -41,69 +41,77 @@ export function SiteFooter({
   rights,
 }: SiteFooterProps) {
   return (
-    <footer className="border-t border-border bg-bg-alt">
-      <div className="container-page grid grid-cols-2 gap-x-6 gap-y-12 py-[72px] md:grid-cols-[1.4fr_repeat(3,1fr)] md:gap-10 md:py-24">
-        <div className="col-span-2 flex flex-col items-start gap-5 md:col-span-1">
-          <Logo href={homeHref} label={homeLabel} />
-          <p className="font-display text-[22px] italic leading-snug text-brand">{slogan}</p>
-          <p className="max-w-[300px] text-[15px] leading-relaxed text-text-secondary">{tagline}</p>
-          <ul className="mt-2 flex items-center gap-4" aria-label={socialLabel}>
-            {socials.map(({ network, label, href }) => {
-              const Icon = SOCIAL_ICONS[network];
-              return (
-                <li key={network}>
-                  <a
-                    href={href}
-                    aria-label={label}
-                    className="text-text transition-colors hover:text-brand"
-                  >
-                    <Icon />
-                  </a>
-                </li>
-              );
-            })}
-          </ul>
+    <footer className="surface-dark">
+      <div className="container-page flex flex-col gap-16 pb-8 pt-20 md:gap-24 md:pt-28">
+        <div className="grid gap-12 lg:grid-cols-12 lg:gap-8">
+          <div className="flex flex-col items-start gap-6 lg:col-span-5">
+            <p className="type-h1 max-w-[12ch]">{slogan}</p>
+            <p className="max-w-[340px] text-[15px] leading-relaxed text-on-dark-muted">
+              {tagline}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:col-span-6 lg:col-start-7">
+            {columns.map((column) => (
+              <nav key={column.title} aria-label={column.title} className="flex flex-col gap-4">
+                <p className="type-label">{column.title}</p>
+                <ul className="flex flex-col gap-2.5">
+                  {column.links.map((link) => (
+                    <li key={link.href}>
+                      <a
+                        href={link.href}
+                        className="text-[15px] text-on-dark transition-colors hover:text-quartz"
+                      >
+                        {link.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            ))}
+          </div>
         </div>
 
-        {columns.map((column) => (
-          <nav key={column.title} aria-label={column.title} className="flex flex-col gap-5">
-            <p className="type-eyebrow">{column.title}</p>
-            <ul className="flex flex-col gap-3">
-              {column.links.map((link) => (
-                <li key={link.href}>
-                  <a
-                    href={link.href}
-                    className="text-[15px] text-text-secondary transition-colors hover:text-brand"
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
+        <div className="flex flex-col gap-6 border-t border-border-dark pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-6">
+            <Logo href={homeHref} label={homeLabel} tone="dark" />
+            <ul className="flex items-center gap-1" aria-label={socialLabel}>
+              {socials.map(({ network, label, href }) => {
+                const Icon = SOCIAL_ICONS[network];
+                return (
+                  <li key={network}>
+                    <a
+                      href={href}
+                      aria-label={label}
+                      className="inline-flex size-9 items-center justify-center rounded-full text-on-dark-muted transition-colors hover:bg-border-dark hover:text-on-dark"
+                    >
+                      <Icon />
+                    </a>
+                  </li>
+                );
+              })}
             </ul>
-          </nav>
-        ))}
-      </div>
-
-      <div className="border-t border-border">
-        <div className="container-page flex flex-col items-center justify-between gap-4 py-6 text-[13px] text-text-muted sm:flex-row">
-          <p>
-            © {new Date().getFullYear()} Antrina. {rights}
-          </p>
-          <nav aria-label={languageLabel} className="flex gap-4">
-            {locales.map((locale) => (
-              <a
-                key={locale.code}
-                href={locale.href}
-                hrefLang={locale.code}
-                aria-current={locale.isActive ? 'true' : undefined}
-                className={
-                  locale.isActive ? 'text-text underline underline-offset-4' : 'hover:text-text'
-                }
-              >
-                {locale.label}
-              </a>
-            ))}
-          </nav>
+          </div>
+          <div className="type-label flex items-center gap-6">
+            <p>
+              © {new Date().getFullYear()} Antrina. {rights}
+            </p>
+            <nav aria-label={languageLabel} className="flex gap-1">
+              {locales.map((locale) => (
+                <a
+                  key={locale.code}
+                  href={locale.href}
+                  hrefLang={locale.code}
+                  aria-current={locale.isActive ? 'true' : undefined}
+                  className={`rounded-sm px-1.5 py-0.5 ${
+                    locale.isActive ? 'bg-on-dark text-text' : 'hover:text-on-dark'
+                  }`}
+                >
+                  {locale.label}
+                </a>
+              ))}
+            </nav>
+          </div>
         </div>
       </div>
     </footer>

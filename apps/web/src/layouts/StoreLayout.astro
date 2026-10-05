@@ -21,11 +21,7 @@ const t = getDictionary(locale);
 <BaseLayout locale={locale} title={title} description={description} path={path}>
   <AnnouncementBar
     message={t.announcement}
-    highlights={[
-      { label: t.highlights.story, href: routes.story(locale) },
-      { label: t.highlights.shipping, href: routes.shipping(locale) },
-      { label: t.highlights.corporate, href: routes.corporate(locale) },
-    ]}
+    note={t.shippingNote}
     locales={locales}
     languageLabel={t.header.language}
   />

@@ -1,8 +1,10 @@
-import { Input, Label, TextField } from '@heroui/react';
+import { Button, Input, Label, TextField } from '@heroui/react';
 import { Emphasis } from './Emphasis';
+import { SectionIndex } from './SectionHeading';
 
 interface NewsletterSignupProps {
-  eyebrow: string;
+  label: string;
+  index?: number;
   title: string;
   text: string;
   action: string;
@@ -13,7 +15,8 @@ interface NewsletterSignupProps {
 }
 
 export function NewsletterSignup({
-  eyebrow,
+  label,
+  index,
   title,
   text,
   action,
@@ -24,26 +27,37 @@ export function NewsletterSignup({
 }: NewsletterSignupProps) {
   return (
     <section className="section border-t border-border">
-      <div className="container-page measure flex flex-col items-center gap-6 text-center">
-        <p className="type-eyebrow">{eyebrow}</p>
-        <h2 className="type-h2">
-          <Emphasis text={title} />
-        </h2>
-        <p className="type-body">{text}</p>
-        <form
-          action={action}
-          method="post"
-          className="mt-4 flex w-full flex-col items-stretch gap-5 sm:flex-row sm:items-end sm:gap-8"
-        >
-          <TextField name="email" type="email" isRequired fullWidth className="flex-1 text-left">
-            <Label className="sr-only">{emailLabel}</Label>
-            <Input placeholder={emailPlaceholder} className="h-12 text-[15px]" />
-          </TextField>
-          <button type="submit" className="btn-secondary cursor-pointer self-center sm:self-auto">
-            {submitLabel}
-          </button>
-        </form>
-        <p className="text-[13px] text-text-muted">{disclaimer}</p>
+      <div className="container-page grid gap-10 lg:grid-cols-12 lg:items-end lg:gap-8">
+        <div className="flex flex-col gap-5 lg:col-span-6">
+          <SectionIndex label={label} index={index} />
+          <h2 className="type-h2">
+            <Emphasis text={title} />
+          </h2>
+          <p className="type-body measure">{text}</p>
+        </div>
+        <div className="flex flex-col gap-3 lg:col-span-5 lg:col-start-8">
+          <form
+            action={action}
+            method="post"
+            className="flex flex-col gap-2 rounded-full sm:flex-row sm:border sm:border-border-strong sm:bg-surface sm:p-1.5"
+          >
+            <TextField name="email" type="email" isRequired fullWidth className="flex-1">
+              <Label className="sr-only">{emailLabel}</Label>
+              <Input
+                placeholder={emailPlaceholder}
+                className="h-12 rounded-full px-5 text-[15px] sm:h-11 sm:border-0 sm:bg-transparent"
+              />
+            </TextField>
+            <Button
+              type="submit"
+              size="lg"
+              className="h-12 bg-text px-6 text-[15px] text-on-dark sm:h-11"
+            >
+              {submitLabel}
+            </Button>
+          </form>
+          <p className="type-label px-5">{disclaimer}</p>
+        </div>
       </div>
     </section>
   );

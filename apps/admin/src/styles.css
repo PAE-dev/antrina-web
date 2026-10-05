@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 @import '@heroui/styles';
-/* Marca compartida con la tienda (amatista, latón); el panel ajusta abajo superficies y tipografía. */
+/* Marca compartida con la tienda (amatista); el panel ajusta abajo superficies, radios y tipografía. */
 @import '@antrina/ui/styles/tokens.css';
 
 /*
@@ -24,6 +24,8 @@
   --color-danger-tint: #fdeceb;
   --radius-sm: 6px;
   --radius-md: 8px;
+  --button-radius: var(--radius-md);
+  --field-radius: var(--radius-sm);
 
   --accent-foreground: var(--color-surface);
   --success: var(--color-success);

@@ -253,7 +253,7 @@ export function ProductsPage() {
                                 {product.name}
                               </Link>
                               {product.isFeatured && (
-                                <span title="Destacado" className="shrink-0 text-brass">
+                                <span title="Destacado" className="shrink-0 text-warning">
                                   <IconStar size={13} />
                                   <span className="sr-only">Destacado</span>
                                 </span>

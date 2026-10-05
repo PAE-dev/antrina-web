@@ -1,4 +1,5 @@
 import { type ProductBadgeCode, type ProductSummaryDto } from '@antrina/contracts';
+import { Chip } from '@heroui/react';
 import { formatMoney } from './format';
 import { PhotoPlaceholder } from './PhotoPlaceholder';
 
@@ -8,7 +9,7 @@ interface ProductCardProps {
   product: ProductSummaryDto;
   href: string;
   locale: string;
-  /** Intención del árbol (p. ej. "Abundancia"), se muestra como eyebrow. */
+  /** Intención del árbol (p. ej. "Abundancia"), se muestra como etiqueta mono. */
   intention: string;
   badgeLabels: BadgeLabels;
   imagePlaceholderLabel: string;
@@ -25,7 +26,7 @@ export function ProductCard({
 }: ProductCardProps) {
   return (
     <article className="group flex flex-col gap-4">
-      <div className="relative overflow-hidden bg-bg-alt">
+      <div className="relative overflow-hidden rounded-md bg-bg-alt">
         <a href={href} tabIndex={-1} aria-hidden="true" className="block">
           <div className="transition-transform duration-[400ms] ease-out group-hover:scale-[1.03]">
             {product.imageUrl ? (
@@ -36,22 +37,26 @@ export function ProductCard({
                 className="aspect-[4/5] w-full object-cover"
               />
             ) : (
-              <PhotoPlaceholder label={imagePlaceholderLabel} />
+              <PhotoPlaceholder label={imagePlaceholderLabel} className="rounded-none" />
             )}
           </div>
         </a>
         {product.badge && (
-          <span className="label-tag absolute left-3 top-3">{badgeLabels[product.badge]}</span>
+          <Chip size="sm" className="absolute left-3 top-3 bg-surface text-text">
+            {badgeLabels[product.badge]}
+          </Chip>
         )}
       </div>
-      <div className="flex flex-col gap-1.5">
-        <p className="type-eyebrow">{intention}</p>
-        <h3 className="font-display text-[22px] font-medium leading-tight text-text md:text-[24px]">
-          <a href={href} className="transition-colors hover:text-brand">
-            {product.name}
-          </a>
-        </h3>
-        <p className="type-price">{formatMoney(product.price, locale)}</p>
+      <div className="flex flex-col gap-1">
+        <div className="flex items-baseline justify-between gap-4">
+          <h3 className="text-[16px] font-medium leading-snug tracking-[-0.015em] text-text">
+            <a href={href} className="transition-colors hover:text-brand">
+              {product.name}
+            </a>
+          </h3>
+          <p className="type-price shrink-0">{formatMoney(product.price, locale)}</p>
+        </div>
+        <p className="type-label">{intention}</p>
       </div>
     </article>
   );

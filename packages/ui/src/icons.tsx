@@ -48,9 +48,15 @@ export const ArrowRightIcon = (props: IconProps) => (
   </svg>
 );
 
+export const ArrowUpRightIcon = (props: IconProps) => (
+  <svg {...base} width={16} height={16} {...props}>
+    <path d="M7 17 17 7M8 7h9v9" />
+  </svg>
+);
+
 export const MenuIcon = (props: IconProps) => (
   <svg {...base} {...props}>
-    <path d="M4 7h16M4 12h16M4 17h16" />
+    <path d="M4 9h16M4 15h16" />
   </svg>
 );
 

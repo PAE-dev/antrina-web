@@ -1,4 +1,4 @@
-import { ButtonLink } from './ButtonLink';
+import { ArrowLink, ButtonLink } from './ButtonLink';
 import { Emphasis } from './Emphasis';
 import { PhotoPlaceholder } from './PhotoPlaceholder';
 import { type CallToAction } from './types';
@@ -10,6 +10,8 @@ interface HeroSectionProps {
   primary: CallToAction;
   secondary: CallToAction;
   imageLabel: string;
+  /** Pie de foto en mono, p. ej. "Amatista y cuarzo rosa · 32 cm". */
+  caption: string;
 }
 
 export function HeroSection({
@@ -19,24 +21,37 @@ export function HeroSection({
   primary,
   secondary,
   imageLabel,
+  caption,
 }: HeroSectionProps) {
   return (
-    <section className="section">
-      <div className="container-page grid items-center gap-12 md:grid-cols-2 md:gap-16 lg:gap-24">
-        <div className="flex flex-col items-start gap-6">
-          <p className="type-eyebrow">{eyebrow}</p>
-          <h1 className="type-h1">
+    <section className="pb-20 pt-8 md:pb-32 md:pt-14">
+      <div className="container-page grid gap-10 lg:grid-cols-12 lg:gap-8">
+        <div className="flex flex-col justify-between gap-10 lg:col-span-7 lg:py-6">
+          <p className="type-label inline-flex items-center gap-2.5 text-text-secondary">
+            <span aria-hidden="true" className="size-1.5 rounded-full bg-clay" />
+            {eyebrow}
+          </p>
+          <h1 className="type-display max-w-[11ch]">
             <Emphasis text={title} />
           </h1>
-          <p className="type-body max-w-[460px]">{text}</p>
-          <div className="mt-4 flex flex-wrap items-center gap-x-10 gap-y-6">
-            <ButtonLink href={primary.href} variant="primary">
-              {primary.label}
-            </ButtonLink>
-            <ButtonLink href={secondary.href}>{secondary.label}</ButtonLink>
+          <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between lg:flex-col lg:items-start xl:flex-row xl:items-end">
+            <p className="type-body max-w-[420px]">{text}</p>
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
+              <ButtonLink href={primary.href} variant="primary" withArrow>
+                {primary.label}
+              </ButtonLink>
+              <ArrowLink href={secondary.href}>{secondary.label}</ArrowLink>
+            </div>
           </div>
         </div>
-        <PhotoPlaceholder label={imageLabel} aspect="aspect-[4/5]" />
+
+        <figure className="flex flex-col gap-3 lg:col-span-5">
+          <PhotoPlaceholder label={imageLabel} aspect="aspect-[4/5]" />
+          <figcaption className="type-label flex items-center justify-between gap-4">
+            <span className="shrink-0">N.º&nbsp;001</span>
+            <span className="text-right">{caption}</span>
+          </figcaption>
+        </figure>
       </div>
     </section>
   );

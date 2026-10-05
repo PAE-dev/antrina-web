@@ -1,35 +1,46 @@
 import { ButtonLink } from './ButtonLink';
 import { Emphasis } from './Emphasis';
 import { PhotoPlaceholder } from './PhotoPlaceholder';
+import { SectionIndex } from './SectionHeading';
 import { type CallToAction } from './types';
 
 interface CorporateBannerProps {
-  eyebrow: string;
+  label: string;
+  index?: number;
   title: string;
   text: string;
   imageLabel: string;
   cta: CallToAction;
 }
 
-export function CorporateBanner({ eyebrow, title, text, imageLabel, cta }: CorporateBannerProps) {
+export function CorporateBanner({
+  label,
+  index,
+  title,
+  text,
+  imageLabel,
+  cta,
+}: CorporateBannerProps) {
   return (
-    <section className="section">
+    <section className="pb-20 md:pb-32">
       <div className="container-page">
-        <div className="grid items-stretch border border-border bg-surface md:grid-cols-[1.1fr_1fr]">
-          <div className="flex flex-col items-start justify-center gap-6 p-8 md:p-14 lg:p-20">
-            <p className="type-eyebrow">{eyebrow}</p>
-            <h2 className="type-h2">
-              <Emphasis text={title} />
-            </h2>
-            <p className="type-body measure">{text}</p>
-            <ButtonLink href={cta.href} className="mt-2">
-              {cta.label}
-            </ButtonLink>
+        <div className="grid items-stretch gap-2 rounded-md bg-quartz p-2 md:grid-cols-[1.15fr_1fr]">
+          <div className="flex flex-col items-start justify-between gap-12 p-6 md:p-12 lg:p-16">
+            <SectionIndex label={label} index={index} className="text-text-secondary" />
+            <div className="flex flex-col items-start gap-6">
+              <h2 className="type-h2">
+                <Emphasis text={title} />
+              </h2>
+              <p className="type-body measure text-text-secondary">{text}</p>
+              <ButtonLink href={cta.href} withArrow className="mt-2 border-text">
+                {cta.label}
+              </ButtonLink>
+            </div>
           </div>
           <PhotoPlaceholder
             label={imageLabel}
             aspect="aspect-[4/3] md:aspect-auto"
-            className="md:h-full"
+            className="bg-surface md:h-full"
           />
         </div>
       </div>

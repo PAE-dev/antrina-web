@@ -18,6 +18,7 @@ export function buildMainNavigation(locale: LocaleCode, t: Dictionary): NavCateg
       items: INTENTIONS.map(({ slug, copy }) => ({
         label: copy[locale].label,
         href: routes.intention(locale, slug),
+        detail: copy[locale].stones,
       })),
     },
     {
@@ -26,6 +27,7 @@ export function buildMainNavigation(locale: LocaleCode, t: Dictionary): NavCateg
       items: SIGNS.map(({ slug, copy }) => ({
         label: copy[locale].label,
         href: routes.sign(locale, slug),
+        detail: copy[locale].stone,
       })),
     },
     {

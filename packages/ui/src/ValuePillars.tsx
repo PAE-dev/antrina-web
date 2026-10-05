@@ -17,30 +17,32 @@ const ICONS: Record<PillarIcon, ComponentType<SVGProps<SVGSVGElement>>> = {
 };
 
 interface ValuePillarsProps {
+  label: string;
+  index?: number;
   title: string;
   pillars: Pillar[];
 }
 
-export function ValuePillars({ title, pillars }: ValuePillarsProps) {
+export function ValuePillars({ label, index, title, pillars }: ValuePillarsProps) {
   return (
     <section className="section border-t border-border">
-      <div className="container-page flex flex-col gap-14 md:gap-20">
-        <SectionHeading title={title} />
-        <ul className="grid gap-12 md:grid-cols-3 md:gap-0 md:divide-x md:divide-border">
-          {pillars.map(({ icon, title: pillarTitle, text }) => {
+      <div className="container-page flex flex-col gap-12 md:gap-16">
+        <SectionHeading label={label} index={index} title={title} />
+        <ol className="grid gap-10 md:grid-cols-3 md:gap-6">
+          {pillars.map(({ icon, title: pillarTitle, text }, position) => {
             const Icon = ICONS[icon];
             return (
-              <li
-                key={pillarTitle}
-                className="flex flex-col items-center gap-4 text-center md:px-10"
-              >
-                <Icon className="text-text" />
-                <h3 className="type-h3">{pillarTitle}</h3>
-                <p className="type-body max-w-[320px]">{text}</p>
+              <li key={pillarTitle} className="flex flex-col gap-4 border-t border-text pt-5">
+                <div className="flex items-center justify-between">
+                  <span className="type-label">{String(position + 1).padStart(2, '0')}</span>
+                  <Icon className="text-text-muted" />
+                </div>
+                <h3 className="type-h3 mt-6">{pillarTitle}</h3>
+                <p className="type-body max-w-[360px]">{text}</p>
               </li>
             );
           })}
-        </ul>
+        </ol>
       </div>
     </section>
   );

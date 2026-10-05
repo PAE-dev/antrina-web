@@ -1,7 +1,7 @@
 import { Fragment } from 'react';
 
 /**
- * Convierte `*palabras*` en `<em>`: en títulos se ven en Cormorant itálica color marca.
+ * Convierte `*palabras*` en `<em>`: en títulos se ven en color marca (sin itálica).
  * Ej.: "Arraigado en *tu intención*". Usar en 1–2 palabras clave como máximo.
  */
 export function Emphasis({ text }: { text: string }) {

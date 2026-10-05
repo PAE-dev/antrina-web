@@ -40,12 +40,13 @@ const { products } = await getFeaturedProducts(locale);
     primary={{ label: t.hero.primaryCta, href: routes.intention(locale) }}
     secondary={{ label: t.hero.secondaryCta, href: routes.createTree(locale) }}
     imageLabel={t.hero.imageLabel}
+    caption={t.hero.caption}
   />
   <IntentionCards
-    eyebrow={t.intentions.eyebrow}
+    index={1}
+    label={t.intentions.label}
     title={t.intentions.title}
     intro={t.intentions.intro}
-    imageLabel={t.intentions.imageLabel}
     items={INTENTIONS.map(({ slug, copy }) => ({
       title: copy[locale].label,
       stones: copy[locale].stones,
@@ -54,7 +55,8 @@ const { products } = await getFeaturedProducts(locale);
     }))}
   />
   <ProductGrid
-    eyebrow={t.bestsellers.eyebrow}
+    index={2}
+    label={t.bestsellers.label}
     title={t.bestsellers.title}
     products={products}
     locale={locale}
@@ -65,14 +67,16 @@ const { products } = await getFeaturedProducts(locale);
     viewAll={{ label: t.bestsellers.viewAll, href: routes.intention(locale) }}
   />
   <StorySection
-    eyebrow={t.story.eyebrow}
+    index={3}
+    label={t.story.label}
     title={t.story.title}
     paragraphs={t.story.paragraphs}
     imageLabel={t.story.imageLabel}
     cta={{ label: t.story.cta, href: routes.story(locale) }}
   />
   <ZodiacGrid
-    eyebrow={t.zodiac.eyebrow}
+    index={4}
+    label={t.zodiac.label}
     title={t.zodiac.title}
     intro={t.zodiac.intro}
     signs={SIGNS.map(({ slug, copy }) => ({
@@ -82,22 +86,29 @@ const { products } = await getFeaturedProducts(locale);
       href: routes.sign(locale, slug),
     }))}
   />
-  <ValuePillars title={t.pillars.title} pillars={t.pillars.items} />
+  <ValuePillars
+    index={5}
+    label={t.pillars.label}
+    title={t.pillars.title}
+    pillars={t.pillars.items}
+  />
   <Testimonials
-    eyebrow={t.testimonials.eyebrow}
+    index={6}
+    label={t.testimonials.label}
     title={t.testimonials.title}
-    photoLabel={t.testimonials.photoLabel}
     items={t.testimonials.items}
   />
   <CorporateBanner
-    eyebrow={t.corporate.eyebrow}
+    index={7}
+    label={t.corporate.label}
     title={t.corporate.title}
     text={t.corporate.text}
     imageLabel={t.corporate.imageLabel}
     cta={{ label: t.corporate.cta, href: routes.corporate(locale) }}
   />
   <NewsletterSignup
-    eyebrow={t.newsletter.eyebrow}
+    index={8}
+    label={t.newsletter.label}
     title={t.newsletter.title}
     text={t.newsletter.text}
     action={routes.newsletter(locale)}

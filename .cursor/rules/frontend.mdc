@@ -6,8 +6,8 @@ alwaysApply: false
 
 # Frontend: Astro + HeroUI v3
 
-- HeroUI v3 únicamente: `import { Button, Dropdown } from '@heroui/react'`. Sin provider, sin `tailwind.config`.
-- Componentes compuestos con punto: `Dropdown.Menu`, `Drawer.Dialog`. Eventos con `onPress`.
+- HeroUI v3 únicamente: `import { Button, Popover } from '@heroui/react'`. Sin provider, sin `tailwind.config`.
+- Componentes compuestos con punto: `Popover.Content`, `Drawer.Dialog`. Eventos con `onPress`.
 - Botones solo-icono llevan `isIconOnly` y `aria-label`.
 - Estático por defecto; hidratar solo lo interactivo (`<SiteHeader client:load />`).
 - `packages/ui` no conoce i18n ni rutas: recibe labels y hrefs por props.
@@ -16,24 +16,27 @@ alwaysApply: false
 - Datos de la API tipados con `@antrina/contracts`; nunca importar `@antrina/domain` en el front.
 - Precios con `formatMoney(money, locale)`; los montos vienen en céntimos.
 
-# Sistema de diseño (tokens en `apps/web/src/styles/global.css`)
+# Sistema de diseño "Galería mineral" (tokens en `packages/ui/src/styles/tokens.css`)
 
 ```tsx
-// ❌ hex sueltos, paletas Tailwind, sombras, radios grandes, descuentos
-<div className="bg-[#5B3F6E] text-gray-600 shadow-lg rounded-2xl">-20%</div>
+// ❌ hex sueltos, paletas Tailwind, sombras, serif/itálicas, mayúsculas espaciadas, descuentos
+<p className="text-[#5B3F6E] uppercase tracking-widest shadow-lg">-20%</p>
 
 // ✅ tokens y clases del sistema
-<p className="type-eyebrow">Abundancia</p>
-<h2 className="type-h2"><Emphasis text="Elige *tu intención*" /></h2>
-<a className="btn-secondary" href={routes.createTree(locale)}>Crea tu árbol</a>
+<SectionHeading index={1} label="Intenciones" title="Elige *tu intención*" />
+<p className="type-label text-clay">Citrino · Pirita</p>
+<ArrowLink href={routes.createTree(locale)}>Crea tu árbol</ArrowLink>
 ```
 
-- Colores: `bg-bg`, `bg-bg-alt`, `bg-surface`, `text-text(-secondary|-muted)`, `bg-brand`,
-  `bg-brand-tint`, `bg-brass`, `text-brass-text`, `border-border(-strong)`, `text-sage`.
-- Amatista (`brand`) solo para el botón principal, el logo y estados activos. Latón nunca en cuerpo de texto.
-- `accent` de Tailwind es de HeroUI (= marca); el latón del brief se usa como `brass`.
-- Tipografía: `type-h1|h2|h3|body|eyebrow|button|menu|price`. Solo Cormorant Garamond y Jost.
-- Un único `btn-primary` por vista; lo demás `btn-secondary`.
-- Sin `box-shadow` (salvo foco), sin degradados, sin emojis, `rounded-sm`/`rounded-md` como máximo.
-- Secciones con `.section` + `.container-page`; texto largo con `.measure`.
+- Colores: `bg-bg`, `bg-bg-alt`, `bg-surface`, `text-text(-secondary|-muted)`, `bg-brand(-tint)`,
+  `bg-quartz`, `text-clay`, `border-border(-strong)`; sobre carbón `.surface-dark` con
+  `text-on-dark(-muted)` y `border-border-dark`.
+- Amatista (`brand`) para logo, botón principal, énfasis en títulos y estados activos. Arcilla solo en
+  detalles pequeños, nunca en cuerpo de texto. `accent` de Tailwind es de HeroUI (= marca).
+- Tipografía: Bricolage Grotesque (títulos), Geist (texto), Geist Mono (etiquetas). Clases
+  `type-display|h1|h2|h3|body|label|menu|price`.
+- Un único `ButtonLink variant="primary"` por vista; lo demás `secondary`, `inverse` o `ArrowLink`.
+  Botones en píldora.
+- Sin `box-shadow` salvo foco y overlays, sin degradados, sin emojis, `rounded-sm`/`rounded-md`.
+- Secciones con `.section` + `.container-page` y `SectionHeading`/`SectionIndex`; texto largo con `.measure`.
 - Sin fotos reales: `PhotoPlaceholder`. Nunca ilustraciones genéricas.

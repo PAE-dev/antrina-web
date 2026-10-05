@@ -1,4 +1,3 @@
-import { PhotoPlaceholder } from './PhotoPlaceholder';
 import { SectionHeading } from './SectionHeading';
 
 export interface Testimonial {
@@ -9,30 +8,30 @@ export interface Testimonial {
 }
 
 interface TestimonialsProps {
-  eyebrow: string;
+  label: string;
+  index?: number;
   title: string;
-  photoLabel: string;
   items: Testimonial[];
 }
 
-export function Testimonials({ eyebrow, title, photoLabel, items }: TestimonialsProps) {
+export function Testimonials({ label, index, title, items }: TestimonialsProps) {
   return (
     <section className="section border-t border-border">
-      <div className="container-page flex flex-col gap-14 md:gap-20">
-        <SectionHeading eyebrow={eyebrow} title={title} />
-        <ul className="grid gap-14 md:grid-cols-3 md:gap-10 lg:gap-16">
+      <div className="container-page flex flex-col gap-12 md:gap-16">
+        <SectionHeading label={label} index={index} title={title} />
+        <ul className="grid gap-4 md:grid-cols-3">
           {items.map((item) => (
             <li key={item.author}>
-              <figure className="flex flex-col gap-6">
-                <PhotoPlaceholder label={photoLabel} aspect="aspect-[4/3]" />
-                <blockquote className="font-display text-[22px] font-medium italic leading-snug text-text">
+              <figure className="flex h-full flex-col justify-between gap-10 rounded-md bg-surface p-6 md:p-8">
+                <blockquote className="font-display text-[21px] font-normal leading-[1.3] tracking-[-0.02em] text-text md:text-[23px]">
                   “{item.quote}”
                 </blockquote>
-                <figcaption className="flex flex-col gap-1">
-                  <span className="text-[15px] font-medium text-text">{item.author}</span>
-                  <span className="text-[13px] text-text-muted">
-                    {item.place} · {item.product}
+                <figcaption className="flex items-end justify-between gap-4 border-t border-border pt-5">
+                  <span className="flex flex-col gap-0.5">
+                    <span className="text-[15px] font-medium text-text">{item.author}</span>
+                    <span className="type-label">{item.place}</span>
                   </span>
+                  <span className="type-label text-right text-clay">{item.product}</span>
                 </figcaption>
               </figure>
             </li>

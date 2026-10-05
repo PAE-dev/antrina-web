@@ -112,39 +112,51 @@ según el `code`: `auth.locked` → 423, `auth.forbidden` → 403, `auth.*` → 
   `apps/web/src/i18n/taxonomy.ts`. Los componentes de `ui` reciben labels y hrefs por props.
 - Rutas siempre con `routes` (`apps/web/src/lib/routes.ts`): segmentos traducidos
   (`/intencion/amor` ↔ `/en/intention/amor`), `es` sin prefijo y `en` bajo `/en`.
-- Páginas de tienda envueltas en `StoreLayout.astro` (barras superiores, header, footer).
+- Páginas de tienda envueltas en `StoreLayout.astro` (franja superior, header, footer).
 - Panel (`apps/admin`): SPA solo en español, rutas en español (`/productos`, `/configurar-2fa`),
   `noindex` + `robots.txt` que lo bloquea todo. Comparte la marca con la tienda pero tiene su propia
   capa visual de herramienta de trabajo (ver "Panel" abajo).
 
-### Sistema de diseño (obligatorio)
+### Sistema de diseño (obligatorio): "Galería mineral"
 
 Fuente única: `packages/ui/src/styles/tokens.css` (variables en `:root` + `@theme inline`, clases
-de tipografía, botones y layout). `apps/web/src/styles/global.css` solo importa Tailwind, HeroUI y
-ese archivo; `apps/admin/src/styles.css` lo importa y sobrescribe lo indicado en "Panel".
+de tipografía y layout). `apps/web/src/styles/global.css` solo importa Tailwind, HeroUI y ese
+archivo; `apps/admin/src/styles.css` lo importa y sobrescribe lo indicado en "Panel".
 
-- **Color:** solo tokens. Nada de hex sueltos, paletas de Tailwind (`red-500`…), degradados ni
-  opacidades inventadas. Proporción ~80% hueso/arena, 15% carbón, 5% amatista + latón.
-  - `bg-bg`, `bg-bg-alt`, `bg-surface` · `text-text`, `text-text-secondary`, `text-text-muted`
-  - `bg-brand` / `hover:bg-brand-hover` / `bg-brand-tint` (amatista): solo botón principal, logo y
-    estados activos.
-  - `bg-brass` / `text-brass-text` (latón = `--color-accent` del brief). `accent` en Tailwind está
-    reservado para HeroUI y equivale a la marca. Latón nunca en texto de cuerpo.
-  - `border-border`, `border-border-strong`, `text-sage`.
-- **Tipografía:** solo Cormorant Garamond 500 (títulos, también itálica) y Jost 400/500. Usa las
-  clases `type-h1`, `type-h2`, `type-h3`, `type-body`, `type-eyebrow`, `type-button`, `type-menu`,
-  `type-price`. Para resaltar 1–2 palabras de un título escribe `*palabras*` en el diccionario y
-  renderiza con `<Emphasis>` (itálica color marca).
-- **Botones:** `ButtonLink` / `.btn-primary` como máximo **una vez por vista**; el resto `.btn-secondary`.
-- **Formas:** `rounded-sm` (2px) o `rounded-md` (4px). Sin `box-shadow` salvo el foco accesible;
-  separa con líneas de 1px `border-border` y `.accent-rule` (40px latón) bajo títulos de sección.
-- **Espaciado:** `.section` (72px móvil / 120px escritorio), `.container-page` (máx. 1280px),
-  `.measure` (máx. 640px para texto largo). Ante la duda, más espacio.
-- **Producto:** imagen 4:5 sobre `bg-bg-alt`, eyebrow con la intención, nombre en Cormorant, precio en
-  Jost, zoom 1.03 en 400ms. **Nunca** descuentos visibles (ni tachados ni %). Etiquetas permitidas:
-  `NEW`, `CUSTOMIZABLE`, `LIMITED_EDITION` (`.label-tag`).
-- **Imágenes:** mientras no haya fotos reales, `PhotoPlaceholder` (rectángulo `bg-bg-alt` + texto).
-  Nunca ilustraciones genéricas ni recortes sobre blanco puro.
+- **Color:** solo tokens. Nada de hex sueltos, paletas de Tailwind (`red-500`…) ni degradados.
+  Proporción ~75% piedra, ~20% carbón, ~5% amatista + arcilla.
+  - Piedra: `bg-bg`, `bg-bg-alt`, `bg-surface` · Carbón: `text-text`, `text-text-secondary`,
+    `text-text-muted`.
+  - `bg-brand` / `hover:bg-brand-hover` / `bg-brand-tint` (amatista): logo, botón principal,
+    énfasis en títulos y estados activos. `accent` en Tailwind está reservado para HeroUI (= marca).
+  - `bg-quartz` (cuarzo rosa): superficies suaves y hover de tarjetas. `text-clay` / `bg-clay`
+    (arcilla): detalles pequeños (piedras, puntos), nunca texto largo.
+  - Bloques carbón con `.surface-dark` (historia, pie): texto `text-on-dark` /
+    `text-on-dark-muted`, bordes `border-border-dark`; ahí el énfasis pasa a cuarzo.
+  - `border-border`, `border-border-strong`.
+- **Tipografía:** solo Bricolage Grotesque (títulos, 500–600, tracking negativo), Geist (texto) y
+  Geist Mono (etiquetas). Clases `type-display` (hero), `type-h1`, `type-h2`, `type-h3`,
+  `type-body`, `type-label` (mono), `type-menu`, `type-price` (mono). Sin serif, sin itálicas y
+  sin rótulos en mayúsculas con tracking. Para resaltar 1–2 palabras de un título escribe
+  `*palabras*` en el diccionario y renderiza con `<Emphasis>` (color marca).
+- **Secciones:** cada sección abre con `SectionIndex` ("01 — Intenciones", mono + línea fina) vía
+  `SectionHeading`; el número lo pasa la página (`index`) y la etiqueta corta viene del diccionario
+  (`label`).
+- **Botones:** píldora (`--button-radius`). `ButtonLink variant="primary"` (amatista) como máximo
+  **una vez por vista**; el resto `secondary` (contorno), `inverse` sobre carbón o `ArrowLink`
+  (texto subrayado con flecha). En islas, `Button` de HeroUI.
+- **Formas:** `rounded-sm` (4px) o `rounded-md` (6px) para tarjetas, imágenes y campos. Sin
+  `box-shadow` salvo foco accesible y overlays (popover, modal, drawer). Separa con líneas de 1px.
+- **Cabecera:** franja carbón fina (mensaje + ES/EN) y una sola fila (logo, menú, iconos). Menús
+  con `Popover` (mega menú con piedra en mono), búsqueda en `Modal`, móvil con `Drawer` +
+  `Accordion`. Al hacer scroll usa `.header-glass` (única transparencia permitida junto al backdrop).
+- **Espaciado:** `.section` (80px móvil / 128px escritorio), `.container-page` (máx. 1360px),
+  `.measure` (máx. 620px para texto largo). Ante la duda, más espacio.
+- **Producto:** imagen 4:5 `rounded-md` sobre `bg-bg-alt`, nombre en Geist 500, precio en mono,
+  intención como `type-label`, zoom 1.03 en 400ms. **Nunca** descuentos visibles (ni tachados ni %).
+  Etiquetas permitidas con `Chip`: `NEW`, `CUSTOMIZABLE`, `LIMITED_EDITION`.
+- **Imágenes:** mientras no haya fotos reales, `PhotoPlaceholder` (rectángulo `bg-bg-alt` + texto
+  mono). Nunca ilustraciones genéricas ni recortes sobre blanco puro.
 - **Iconos:** línea fina, `strokeWidth` 1.5, color `text`. Sin emojis en la UI.
 
 #### Panel (`apps/admin`)
@@ -152,12 +164,13 @@ ese archivo; `apps/admin/src/styles.css` lo importa y sobrescribe lo indicado en
 Lo anterior es para la tienda. El panel es una herramienta densa y neutra; sus excepciones viven
 solo en `apps/admin/src/styles.css`:
 
-- **Tipografía:** Geist Variable en todo (Geist Mono para SKU, URL y claves). Sin serif, sin
-  versalitas con tracking ni `type-*`/`.btn-*`/`.accent-rule`. Clases `panel-title`, `panel-heading`,
-  `panel-meta`, `panel-num` (cifras tabulares) y `panel-card`. Base 14px.
+- **Tipografía:** Geist Variable en todo (Geist Mono para SKU, URL y claves), sin Bricolage ni
+  `type-*`. Clases `panel-title`, `panel-heading`, `panel-meta`, `panel-num` (cifras tabulares) y
+  `panel-card`. Base 14px.
 - **Color:** superficies grises cálidas y blanco; amatista solo en acción principal y estado activo.
   Estados con `success`/`warning`/`danger` (+ `-tint`) vía `StatusBadge`.
-- **Formas:** radios 6/8px; sombra solo en overlays (drawer, modal, popover).
+- **Formas:** radios 6/8px, también en botones (`--button-radius`, sin píldora); sombra solo en
+  overlays (drawer, modal, popover).
 - **Patrones:** lista en tabla compacta (lista simple en móvil); crear/editar en `Drawer` lateral sobre
   la lista (`/productos/:id`, `nuevo` para alta) con pestañas y pie fijo; confirmaciones con
   `ConfirmDialog`; feedback con `toast`. Iconos en `components/icons.tsx`.

@@ -1,25 +1,26 @@
 interface LogoProps {
   href: string;
   label: string;
-  isCompact?: boolean;
+  /** `dark` para fondos carbón (pie de página). */
+  tone?: 'light' | 'dark';
 }
 
-export function Logo({ href, label, isCompact = false }: LogoProps) {
+export function Logo({ href, label, tone = 'light' }: LogoProps) {
   return (
     <a
       href={href}
       aria-label={label}
-      className="inline-flex items-center gap-2.5 text-brand transition-[gap] duration-300"
+      className={`inline-flex items-center gap-2 ${tone === 'dark' ? 'text-on-dark' : 'text-text'}`}
     >
       <svg
         viewBox="0 0 32 32"
         aria-hidden="true"
         fill="none"
         stroke="currentColor"
-        strokeWidth={1.5}
+        strokeWidth={1.75}
         strokeLinecap="round"
         strokeLinejoin="round"
-        className={`transition-[width,height] duration-300 ${isCompact ? 'size-6' : 'size-7 md:size-8'}`}
+        className={`size-7 ${tone === 'dark' ? 'text-quartz' : 'text-brand'}`}
       >
         <path d="M9 26h14l-1.5 3.5h-11z" />
         <path d="M16 26c0-5-3-7-3-11s3-5 3-8.5" />
@@ -29,11 +30,7 @@ export function Logo({ href, label, isCompact = false }: LogoProps) {
         <circle cx="22.5" cy="5" r="2.6" />
         <circle cx="15.5" cy="4" r="2" />
       </svg>
-      <span
-        className={`font-display font-medium leading-none tracking-[0.04em] transition-[font-size] duration-300 ${
-          isCompact ? 'text-[26px]' : 'text-[28px] md:text-[34px]'
-        }`}
-      >
+      <span className="font-display text-[23px] font-semibold leading-none tracking-[-0.045em] [font-variation-settings:'opsz'_48]">
         Antrina
       </span>
     </a>

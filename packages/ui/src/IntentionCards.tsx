@@ -1,4 +1,5 @@
-import { PhotoPlaceholder } from './PhotoPlaceholder';
+import { Card } from '@heroui/react';
+import { ArrowUpRightIcon } from './icons';
 import { SectionHeading } from './SectionHeading';
 
 export interface IntentionItem {
@@ -9,33 +10,35 @@ export interface IntentionItem {
 }
 
 interface IntentionCardsProps {
-  eyebrow: string;
+  label: string;
+  index?: number;
   title: string;
   intro: string;
-  imageLabel: string;
   items: IntentionItem[];
 }
 
-export function IntentionCards({ eyebrow, title, intro, imageLabel, items }: IntentionCardsProps) {
+export function IntentionCards({ label, index, title, intro, items }: IntentionCardsProps) {
   return (
     <section id="intenciones" className="section border-t border-border">
-      <div className="container-page flex flex-col gap-14 md:gap-20">
-        <SectionHeading eyebrow={eyebrow} title={title} intro={intro} />
-        <ul className="grid grid-cols-2 gap-x-5 gap-y-12 md:grid-cols-3 lg:grid-cols-5 lg:gap-x-8">
-          {items.map((item) => (
+      <div className="container-page flex flex-col gap-12 md:gap-16">
+        <SectionHeading label={label} index={index} title={title} intro={intro} />
+        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {items.map((item, position) => (
             <li key={item.href}>
-              <a href={item.href} className="group flex flex-col gap-4">
-                <div className="overflow-hidden">
-                  <PhotoPlaceholder
-                    label={imageLabel}
-                    className="transition-transform duration-[400ms] ease-out group-hover:scale-[1.03]"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <h3 className="type-h3 transition-colors group-hover:text-brand">{item.title}</h3>
-                  <p className="type-eyebrow">{item.stones}</p>
-                  <p className="text-[15px] leading-relaxed text-text-secondary">{item.text}</p>
-                </div>
+              <a href={item.href} className="group block h-full rounded-md">
+                <Card className="h-full justify-between gap-8 border border-border bg-surface p-5 transition-colors duration-300 group-hover:border-quartz group-hover:bg-quartz md:min-h-[300px]">
+                  <div className="flex items-start justify-between">
+                    <span className="type-label">{String(position + 1).padStart(2, '0')}</span>
+                    <ArrowUpRightIcon className="text-text-muted transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-text" />
+                  </div>
+                  <Card.Header className="gap-3">
+                    <Card.Title className="type-h3">{item.title}</Card.Title>
+                    <p className="type-label text-clay">{item.stones}</p>
+                    <Card.Description className="text-[14.5px] leading-relaxed text-text-secondary">
+                      {item.text}
+                    </Card.Description>
+                  </Card.Header>
+                </Card>
               </a>
             </li>
           ))}

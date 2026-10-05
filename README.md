@@ -5,9 +5,10 @@ _Arraigado en tu intención._
 
 Monorepo con **Astro 7 + HeroUI v3** (storefront), **Vite + React + HeroUI v3** (panel de
 administración) y **NestJS 12 + Prisma 7 + PostgreSQL** (API), organizado con arquitectura hexagonal.
-El sistema de diseño (tokens de color, tipografía Cormorant Garamond + Jost, botones, layout) vive en
-`packages/ui/src/styles/tokens.css`, lo comparten la tienda y el panel, y está documentado en
-[AGENTS.md](AGENTS.md#sistema-de-diseño-obligatorio).
+El sistema de diseño "Galería mineral" (paleta piedra/carbón con amatista, tipografía Bricolage
+Grotesque + Geist + Geist Mono, layout) vive en `packages/ui/src/styles/tokens.css`, lo comparten la
+tienda y el panel, y está documentado en
+[AGENTS.md](AGENTS.md#sistema-de-diseño-obligatorio-galería-mineral).
 
 ## Requisitos
 

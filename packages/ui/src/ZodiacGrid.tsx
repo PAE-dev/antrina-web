@@ -8,29 +8,35 @@ export interface ZodiacSign {
 }
 
 interface ZodiacGridProps {
-  eyebrow: string;
+  label: string;
+  index?: number;
   title: string;
   intro: string;
   signs: ZodiacSign[];
 }
 
-export function ZodiacGrid({ eyebrow, title, intro, signs }: ZodiacGridProps) {
+export function ZodiacGrid({ label, index, title, intro, signs }: ZodiacGridProps) {
   return (
-    <section className="section border-t border-border">
-      <div className="container-page flex flex-col gap-14 md:gap-20">
-        <SectionHeading eyebrow={eyebrow} title={title} intro={intro} />
-        <ul className="grid grid-cols-2 border-l border-t border-border sm:grid-cols-3 lg:grid-cols-6">
+    <section className="section">
+      <div className="container-page flex flex-col gap-12 md:gap-16">
+        <SectionHeading label={label} index={index} title={title} intro={intro} />
+        <ul className="grid grid-cols-2 gap-px overflow-hidden rounded-md border border-border bg-border sm:grid-cols-3 lg:grid-cols-6">
           {signs.map((sign) => (
-            <li key={sign.href} className="border-b border-r border-border">
+            <li key={sign.href} className="bg-bg">
               <a
                 href={sign.href}
-                className="group flex h-full flex-col items-center gap-2 px-3 py-8 text-center transition-colors hover:bg-surface md:py-10"
+                className="group flex h-full flex-col gap-6 p-5 transition-colors duration-300 hover:bg-quartz md:p-6"
               >
-                <span className="type-h3 transition-colors group-hover:text-brand">
-                  {sign.name}
+                <span className="type-label">{sign.dates}</span>
+                <span className="flex flex-col gap-1.5">
+                  <span className="font-display text-[22px] font-medium leading-none tracking-[-0.03em] text-text">
+                    {sign.name}
+                  </span>
+                  <span className="type-label inline-flex items-center gap-2 text-text-secondary">
+                    <span aria-hidden="true" className="size-1.5 rounded-full bg-clay" />
+                    {sign.stone}
+                  </span>
                 </span>
-                <span className="text-[13px] text-text-muted">{sign.dates}</span>
-                <span className="type-eyebrow mt-1">{sign.stone}</span>
               </a>
             </li>
           ))}

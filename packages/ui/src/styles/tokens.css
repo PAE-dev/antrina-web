@@ -1,41 +1,47 @@
 /*
- * Sistema de diseño Antrina: lujo artesanal zen. Fuente única de tokens para la tienda y el panel.
- * Proporción: ~80% hueso/arena, ~15% carbón, ~5% amatista + latón.
+ * Sistema de diseño Antrina: "Galería mineral". Fuente única de tokens para la tienda y el panel.
+ * Proporción: ~75% piedra, ~20% carbón, ~5% amatista + arcilla.
  * Única fuente de color del proyecto: ningún componente usa hex sueltos.
  * Se importa después de `tailwindcss` y `@heroui/styles`.
  */
 :root {
-  --color-bg: #f6f1ea;
-  --color-bg-alt: #e9e0d4;
-  --color-surface: #fffdf9;
-  --color-text: #2a2623;
-  --color-text-secondary: #5e5650;
-  --color-text-muted: #8c847c;
-  --color-brand: #5b3f6e;
-  --color-brand-hover: #4a3259;
-  --color-brand-tint: #efe9f2;
-  --color-accent: #b08d57;
-  --color-accent-text: #8a6b3c;
-  --color-sage: #8c9a84;
-  --color-border: #e2d8cb;
-  --color-border-strong: #cfc2b2;
-  --radius-sm: 2px;
-  --radius-md: 4px;
+  --color-bg: #f3f1ed;
+  --color-bg-alt: #e8e4dd;
+  --color-surface: #fbfaf8;
+  --color-text: #171513;
+  --color-text-secondary: #57524c;
+  --color-text-muted: #8b857e;
+  --color-brand: #4a2c6a;
+  --color-brand-hover: #3a2155;
+  --color-brand-tint: #eee9f4;
+  --color-quartz: #ecd9d0;
+  --color-clay: #a85a42;
+  --color-border: #e1ddd6;
+  --color-border-strong: #cbc5bc;
+  /* Texto sobre bloques carbón (historia, empresas, pie). */
+  --color-on-dark: #f3f1ed;
+  --color-on-dark-muted: #a7a19a;
+  --color-border-dark: #34302c;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --button-radius: 9999px;
 
   /*
-   * Puente con HeroUI v3: sus variables viven en @layer base, así que este bloque sin capa
-   * las sobrescribe. Su "accent" es nuestro color de marca (amatista), no el latón.
+   * Puente con HeroUI v3: sus variables viven en @layer theme, así que este bloque sin capa
+   * las sobrescribe. Su "accent" es nuestro color de marca (amatista).
    */
   --background: var(--color-bg);
   --foreground: var(--color-text);
   --surface: var(--color-surface);
   --surface-foreground: var(--color-text);
+  --surface-secondary: var(--color-bg-alt);
   --overlay: var(--color-surface);
   --overlay-foreground: var(--color-text);
   --default: var(--color-bg-alt);
   --default-foreground: var(--color-text);
   --accent: var(--color-brand);
-  --accent-foreground: var(--color-bg);
+  --accent-hover: var(--color-brand-hover);
+  --accent-foreground: var(--color-surface);
   --muted: var(--color-text-muted);
   --border: var(--color-border);
   --separator: var(--color-border);
@@ -43,22 +49,24 @@
   --link: var(--color-brand);
   --backdrop: color-mix(in srgb, var(--color-text) 40%, transparent);
   --radius: var(--radius-md);
-  --field-radius: var(--radius-sm);
+  --field-radius: var(--radius-md);
   --field-background: var(--color-surface);
   --field-foreground: var(--color-text);
   --field-placeholder: var(--color-text-muted);
   --field-border: var(--color-border-strong);
   --field-border-width: 1px;
   --surface-shadow: none;
-  --overlay-shadow: none;
+  --overlay-shadow:
+    0 24px 48px -16px color-mix(in srgb, var(--color-text) 22%, transparent),
+    0 0 0 1px var(--color-border);
   --field-shadow: none;
 }
 
 /*
- * Utilidades Tailwind: bg-bg, bg-bg-alt, bg-surface, text-text, text-text-secondary,
- * text-text-muted, bg-brand, hover:bg-brand-hover, bg-brand-tint, bg-brass, text-brass-text,
- * text-sage, border-border, border-border-strong, rounded-sm, rounded-md.
- * `accent` queda reservado para HeroUI (= marca); el latón se expone como `brass`.
+ * Utilidades Tailwind: bg-bg, bg-bg-alt, bg-surface, bg-quartz, text-clay, text-text,
+ * text-text-secondary, text-text-muted, bg-brand, hover:bg-brand-hover, bg-brand-tint,
+ * text-on-dark, text-on-dark-muted, border-border, border-border-strong, border-border-dark.
+ * `accent` queda reservado para HeroUI (= marca).
  */
 @theme inline {
   --color-red-*: initial;
@@ -92,11 +100,13 @@
   --color-brand: var(--color-brand);
   --color-brand-hover: var(--color-brand-hover);
   --color-brand-tint: var(--color-brand-tint);
-  --color-brass: var(--color-accent);
-  --color-brass-text: var(--color-accent-text);
-  --color-sage: var(--color-sage);
+  --color-quartz: var(--color-quartz);
+  --color-clay: var(--color-clay);
   --color-border: var(--color-border);
   --color-border-strong: var(--color-border-strong);
+  --color-on-dark: var(--color-on-dark);
+  --color-on-dark-muted: var(--color-on-dark-muted);
+  --color-border-dark: var(--color-border-dark);
 
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
@@ -106,8 +116,9 @@
   --radius-3xl: var(--radius-md);
   --radius-4xl: var(--radius-md);
 
-  --font-display: 'Cormorant Garamond', Georgia, serif;
-  --font-sans: 'Jost', system-ui, sans-serif;
+  --font-display: 'Bricolage Grotesque Variable', 'Geist Variable', system-ui, sans-serif;
+  --font-sans: 'Geist Variable', system-ui, sans-serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
   --font-serif: var(--font-display);
 }
 
@@ -119,11 +130,12 @@
   body {
     @apply bg-bg font-sans text-text antialiased;
     font-size: 16px;
-    line-height: 1.7;
+    line-height: 1.65;
+    letter-spacing: -0.005em;
   }
 
   ::selection {
-    background: var(--color-brand-tint);
+    background: var(--color-quartz);
     color: var(--color-text);
   }
 
@@ -140,94 +152,107 @@
 }
 
 @layer components {
+  /* Botones de HeroUI en píldora; el panel lo sobrescribe con su radio. */
+  .button {
+    border-radius: var(--button-radius);
+  }
+
   /* Tipografía: móvil primero, escritorio desde md (768px). */
+  .type-display,
   .type-h1,
   .type-h2,
   .type-h3 {
     font-family: var(--font-display);
     font-weight: 500;
-    color: var(--color-text);
+    color: inherit;
     text-wrap: balance;
   }
 
+  .type-display em,
   .type-h1 em,
   .type-h2 em,
   .type-h3 em {
-    font-style: italic;
+    font-style: normal;
     color: var(--color-brand);
+  }
+
+  .type-display {
+    font-size: 52px;
+    line-height: 0.95;
+    letter-spacing: -0.045em;
+    font-variation-settings: 'opsz' 96;
   }
 
   .type-h1 {
     font-size: 40px;
-    line-height: 1.05;
-    letter-spacing: -0.01em;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    font-variation-settings: 'opsz' 96;
   }
 
   .type-h2 {
-    font-size: 32px;
-    line-height: 1.1;
+    font-size: 34px;
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+    font-variation-settings: 'opsz' 72;
   }
 
   .type-h3 {
-    font-size: 22px;
-    line-height: 1.25;
+    font-size: 21px;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    font-variation-settings: 'opsz' 24;
   }
 
   .type-body {
     font-family: var(--font-sans);
     font-weight: 400;
     font-size: 16px;
-    line-height: 1.7;
+    line-height: 1.65;
     color: var(--color-text-secondary);
   }
 
-  .type-eyebrow {
-    font-family: var(--font-sans);
-    font-weight: 500;
-    font-size: 12px;
+  /* Etiqueta de galería en mono: números de sección, piedras, fechas. Nunca en mayúsculas. */
+  .type-label {
+    font-family: var(--font-mono);
+    font-weight: 400;
+    font-size: 12.5px;
     line-height: 1.4;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: var(--color-accent-text);
-  }
-
-  .type-button,
-  .btn-primary,
-  .btn-secondary {
-    font-family: var(--font-sans);
-    font-weight: 500;
-    font-size: 13px;
-    line-height: 1.2;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    letter-spacing: 0;
+    color: var(--color-text-muted);
   }
 
   .type-menu {
     font-family: var(--font-sans);
-    font-weight: 400;
-    font-size: 15px;
+    font-weight: 450;
+    font-size: 14.5px;
     line-height: 1.4;
+    letter-spacing: -0.005em;
   }
 
   .type-price {
-    font-family: var(--font-sans);
+    font-family: var(--font-mono);
     font-weight: 400;
-    font-size: 18px;
+    font-size: 14.5px;
     line-height: 1.4;
     color: var(--color-text);
   }
 
   @media (min-width: 48rem) {
+    .type-display {
+      font-size: 84px;
+    }
+
     .type-h1 {
       font-size: 64px;
     }
 
     .type-h2 {
-      font-size: 44px;
+      font-size: 50px;
     }
 
     .type-h3 {
-      font-size: 24px;
+      font-size: 23px;
     }
 
     .type-body {
@@ -235,93 +260,99 @@
     }
   }
 
-  /* Botones: como máximo UN .btn-primary por vista. */
-  .btn-primary {
+  @media (min-width: 80rem) {
+    .type-display {
+      font-size: 108px;
+    }
+  }
+
+  /* Índice de sección: "01 — Intenciones" en mono con línea fina. */
+  .section-index {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 14px 32px;
-    border-radius: var(--radius-sm);
-    background-color: var(--color-brand);
-    color: var(--color-bg);
-    transition: background-color 200ms ease;
-  }
-
-  .btn-primary:hover {
-    background-color: var(--color-brand-hover);
-  }
-
-  .btn-secondary {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 14px 0 13px;
-    border-bottom: 1px solid var(--color-accent);
-    background: transparent;
-    color: var(--color-text);
-    transition: border-color 200ms ease;
-  }
-
-  .btn-secondary:hover {
-    border-bottom-color: var(--color-brand);
-  }
-
-  /* Etiquetas editoriales permitidas: Nuevo, Personalizable, Edición limitada. */
-  .label-tag {
-    display: inline-block;
-    padding: 4px 10px;
-    background-color: var(--color-bg);
-    color: var(--color-accent-text);
-    font-family: var(--font-sans);
-    font-weight: 500;
-    font-size: 11px;
+    gap: 12px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
     line-height: 1.4;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
+    color: var(--color-text-muted);
   }
 
-  .accent-rule {
-    display: block;
-    width: 40px;
+  .section-index::after {
+    content: '';
+    width: 32px;
     height: 1px;
-    background-color: var(--color-accent);
+    background-color: currentColor;
+    opacity: 0.6;
   }
 
   .photo-placeholder {
     display: flex;
-    align-items: center;
-    justify-content: center;
+    align-items: flex-end;
+    justify-content: flex-start;
+    padding: 14px 16px;
+    border-radius: var(--radius-md);
     background-color: var(--color-bg-alt);
     color: var(--color-text-muted);
-    font-family: var(--font-sans);
-    font-size: 13px;
-    letter-spacing: 0.04em;
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  /* Bloque carbón: historia y pie. Los acentos pasan a cuarzo para mantener contraste. */
+  .surface-dark {
+    background-color: var(--color-text);
+    color: var(--color-on-dark);
+  }
+
+  .surface-dark em {
+    color: var(--color-quartz);
+  }
+
+  .surface-dark .type-body,
+  .surface-dark .section-index,
+  .surface-dark .type-label {
+    color: var(--color-on-dark-muted);
+  }
+
+  .surface-dark .photo-placeholder {
+    background-color: var(--color-border-dark);
+    color: var(--color-on-dark-muted);
+  }
+
+  /* Cabecera translúcida al hacer scroll (única transparencia permitida junto al backdrop). */
+  .header-glass {
+    background-color: color-mix(in srgb, var(--color-bg) 88%, transparent);
+    backdrop-filter: saturate(1.4) blur(14px);
   }
 
   /* Layout: ante la duda, más espacio. */
   .section {
-    padding-block: 72px;
+    padding-block: 80px;
   }
 
   .container-page {
     width: 100%;
-    max-width: 1280px;
+    max-width: 1360px;
     margin-inline: auto;
     padding-inline: 20px;
   }
 
   .measure {
-    max-width: 640px;
+    max-width: 620px;
   }
 
   @media (min-width: 48rem) {
     .section {
-      padding-block: 120px;
+      padding-block: 128px;
     }
 
     .container-page {
       padding-inline: 40px;
+    }
+  }
+
+  @media (min-width: 80rem) {
+    .container-page {
+      padding-inline: 56px;
     }
   }
 }

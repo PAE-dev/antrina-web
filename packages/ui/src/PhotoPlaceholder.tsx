@@ -6,7 +6,7 @@ interface PhotoPlaceholderProps {
 }
 
 /**
- * Hueco para fotografía real (luz natural, fondos arena o ambientes reales).
+ * Hueco para fotografía real (luz natural, fondos piedra o ambientes reales).
  * Nunca sustituir por ilustraciones genéricas ni recortes sobre blanco.
  */
 export function PhotoPlaceholder({
