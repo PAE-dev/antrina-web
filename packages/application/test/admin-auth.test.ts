@@ -43,11 +43,28 @@ describe('autenticación del panel', () => {
     });
   });
 
+  /** Sesión pendiente (como tras contraseña con 2FA) para poder probar el alta de TOTP. */
+  async function createPendingSession(): Promise<string> {
+    const user = await env.users.findByEmail(EMAIL);
+    if (!user) throw new Error('usuario de prueba ausente');
+    const { token, tokenHash } = env.deps.tokens.generate();
+    const now = env.deps.clock.now();
+    await env.deps.sessions.create({
+      adminUserId: user.id,
+      tokenHash,
+      mfaVerified: false,
+      expiresAt: new Date(now.getTime() + ADMIN_SECURITY.pendingSessionTtlMs),
+      ip: ctx.ip,
+      userAgent: ctx.userAgent,
+    });
+    return token;
+  }
+
   async function enrollTotp(): Promise<string> {
-    const pending = await login.execute({ email: EMAIL, password: PASSWORD, ...ctx });
-    await startEnrollment.execute({ sessionToken: pending.sessionToken });
+    const pendingToken = await createPendingSession();
+    await startEnrollment.execute({ sessionToken: pendingToken });
     const session = await confirmEnrollment.execute({
-      sessionToken: pending.sessionToken,
+      sessionToken: pendingToken,
       code: '123456',
       ...ctx,
     });
@@ -65,22 +82,25 @@ describe('autenticación del panel', () => {
     );
   });
 
-  it('el primer login exige configurar el 2FA y no da acceso al panel', async () => {
+  it('sin 2FA, el login da acceso directo al panel', async () => {
     const result = await login.execute({
       email: ` ${EMAIL.toUpperCase()} `,
       password: PASSWORD,
       ...ctx,
     });
-    expect(result.status).toBe('MFA_SETUP_REQUIRED');
-    await expectCode(
-      currentAdmin.execute({ sessionToken: result.sessionToken }),
-      'auth.unauthorized',
+    expect(result.status).toBe('AUTHENTICATED');
+    await expect(currentAdmin.execute({ sessionToken: result.sessionToken })).resolves.toMatchObject(
+      {
+        email: EMAIL,
+        role: 'OWNER',
+      },
     );
+    expect(env.audit.entries.map((entry) => entry.action)).toEqual(['auth.login']);
   });
 
   it('configura el 2FA, rota el token y concede la sesión completa', async () => {
-    const pending = await login.execute({ email: EMAIL, password: PASSWORD, ...ctx });
-    const setup = await startEnrollment.execute({ sessionToken: pending.sessionToken });
+    const pendingToken = await createPendingSession();
+    const setup = await startEnrollment.execute({ sessionToken: pendingToken });
     expect(setup.secret).toBe('SECRET');
     expect(setup.otpauthUri).toContain(EMAIL);
 
@@ -88,20 +108,17 @@ describe('autenticación del panel', () => {
     expect(user?.totpSecretEnc).toBe('enc:SECRET');
 
     await expectCode(
-      confirmEnrollment.execute({ sessionToken: pending.sessionToken, code: '000000', ...ctx }),
+      confirmEnrollment.execute({ sessionToken: pendingToken, code: '000000', ...ctx }),
       'auth.mfa_invalid',
     );
 
     const session = await confirmEnrollment.execute({
-      sessionToken: pending.sessionToken,
+      sessionToken: pendingToken,
       code: '123 456',
       ...ctx,
     });
-    expect(session.sessionToken).not.toBe(pending.sessionToken);
-    await expectCode(
-      currentAdmin.execute({ sessionToken: pending.sessionToken }),
-      'auth.unauthorized',
-    );
+    expect(session.sessionToken).not.toBe(pendingToken);
+    await expectCode(currentAdmin.execute({ sessionToken: pendingToken }), 'auth.unauthorized');
 
     const me = await currentAdmin.execute({ sessionToken: session.sessionToken });
     expect(me).toMatchObject({ email: EMAIL, role: 'OWNER' });
@@ -156,7 +173,7 @@ describe('autenticación del panel', () => {
     await expect(
       login.execute({ email: EMAIL, password: PASSWORD, ...ctx }),
     ).resolves.toMatchObject({
-      status: 'MFA_SETUP_REQUIRED',
+      status: 'AUTHENTICATED',
     });
   });
 
@@ -180,10 +197,10 @@ describe('autenticación del panel', () => {
   });
 
   it('la sesión pendiente caduca a los 10 minutos', async () => {
-    const pending = await login.execute({ email: EMAIL, password: PASSWORD, ...ctx });
+    const pendingToken = await createPendingSession();
     env.clock.advance(ADMIN_SECURITY.pendingSessionTtlMs + 1);
     await expectCode(
-      startEnrollment.execute({ sessionToken: pending.sessionToken }),
+      startEnrollment.execute({ sessionToken: pendingToken }),
       'auth.unauthorized',
     );
   });
@@ -213,13 +230,13 @@ describe('autenticación del panel', () => {
     return session.sessionToken;
   }
 
-  it('el alta por CLI exige contraseña larga y correo único', async () => {
+  it('el alta por CLI exige contraseña no vacía y correo único', async () => {
     const create = new CreateAdminUserUseCase(env.deps.users, env.deps.hasher);
     await expectCode(
       create.execute({
         email: 'otro@antrina.com',
         name: 'Otro',
-        password: 'corta',
+        password: '',
         role: 'EDITOR',
       }),
       'admin.weak_password',

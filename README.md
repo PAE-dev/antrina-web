@@ -44,7 +44,7 @@ consola.
 pnpm admin:create --email taller@antrina.com --name "Taller Antrina" --role OWNER
 ```
 
-1. Entra en http://localhost:5174 con ese correo y contraseña (mínimo 12 caracteres).
+1. Entra en http://localhost:5174 con ese correo y contraseña.
 2. La primera vez se pide vincular una app autenticadora (Google Authenticator, 1Password, Authy…)
    escaneando el QR. A partir de ahí cada acceso pide contraseña + código de 6 dígitos.
 3. En **Productos** se crean y editan productos (español obligatorio, inglés opcional), precio en

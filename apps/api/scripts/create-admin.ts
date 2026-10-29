@@ -54,7 +54,7 @@ async function main(): Promise<void> {
 
   let password = process.env.ADMIN_PASSWORD ?? '';
   if (!password) {
-    password = await promptHidden('Contraseña (mín. 12 caracteres): ');
+    password = await promptHidden('Contraseña: ');
     const confirmation = await promptHidden('Repite la contraseña: ');
     if (password !== confirmation) throw new Error('Las contraseñas no coinciden');
   }

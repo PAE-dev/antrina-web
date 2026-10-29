@@ -10,7 +10,8 @@ export const ADMIN_SECURITY = {
   pendingSessionTtlMs: 10 * 60 * 1000,
   sessionTtlMs: 8 * 60 * 60 * 1000,
   idleTimeoutMs: 30 * 60 * 1000,
-  minPasswordLength: 12,
+  /** Mínimo laxo: el panel es privado (solo altas por CLI). */
+  minPasswordLength: 1,
 } as const;
 
 export interface AdminUserProps {

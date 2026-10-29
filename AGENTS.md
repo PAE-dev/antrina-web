@@ -81,10 +81,11 @@ según el `code`: `auth.locked` → 423, `auth.forbidden` → 403, `auth.*` → 
 
 - Sin registro público: altas con `pnpm admin:create` (CLI). Roles `OWNER` (todo) y `EDITOR`
   (catálogo); permisos en `AdminUser.can()`.
-- Contraseña Argon2id (mín. 12). 2FA TOTP **obligatorio**: el primer login fuerza a configurarlo; la
-  semilla se guarda cifrada con AES-256-GCM (`ADMIN_ENCRYPTION_KEY`).
+- Contraseña Argon2id (mín. 1 carácter). 2FA TOTP es **opcional**: sin app autenticadora, el login
+  abre sesión completa. Si la cuenta tiene 2FA, pide el código; la semilla se guarda cifrada con
+  AES-256-GCM (`ADMIN_ENCRYPTION_KEY`).
 - Sesión: token opaco en cookie `antrina_admin` (httpOnly, SameSite=Strict, Secure en producción,
-  path `/admin`); en BD solo su hash SHA-256. Sesión pendiente (sin 2FA) 10 min, completa 8 h,
+  path `/admin`); en BD solo su hash SHA-256. Sesión pendiente (con 2FA) 10 min, completa 8 h,
   cierre por inactividad a los 30 min. Tras el 2FA el token se rota.
 - 5 fallos (contraseña o código) bloquean la cuenta 15 min. Rate limit de 10 req/min por IP en los
   pasos de acceso (`AuthRateLimitGuard`, en memoria; `@nestjs/throttler` es CommonJS y no carga en

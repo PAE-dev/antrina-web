@@ -4,16 +4,17 @@ import {
   type AdminLoginRequest,
   type AdminLoginResponse,
 } from '@antrina/contracts';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router';
-import { useCurrentAdmin } from '../auth/session';
+import { ME_QUERY_KEY, useCurrentAdmin } from '../auth/session';
 import { AuthCard } from '../components/AuthCard';
 import { ErrorNotice } from '../components/ErrorNotice';
 import { api } from '../lib/api';
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const me = useCurrentAdmin();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,6 +24,11 @@ export function LoginPage() {
       api<AdminLoginResponse>('POST', ADMIN_AUTH_ROUTES.login, body),
     onSuccess: (result) => {
       setPassword('');
+      if (result.status === 'AUTHENTICATED') {
+        void queryClient.invalidateQueries({ queryKey: ME_QUERY_KEY });
+        void navigate('/productos', { replace: true });
+        return;
+      }
       void navigate(result.status === 'MFA_REQUIRED' ? '/login/verificar' : '/configurar-2fa');
     },
   });

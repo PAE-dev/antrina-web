@@ -5,8 +5,12 @@ export interface AdminLoginRequest {
   password: string;
 }
 
-/** Tras la contraseña siempre falta un paso: verificar el código o configurar la app autenticadora. */
-export type AdminLoginStatus = 'MFA_REQUIRED' | 'MFA_SETUP_REQUIRED';
+/**
+ * `AUTHENTICATED`: acceso directo (sin 2FA).
+ * `MFA_REQUIRED`: la cuenta tiene app autenticadora y hay que escribir el código.
+ * `MFA_SETUP_REQUIRED`: reservado (ya no se fuerza al entrar).
+ */
+export type AdminLoginStatus = 'AUTHENTICATED' | 'MFA_REQUIRED' | 'MFA_SETUP_REQUIRED';
 
 export interface AdminLoginResponse {
   status: AdminLoginStatus;

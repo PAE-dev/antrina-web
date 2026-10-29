@@ -59,6 +59,29 @@ export class LoginUseCase {
     }
 
     const { token, tokenHash } = this.deps.tokens.generate();
+
+    // Sin 2FA: sesión completa y acceso al panel. Con 2FA: sesión pendiente 10 min.
+    if (!user.hasTotpEnabled) {
+      const expiresAt = new Date(now.getTime() + ADMIN_SECURITY.sessionTtlMs);
+      await this.deps.sessions.create({
+        adminUserId: user.id,
+        tokenHash,
+        mfaVerified: true,
+        expiresAt,
+        ip: input.ip,
+        userAgent: input.userAgent,
+      });
+      await this.deps.users.save(user.withSuccessfulLogin(now));
+      await this.deps.audit.record({
+        adminUserId: user.id,
+        action: 'auth.login',
+        entityType: 'AdminUser',
+        entityId: user.id,
+        ...(input.ip ? { changes: { ip: input.ip } } : {}),
+      });
+      return { sessionToken: token, expiresAt, status: 'AUTHENTICATED' };
+    }
+
     const expiresAt = new Date(now.getTime() + ADMIN_SECURITY.pendingSessionTtlMs);
     await this.deps.sessions.create({
       adminUserId: user.id,
@@ -69,10 +92,6 @@ export class LoginUseCase {
       userAgent: input.userAgent,
     });
 
-    return {
-      sessionToken: token,
-      expiresAt,
-      status: user.hasTotpEnabled ? 'MFA_REQUIRED' : 'MFA_SETUP_REQUIRED',
-    };
+    return { sessionToken: token, expiresAt, status: 'MFA_REQUIRED' };
   }
 }
