@@ -18,8 +18,9 @@ services:
       retries: 10
 
   # Almacenamiento de fotos S3-compatible (en producción: Cloudflare R2).
+  # MinIO dejó de publicar imágenes en Docker Hub/quay.io; usamos la build de Chainguard (trae mc y sh).
   minio:
-    image: minio/minio:latest
+    image: cgr.dev/chainguard/minio:latest
     container_name: antrina-minio
     restart: unless-stopped
     command: server /data --console-address ':9001'
@@ -41,7 +42,7 @@ services:
 
   # Crea el bucket con lectura pública (las fotos de producto son públicas; la escritura solo con URL firmada).
   minio-init:
-    image: minio/mc:latest
+    image: cgr.dev/chainguard/minio:latest
     container_name: antrina-minio-init
     depends_on:
       minio:
