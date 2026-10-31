@@ -132,12 +132,28 @@ model Product {
   images              ProductImage[]
   orderLines          OrderLine[]
   stockMovements      StockMovement[]
+  pieces              ProductPiece[]
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
 
   @@index([status, isFeatured])
   @@index([categoryId])
   @@index([intention])
+}
+
+/// Pieza física con QR propio. `code` es aleatorio y va impreso en la etiqueta (`/q/<code>`).
+model ProductPiece {
+  id        String    @id @default(cuid())
+  productId String
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+  /// Número correlativo dentro del producto, para identificar la etiqueta.
+  serial    Int
+  code      String    @unique
+  /// Etiqueta perdida o dañada: el código deja de ser válido.
+  voidedAt  DateTime?
+  createdAt DateTime  @default(now())
+
+  @@unique([productId, serial])
 }
 
 /// Historial de existencias: cada cambio de `Product.stock` deja una fila.

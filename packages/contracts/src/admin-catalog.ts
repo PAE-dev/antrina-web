@@ -217,6 +217,67 @@ export interface AdjustStockRequest {
   note: string | null;
 }
 
+export interface InventoryItemDto {
+  id: string;
+  sku: string;
+  name: string;
+  status: ProductStatusCode;
+  stock: number;
+  lowStockThreshold: number;
+  isLowStock: boolean;
+}
+
+/** Categoría con sus productos; las principales llevan sus subcategorías en `children`. */
+export interface InventoryGroupDto {
+  categoryId: string;
+  name: string;
+  /** Unidades de la categoría, subcategorías incluidas. */
+  units: number;
+  items: InventoryItemDto[];
+  children: InventoryGroupDto[];
+}
+
+export interface InventoryQuery {
+  q?: string;
+  stock?: AdminStockFilterCode;
+}
+
+export interface InventoryResponse {
+  groups: InventoryGroupDto[];
+}
+
+export interface ClearStockRequest {
+  productIds: string[];
+  note: string | null;
+}
+
+export interface ClearStockResponse {
+  /** Productos que tenían stock y quedaron en cero. */
+  cleared: number;
+  /** Unidades retiradas en total. */
+  units: number;
+}
+
+export interface ProductPieceDto {
+  id: string;
+  productId: string;
+  serial: number;
+  code: string;
+  voidedAt: string | null;
+  createdAt: string;
+}
+
+export interface ProductPieceListResponse {
+  data: ProductPieceDto[];
+}
+
+export interface GenerateProductPiecesRequest {
+  quantity: number;
+}
+
+/** Ruta pública que abre el QR de una pieza. Va impresa en la etiqueta: no puede cambiar. */
+export const pieceQrPath = (code: string) => `/q/${code}`;
+
 export const ADMIN_CATALOG_ROUTES = {
   products: '/admin/products',
   product: (id: string) => `/admin/products/${id}`,
@@ -229,4 +290,8 @@ export const ADMIN_CATALOG_ROUTES = {
   category: (id: string) => `/admin/categories/${id}`,
   productStock: (id: string) => `/admin/products/${id}/stock`,
   stockMovements: '/admin/stock-movements',
+  inventory: '/admin/inventory',
+  inventoryClear: '/admin/inventory/clear',
+  productPieces: (id: string) => `/admin/products/${id}/pieces`,
+  voidProductPiece: (id: string, pieceId: string) => `/admin/products/${id}/pieces/${pieceId}/void`,
 } as const;

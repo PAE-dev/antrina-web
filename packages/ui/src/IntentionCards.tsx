@@ -20,7 +20,7 @@ interface IntentionCardsProps {
 /** Tarjetas de intención (sin cabecera): portada e índice de intenciones. */
 export function IntentionCardList({ items }: { items: IntentionItem[] }) {
   return (
-    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {items.map((item, position) => (
         <li key={item.href}>
           <a href={item.href} className="group block h-full rounded-md">

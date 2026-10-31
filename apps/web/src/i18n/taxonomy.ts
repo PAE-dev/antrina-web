@@ -130,6 +130,29 @@ export const INTENTIONS: IntentionEntry[] = [
     },
   },
   {
+    category: 'suerte',
+    slug: { es: 'suerte', en: 'luck' },
+    stones: ['ojo-de-tigre', 'pirita'],
+    copy: {
+      es: {
+        label: 'Suerte',
+        stones: 'Ojo de tigre · Pirita',
+        text: 'Para acompañar los comienzos y los días en que toca arriesgarse.',
+        title: 'Árboles de cuarzo para la *suerte*',
+        intro:
+          'El ojo de tigre y la pirita son piedras que la tradición asocia con la buena suerte y la buena fortuna. Un árbol de la suerte es un detalle para un negocio que abre, un viaje o una etapa nueva.',
+      },
+      en: {
+        label: 'Luck',
+        stones: 'Tiger’s eye · Pyrite',
+        text: 'To keep you company in new beginnings and on the days that call for a leap.',
+        title: 'Quartz trees for *luck*',
+        intro:
+          'Tiger’s eye and pyrite are stones that tradition associates with good luck and fortune. A luck tree is a thoughtful gift for a new business, a journey or a fresh chapter.',
+      },
+    },
+  },
+  {
     category: 'mixto',
     slug: { es: 'mixto', en: 'mixed' },
     stones: ['amatista', 'cuarzo-rosa', 'citrino', 'cornalina'],

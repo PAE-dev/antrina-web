@@ -38,6 +38,7 @@ import { ErrorNotice } from '../components/ErrorNotice';
 import { IconPlus } from '../components/icons';
 import { Choice } from '../components/PageKit';
 import { PhotoManager } from '../components/PhotoManager';
+import { PiecesPanel } from '../components/PiecesPanel';
 import { StatusBadge } from '../components/StatusBadge';
 import { StockDialog, type StockTarget } from '../components/StockDialog';
 import { api, STORE_URL } from '../lib/api';
@@ -55,9 +56,9 @@ import {
 } from '../lib/format';
 
 type Lang = 'es' | 'en';
-type Tab = 'detalles' | 'fotos' | 'historial' | 'google';
+type Tab = 'detalles' | 'fotos' | 'historial' | 'qr' | 'google';
 
-const TABS: readonly Tab[] = ['detalles', 'fotos', 'historial', 'google'];
+const TABS: readonly Tab[] = ['detalles', 'fotos', 'historial', 'qr', 'google'];
 /** Lo que Google suele mostrar antes de cortar con "…". */
 const META_TITLE_IDEAL = 60;
 const META_DESCRIPTION_IDEAL = 155;
@@ -616,6 +617,12 @@ function ProductEditor({
                 <Tabs.Indicator />
               </Tabs.Tab>
             )}
+            {product && (
+              <Tabs.Tab id="qr" className="w-auto px-3 text-[13px]">
+                QR
+                <Tabs.Indicator />
+              </Tabs.Tab>
+            )}
             <Tabs.Tab id="google" className="w-auto px-3 text-[13px]">
               Google
               <Tabs.Indicator />
@@ -974,6 +981,16 @@ function ProductEditor({
 
           <Tabs.Panel id="historial" className="p-0">
             {product && <StockHistory productId={product.id} />}
+          </Tabs.Panel>
+
+          <Tabs.Panel id="qr" className="p-0">
+            {product && (
+              <PiecesPanel
+                productId={product.id}
+                stock={product.stock}
+                isArchived={product.status === 'ARCHIVED'}
+              />
+            )}
           </Tabs.Panel>
 
           <Tabs.Panel id="google" className="p-0">

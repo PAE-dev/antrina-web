@@ -31,6 +31,7 @@ export interface AdminProductCriteria {
   /** Incluye las subcategorías de la categoría. */
   categoryId?: string;
   stock?: AdminStockFilter;
+  excludeArchived?: boolean;
   limit: number;
   offset: number;
 }

@@ -20,13 +20,15 @@ import { api } from '../lib/api';
 import { ErrorNotice } from './ErrorNotice';
 import { IconMinus, IconPlus } from './icons';
 
+type Mode = 'in' | 'out' | 'count';
+
 export interface StockTarget {
   id: string;
   name: string;
   stock: number;
+  /** Con qué opción abre el diálogo; por defecto, entrada. */
+  mode?: Mode;
 }
-
-type Mode = 'in' | 'out' | 'count';
 
 const MODES: { id: Mode; label: string; hint: string }[] = [
   { id: 'in', label: 'Entrada', hint: 'Llegó mercadería o terminaste nuevas piezas.' },
@@ -70,8 +72,8 @@ export function StockDialog({
 
 function StockForm({ target, onClose }: { target: StockTarget; onClose: () => void }) {
   const queryClient = useQueryClient();
-  const [mode, setMode] = useState<Mode>('in');
-  const [quantity, setQuantity] = useState('1');
+  const [mode, setMode] = useState<Mode>(target.mode ?? 'in');
+  const [quantity, setQuantity] = useState(target.mode === 'count' ? String(target.stock) : '1');
   const [note, setNote] = useState('');
 
   const amount = Number(quantity);
@@ -170,6 +172,16 @@ function StockForm({ target, onClose }: { target: StockTarget; onClose: () => vo
               <IconPlus />
             </Button>
           </div>
+          {mode === 'out' && target.stock > 0 && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="-mt-2 self-start"
+              onPress={() => setQuantity(String(target.stock))}
+            >
+              Sacar todas ({target.stock})
+            </Button>
+          )}
 
           <TextField value={note} onChange={setNote}>
             <Label>Nota (opcional)</Label>

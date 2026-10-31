@@ -3,13 +3,17 @@ import {
   AddProductImageUseCase,
   AdjustStockUseCase,
   ArchiveProductUseCase,
+  ClearStockUseCase,
   CreateCategoryUseCase,
   CreateProductUseCase,
   DeleteCategoryUseCase,
   DeleteProductImageUseCase,
+  GenerateProductPiecesUseCase,
   GetAdminProductUseCase,
   ListAdminCategoriesUseCase,
   ListAdminProductsUseCase,
+  ListInventoryUseCase,
+  ListProductPiecesUseCase,
   ListStockMovementsUseCase,
   type ProductImagesDeps,
   ReorderProductImagesUseCase,
@@ -17,12 +21,15 @@ import {
   UpdateCategoryUseCase,
   UpdateProductImageAltUseCase,
   UpdateProductUseCase,
+  VoidProductPieceUseCase,
 } from '@antrina/application';
 import {
   type AuditLog,
   type CategoryRepository,
   type ImageStorage,
+  type PieceCodeGenerator,
   type ProductImageRepository,
+  type ProductPieceRepository,
   type ProductRepository,
   type StockRepository,
 } from '@antrina/domain';
@@ -35,15 +42,20 @@ import {
   PRODUCT_IMAGE_REPOSITORY,
   PRODUCT_REPOSITORY,
 } from '../catalog/catalog.tokens.js';
+import { CryptoPieceCodeGenerator } from './infrastructure/crypto-piece-code.generator.js';
+import { PrismaProductPieceRepository } from './infrastructure/prisma-product-piece.repository.js';
 import { PrismaStockRepository } from './infrastructure/prisma-stock.repository.js';
 import {
   AdminCategoriesController,
+  AdminInventoryController,
   AdminProductsController,
   AdminStockMovementsController,
 } from './presentation/admin-products.controller.js';
 
 const PRODUCT_IMAGES_DEPS = Symbol('ProductImagesDeps');
 const STOCK_REPOSITORY = Symbol('StockRepository');
+const PRODUCT_PIECE_REPOSITORY = Symbol('ProductPieceRepository');
+const PIECE_CODE_GENERATOR = Symbol('PieceCodeGenerator');
 
 type ProductUseCase<T> = new (
   products: ProductRepository,
@@ -75,9 +87,49 @@ const imageUseCase = <T>(UseCase: new (deps: ProductImagesDeps) => T) => ({
 /** Catálogo desde el panel: productos, galería de fotos (MinIO/R2), categorías e inventario. */
 @Module({
   imports: [AdminAuthModule, CatalogModule],
-  controllers: [AdminProductsController, AdminCategoriesController, AdminStockMovementsController],
+  controllers: [
+    AdminProductsController,
+    AdminCategoriesController,
+    AdminStockMovementsController,
+    AdminInventoryController,
+  ],
   providers: [
     { provide: STOCK_REPOSITORY, useClass: PrismaStockRepository },
+    { provide: PRODUCT_PIECE_REPOSITORY, useClass: PrismaProductPieceRepository },
+    { provide: PIECE_CODE_GENERATOR, useClass: CryptoPieceCodeGenerator },
+    {
+      provide: ListProductPiecesUseCase,
+      useFactory: (products: ProductRepository, pieces: ProductPieceRepository) =>
+        new ListProductPiecesUseCase(products, pieces),
+      inject: [PRODUCT_REPOSITORY, PRODUCT_PIECE_REPOSITORY],
+    },
+    {
+      provide: GenerateProductPiecesUseCase,
+      useFactory: (
+        products: ProductRepository,
+        pieces: ProductPieceRepository,
+        codes: PieceCodeGenerator,
+        audit: AuditLog,
+      ) => new GenerateProductPiecesUseCase(products, pieces, codes, audit),
+      inject: [PRODUCT_REPOSITORY, PRODUCT_PIECE_REPOSITORY, PIECE_CODE_GENERATOR, AUDIT_LOG],
+    },
+    {
+      provide: VoidProductPieceUseCase,
+      useFactory: (pieces: ProductPieceRepository, audit: AuditLog) =>
+        new VoidProductPieceUseCase(pieces, audit),
+      inject: [PRODUCT_PIECE_REPOSITORY, AUDIT_LOG],
+    },
+    {
+      provide: ListInventoryUseCase,
+      useFactory: (products: ProductRepository, categories: CategoryRepository) =>
+        new ListInventoryUseCase(products, categories),
+      inject: [PRODUCT_REPOSITORY, CATEGORY_REPOSITORY],
+    },
+    {
+      provide: ClearStockUseCase,
+      useFactory: (stock: StockRepository, audit: AuditLog) => new ClearStockUseCase(stock, audit),
+      inject: [STOCK_REPOSITORY, AUDIT_LOG],
+    },
     {
       provide: AdjustStockUseCase,
       useFactory: (stock: StockRepository, audit: AuditLog) => new AdjustStockUseCase(stock, audit),

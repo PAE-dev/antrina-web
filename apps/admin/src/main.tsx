@@ -17,6 +17,7 @@ import { InventoryPage } from './pages/InventoryPage';
 import { LoginPage } from './pages/LoginPage';
 import { OrderDrawer } from './pages/OrderDrawer';
 import { OrdersPage } from './pages/OrdersPage';
+import { PieceLabelsPage } from './pages/PieceLabelsPage';
 import { ProductDrawer } from './pages/ProductDrawer';
 import { ProductsPage } from './pages/ProductsPage';
 import { SetupMfaPage } from './pages/SetupMfaPage';
@@ -47,6 +48,7 @@ const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
   { path: '/login/verificar', element: <VerifyMfaPage /> },
   { path: '/configurar-2fa', element: <SetupMfaPage /> },
+  { path: '/etiquetas/:productId', element: <PieceLabelsPage /> },
   {
     element: <AdminLayout />,
     children: [

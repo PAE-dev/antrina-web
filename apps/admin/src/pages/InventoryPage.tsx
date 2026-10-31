@@ -1,26 +1,33 @@
-import { Button, SearchField, Skeleton, Tabs } from '@heroui/react';
+import { Button, Checkbox, SearchField, Skeleton, Tabs, toast } from '@heroui/react';
 import {
   ADMIN_CATALOG_ROUTES,
   ADMIN_SALES_ROUTES,
-  type AdminProductListItemDto,
-  type AdminProductListResponse,
+  type ClearStockRequest,
+  type ClearStockResponse,
   type DashboardDto,
+  type InventoryGroupDto,
+  type InventoryItemDto,
+  type InventoryResponse,
   type StockMovementListResponse,
 } from '@antrina/contracts';
 import { formatMoney } from '@antrina/ui';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link } from 'react-router';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ErrorNotice } from '../components/ErrorNotice';
-import { IconLayers, IconPlus } from '../components/icons';
+import { IconChevronRight, IconLayers, IconMinus, IconPlus } from '../components/icons';
 import { EmptyState, PageHeader, Pagination, StatCard, TH } from '../components/PageKit';
-import { StockDialog, type StockTarget } from '../components/StockDialog';
+import { StatusBadge } from '../components/StatusBadge';
+import { invalidateStock, StockDialog, type StockTarget } from '../components/StockDialog';
 import { api } from '../lib/api';
 import { formatDate, MOVEMENT_LABELS } from '../lib/format';
 
 const PAGE_SIZE = 20;
+const CLEAR_NOTE = 'Limpieza de inventario';
 type View = 'stock' | 'movements';
 type StockFilter = 'ALL' | 'low' | 'out';
+type BulkAction = 'clear' | 'archive';
 
 const STOCK_FILTERS: { id: StockFilter; label: string }[] = [
   { id: 'ALL', label: 'Todo' },
@@ -28,28 +35,272 @@ const STOCK_FILTERS: { id: StockFilter; label: string }[] = [
   { id: 'out', label: 'Agotados' },
 ];
 
-export function StockLevel({ product }: { product: AdminProductListItemDto }) {
-  if (product.stock === 0) return <span className="font-medium text-danger">Agotado</span>;
-  if (product.isLowStock) return <span className="font-medium text-warning">{product.stock}</span>;
-  return <span className="text-text">{product.stock}</span>;
+function StockLevel({ item }: { item: InventoryItemDto }) {
+  if (item.stock === 0) return <span className="font-medium text-danger">Agotado</span>;
+  if (item.isLowStock) return <span className="font-medium text-warning">{item.stock}</span>;
+  return <span className="text-text">{item.stock}</span>;
+}
+
+/** Productos de una categoría, incluidas sus subcategorías. */
+function groupItems(group: InventoryGroupDto): InventoryItemDto[] {
+  return [...group.items, ...group.children.flatMap(groupItems)];
+}
+
+const countLabel = (count: number) => `${count} ${count === 1 ? 'producto' : 'productos'}`;
+const unitsLabel = (units: number) => `${units} ${units === 1 ? 'unidad' : 'unidades'}`;
+
+function SelectBox({
+  label,
+  items,
+  selected,
+  onChange,
+}: {
+  label: string;
+  items: InventoryItemDto[];
+  selected: ReadonlySet<string>;
+  onChange: (ids: string[], isSelected: boolean) => void;
+}) {
+  const count = items.filter((item) => selected.has(item.id)).length;
+  return (
+    <Checkbox
+      aria-label={label}
+      isSelected={count > 0 && count === items.length}
+      isIndeterminate={count > 0 && count < items.length}
+      onChange={(value) =>
+        onChange(
+          items.map((item) => item.id),
+          value,
+        )
+      }
+    >
+      <Checkbox.Content>
+        <Checkbox.Control>
+          <Checkbox.Indicator />
+        </Checkbox.Control>
+      </Checkbox.Content>
+    </Checkbox>
+  );
+}
+
+function ProductRow({
+  item,
+  selected,
+  onSelect,
+  onChange,
+  isNested,
+}: {
+  item: InventoryItemDto;
+  selected: ReadonlySet<string>;
+  onSelect: (ids: string[], isSelected: boolean) => void;
+  onChange: (target: StockTarget) => void;
+  isNested: boolean;
+}) {
+  const target = { id: item.id, name: item.name, stock: item.stock };
+  return (
+    <li
+      className={`flex items-center gap-3 py-2 pr-3 ${isNested ? 'pl-4 sm:pl-14' : 'pl-4 sm:pl-9'}`}
+    >
+      <SelectBox
+        label={`Seleccionar ${item.name}`}
+        items={[item]}
+        selected={selected}
+        onChange={onSelect}
+      />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <Link
+          to={`/productos/${item.id}`}
+          className="truncate text-[13.5px] font-medium text-text hover:underline"
+        >
+          {item.name}
+        </Link>
+        <span className="truncate font-mono text-[12px] text-text-muted">
+          {item.sku}
+          <span className="font-sans"> · alerta en {item.lowStockThreshold}</span>
+        </span>
+      </div>
+      {item.status === 'DRAFT' && (
+        <span className="hidden sm:inline-flex">
+          <StatusBadge status={item.status} />
+        </span>
+      )}
+      <span className="panel-num w-14 text-right text-[15px]">
+        <StockLevel item={item} />
+      </span>
+      <div className="flex items-center gap-1">
+        <Button
+          isIconOnly
+          size="sm"
+          variant="tertiary"
+          aria-label={`Sacar unidades de ${item.name}`}
+          isDisabled={item.stock === 0}
+          onPress={() => onChange({ ...target, mode: 'out' })}
+        >
+          <IconMinus size={14} />
+        </Button>
+        <Button
+          isIconOnly
+          size="sm"
+          variant="tertiary"
+          aria-label={`Agregar unidades a ${item.name}`}
+          onPress={() => onChange({ ...target, mode: 'in' })}
+        >
+          <IconPlus size={14} />
+        </Button>
+      </div>
+    </li>
+  );
+}
+
+function CategoryBlock({
+  group,
+  selected,
+  onSelect,
+  onChange,
+  isChild = false,
+}: {
+  group: InventoryGroupDto;
+  selected: ReadonlySet<string>;
+  onSelect: (ids: string[], isSelected: boolean) => void;
+  onChange: (target: StockTarget) => void;
+  isChild?: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(true);
+  const items = groupItems(group);
+  return (
+    <section className={isChild ? 'border-t border-border' : ''}>
+      <div
+        className={`flex items-center gap-3 py-2 pr-4 ${isChild ? 'pl-4 sm:pl-9' : 'bg-bg pl-4'}`}
+      >
+        <SelectBox
+          label={`Seleccionar ${group.name}`}
+          items={items}
+          selected={selected}
+          onChange={onSelect}
+        />
+        <button
+          type="button"
+          aria-expanded={isOpen}
+          onClick={() => setIsOpen((value) => !value)}
+          className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
+        >
+          <IconChevronRight
+            size={14}
+            className={`shrink-0 text-text-muted transition-transform ${isOpen ? 'rotate-90' : ''}`}
+          />
+          <span
+            className={`truncate ${isChild ? 'text-[13px] font-medium text-text-secondary' : 'panel-heading'}`}
+          >
+            {group.name}
+          </span>
+        </button>
+        <span className="panel-num whitespace-nowrap text-[12.5px] text-text-muted">
+          <span className="hidden sm:inline">{countLabel(items.length)} · </span>
+          {unitsLabel(group.units)}
+        </span>
+      </div>
+      {isOpen && (
+        <>
+          {group.items.length > 0 && (
+            <ul className="divide-y divide-border border-t border-border">
+              {group.items.map((item) => (
+                <ProductRow
+                  key={item.id}
+                  item={item}
+                  selected={selected}
+                  onSelect={onSelect}
+                  onChange={onChange}
+                  isNested={isChild}
+                />
+              ))}
+            </ul>
+          )}
+          {group.children.map((child) => (
+            <CategoryBlock
+              key={child.categoryId}
+              group={child}
+              selected={selected}
+              onSelect={onSelect}
+              onChange={onChange}
+              isChild
+            />
+          ))}
+        </>
+      )}
+    </section>
+  );
 }
 
 function StockView({ onChange }: { onChange: (target: StockTarget) => void }) {
+  const queryClient = useQueryClient();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<StockFilter>('ALL');
-  const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const [bulkAction, setBulkAction] = useState<BulkAction | null>(null);
 
-  const params = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE) });
+  const params = new URLSearchParams();
   if (query.trim()) params.set('q', query.trim());
   if (filter !== 'ALL') params.set('stock', filter);
 
-  const products = useQuery({
-    queryKey: ['admin', 'products', 'inventory', { query: query.trim(), filter, page }],
+  const inventory = useQuery({
+    queryKey: ['admin', 'products', 'inventory', { query: query.trim(), filter }],
     queryFn: () =>
-      api<AdminProductListResponse>('GET', `${ADMIN_CATALOG_ROUTES.products}?${params.toString()}`),
+      api<InventoryResponse>('GET', `${ADMIN_CATALOG_ROUTES.inventory}?${params.toString()}`),
     placeholderData: keepPreviousData,
   });
-  const rows = products.data?.data ?? [];
+  const groups = inventory.data?.groups ?? [];
+  const items = groups.flatMap(groupItems);
+  const selectedItems = items.filter((item) => selected.has(item.id));
+  const selectedUnits = selectedItems.reduce((sum, item) => sum + item.stock, 0);
+
+  const select = (ids: string[], isSelected: boolean) =>
+    setSelected((current) => {
+      const next = new Set(current);
+      for (const id of ids) {
+        if (isSelected) next.add(id);
+        else next.delete(id);
+      }
+      return next;
+    });
+
+  const finish = () => {
+    setBulkAction(null);
+    setSelected(new Set());
+    invalidateStock(queryClient);
+  };
+
+  const clear = useMutation({
+    mutationFn: () => {
+      const body: ClearStockRequest = {
+        productIds: selectedItems.map((item) => item.id),
+        note: CLEAR_NOTE,
+      };
+      return api<ClearStockResponse>('POST', ADMIN_CATALOG_ROUTES.inventoryClear, body);
+    },
+    onSuccess: (result) => {
+      finish();
+      toast.success(`Se retiraron ${unitsLabel(result.units)}`, {
+        description: `${countLabel(result.cleared)} en cero. Queda en el historial.`,
+      });
+    },
+    onSettled: () => setBulkAction(null),
+  });
+
+  const archive = useMutation({
+    mutationFn: async () => {
+      for (const item of selectedItems) {
+        await api('POST', ADMIN_CATALOG_ROUTES.archiveProduct(item.id));
+      }
+    },
+    onSuccess: () => {
+      const count = selectedItems.length;
+      finish();
+      toast.success(`${countLabel(count)} archivados`, {
+        description: 'Ya no aparecen en la tienda ni en el inventario.',
+      });
+    },
+    onError: () => invalidateStock(queryClient),
+    onSettled: () => setBulkAction(null),
+  });
 
   return (
     <>
@@ -58,7 +309,7 @@ function StockView({ onChange }: { onChange: (target: StockTarget) => void }) {
           selectedKey={filter}
           onSelectionChange={(key) => {
             setFilter(key as StockFilter);
-            setPage(1);
+            setSelected(new Set());
           }}
         >
           <Tabs.ListContainer>
@@ -77,7 +328,7 @@ function StockView({ onChange }: { onChange: (target: StockTarget) => void }) {
           value={query}
           onChange={(value) => {
             setQuery(value);
-            setPage(1);
+            setSelected(new Set());
           }}
           className="md:w-72"
         >
@@ -88,66 +339,102 @@ function StockView({ onChange }: { onChange: (target: StockTarget) => void }) {
           </SearchField.Group>
         </SearchField>
       </div>
-      {products.error ? (
+      {inventory.error ? (
         <div className="p-4">
-          <ErrorNotice error={products.error} title="No se pudo cargar el inventario" />
+          <ErrorNotice error={inventory.error} title="No se pudo cargar el inventario" />
         </div>
-      ) : products.isPending ? (
+      ) : inventory.isPending ? (
         <div className="flex flex-col gap-3 p-4">
           {Array.from({ length: 6 }, (_, index) => (
             <Skeleton key={index} className="h-9 w-full rounded-md" />
           ))}
         </div>
-      ) : rows.length === 0 ? (
+      ) : groups.length === 0 ? (
         <EmptyState
           icon={<IconLayers size={18} />}
           title={filter === 'ALL' && !query ? 'Todavía no hay productos' : 'Nada por aquí'}
           description={
             filter === 'ALL' && !query
-              ? 'Crea un producto para empezar a llevar su stock.'
+              ? 'Crea un producto y aparecerá aquí, dentro de su categoría.'
               : 'No hay productos con este filtro.'
           }
         />
       ) : (
-        <ul className={`divide-y divide-border ${products.isPlaceholderData ? 'opacity-60' : ''}`}>
-          {rows.map((product) => (
-            <li key={product.id} className="flex items-center gap-3 px-4 py-2.5">
-              <div className="flex min-w-0 flex-1 flex-col">
-                <Link
-                  to={`/productos/${product.id}`}
-                  className="truncate text-[13.5px] font-medium text-text hover:underline"
+        <>
+          <div className="flex min-h-12 flex-wrap items-center gap-x-3 gap-y-2 border-b border-border py-2 pl-4 pr-3">
+            <SelectBox
+              label="Seleccionar todos los productos"
+              items={items}
+              selected={selected}
+              onChange={select}
+            />
+            <span className="panel-num flex-1 whitespace-nowrap text-[13px] text-text-secondary">
+              {selectedItems.length > 0
+                ? `${selectedItems.length} de ${items.length} · ${unitsLabel(selectedUnits)}`
+                : `Seleccionar todo (${items.length})`}
+            </span>
+            {selectedItems.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <Button
+                  size="sm"
+                  variant="tertiary"
+                  isDisabled={selectedUnits === 0}
+                  onPress={() => setBulkAction('clear')}
                 >
-                  {product.name}
-                </Link>
-                <span className="truncate font-mono text-[12px] text-text-muted">
-                  {product.sku}
-                  <span className="font-sans"> · alerta en {product.lowStockThreshold}</span>
-                </span>
+                  Dejar en 0
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-danger"
+                  onPress={() => setBulkAction('archive')}
+                >
+                  Archivar
+                </Button>
               </div>
-              <span className="panel-num w-16 text-right text-[15px]">
-                <StockLevel product={product} />
-              </span>
-              <Button
-                size="sm"
-                variant="tertiary"
-                onPress={() =>
-                  onChange({ id: product.id, name: product.name, stock: product.stock })
-                }
-              >
-                <IconPlus size={14} />
-                <span className="hidden sm:inline">Cambiar stock</span>
-                <span className="sr-only sm:hidden">Cambiar stock</span>
-              </Button>
-            </li>
-          ))}
-        </ul>
+            )}
+          </div>
+          <ErrorNotice error={clear.error} title="No se pudo dejar en cero" />
+          <ErrorNotice error={archive.error} title="No se pudieron archivar todos" />
+          <div
+            className={`divide-y divide-border ${inventory.isPlaceholderData ? 'opacity-60' : ''}`}
+          >
+            {groups.map((group) => (
+              <CategoryBlock
+                key={group.categoryId}
+                group={group}
+                selected={selected}
+                onSelect={select}
+                onChange={onChange}
+              />
+            ))}
+          </div>
+        </>
       )}
-      <Pagination
-        page={page}
-        pageSize={PAGE_SIZE}
-        total={products.data?.total ?? 0}
-        onPageChange={setPage}
-      />
+
+      <ConfirmDialog
+        isOpen={bulkAction === 'clear'}
+        onOpenChange={(open) => !open && setBulkAction(null)}
+        title={`¿Retirar ${unitsLabel(selectedUnits)}?`}
+        confirmLabel="Dejar en 0"
+        tone="warning"
+        isPending={clear.isPending}
+        onConfirm={() => clear.mutate()}
+      >
+        Los productos elegidos quedarán en 0 y, si están publicados, la tienda los mostrará
+        agotados. El cambio queda en el historial.
+      </ConfirmDialog>
+      <ConfirmDialog
+        isOpen={bulkAction === 'archive'}
+        onOpenChange={(open) => !open && setBulkAction(null)}
+        title={`¿Archivar ${countLabel(selectedItems.length)}?`}
+        confirmLabel="Archivar"
+        isPending={archive.isPending}
+        onConfirm={() => archive.mutate()}
+      >
+        Dejarán de mostrarse en la tienda y de contar en el inventario. No se borran: puedes volver
+        a publicarlos desde Productos.
+      </ConfirmDialog>
     </>
   );
 }
@@ -274,7 +561,7 @@ export function InventoryPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Inventario"
-        description="Cuánto tienes de cada producto. Cada entrada, salida y venta queda registrada."
+        description="Cuánto tienes de cada producto, por categoría. Cada entrada, salida y venta queda registrada."
       />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

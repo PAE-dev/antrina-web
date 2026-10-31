@@ -88,7 +88,7 @@ describe('borrador de producto desde el panel', () => {
 
   it('valida la intención y permite productos sin ella', () => {
     expect(toProductDraft({ ...base, intention: null }).intention).toBeNull();
-    expect(() => toProductDraft({ ...base, intention: 'suerte' as never })).toThrow(
+    expect(() => toProductDraft({ ...base, intention: 'inventada' as never })).toThrow(
       expect.objectContaining({ code: 'input.invalid' }),
     );
   });

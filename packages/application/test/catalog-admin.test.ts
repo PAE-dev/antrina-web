@@ -155,6 +155,7 @@ describe('movimientos de inventario', () => {
         createdAt: new Date(),
       };
     },
+    clear: async () => [],
     list: async () => ({ items: [], total: 0 }),
   };
 

@@ -143,9 +143,9 @@ const es: PageCopy = {
     label: 'Intenciones',
     title: 'Árboles de cuarzo *por intención*',
     intro:
-      'Cada piedra acompaña un propósito: abundancia, amor, protección, felicidad o el equilibrio de los siete chakras. Elige la intención y te mostramos los árboles que la llevan.',
+      'Cada piedra acompaña un propósito: abundancia, amor, protección, felicidad, suerte o el equilibrio de los siete chakras. Elige la intención y te mostramos los árboles que la llevan.',
     metaDescription:
-      'Árboles de cuarzo por intención: abundancia (citrino), amor (cuarzo rosa), protección (turmalina negra y amatista), felicidad y siete chakras. Hechos a mano en Lima.',
+      'Árboles de cuarzo por intención: abundancia (citrino), amor (cuarzo rosa), protección (turmalina negra y amatista), felicidad, suerte y siete chakras. Hechos en Lima.',
   },
   signIndex: {
     label: 'Signos',
@@ -314,9 +314,9 @@ const en: PageCopy = {
     label: 'Intentions',
     title: 'Quartz trees *by intention*',
     intro:
-      'Every stone carries a purpose: abundance, love, protection, happiness or the balance of the seven chakras. Choose an intention and see the trees that carry it.',
+      'Every stone carries a purpose: abundance, love, protection, happiness, luck or the balance of the seven chakras. Choose an intention and see the trees that carry it.',
     metaDescription:
-      'Quartz trees by intention: abundance (citrine), love (rose quartz), protection (black tourmaline and amethyst), happiness and seven chakras. Handmade in Lima.',
+      'Quartz trees by intention: abundance (citrine), love (rose quartz), protection (black tourmaline and amethyst), happiness, luck and seven chakras. Made in Lima.',
   },
   signIndex: {
     label: 'Signs',

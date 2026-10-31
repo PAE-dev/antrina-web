@@ -64,7 +64,7 @@ const NAVIGATION: NavigationGroup[] = [
 
 function Avatar({ name }: { name: string }) {
   return (
-    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-tint text-[12px] font-semibold text-brand">
+    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-mist text-[12px] font-semibold text-brand">
       {initials(name)}
     </span>
   );
@@ -75,13 +75,20 @@ function NavItem({ to, icon, children }: { to: string; icon: ReactNode; children
     <NavLink
       to={to}
       className={({ isActive }) =>
-        `flex h-8 items-center gap-2.5 rounded-md px-2.5 text-[13.5px] font-medium transition-colors ${
-          isActive ? 'bg-bg-alt text-text' : 'text-text-secondary hover:bg-bg hover:text-text'
+        `flex h-8 items-center gap-2.5 rounded-md px-2.5 text-[13.5px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-on-dark ${
+          isActive
+            ? 'bg-brand-hover text-on-dark'
+            : 'text-on-dark-muted hover:bg-brand-hover hover:text-on-dark'
         }`
       }
     >
-      {icon}
-      {children}
+      {({ isActive }) => (
+        <>
+          {icon}
+          {children}
+          {isActive && <span className="rombo ml-auto" aria-hidden="true" />}
+        </>
+      )}
     </NavLink>
   );
 }
@@ -118,9 +125,9 @@ export function AdminLayout() {
 
   return (
     <div className="min-h-dvh bg-bg">
-      <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-border bg-surface lg:flex">
+      <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col bg-brand lg:flex">
         <div className="flex h-14 items-center px-4">
-          <BrandMark />
+          <BrandMark tone="dark" />
         </div>
         <nav
           aria-label="Secciones"
@@ -128,7 +135,9 @@ export function AdminLayout() {
         >
           {navigation.map((group) => (
             <div key={group.title} className="flex flex-col gap-0.5">
-              <p className="px-2.5 pb-1.5 text-[12px] font-medium text-text-muted">{group.title}</p>
+              <p className="px-2.5 pb-1.5 text-[12px] font-medium text-on-dark-muted">
+                {group.title}
+              </p>
               {group.items.map((item) => (
                 <NavItem key={item.to} to={item.to} icon={item.icon}>
                   {item.label}
@@ -138,12 +147,12 @@ export function AdminLayout() {
           ))}
           {STORE_URL && (
             <div className="flex flex-col gap-0.5">
-              <p className="px-2.5 pb-1.5 text-[12px] font-medium text-text-muted">Tienda</p>
+              <p className="px-2.5 pb-1.5 text-[12px] font-medium text-on-dark-muted">Tienda</p>
               <a
                 href={STORE_URL}
                 target="_blank"
                 rel="noreferrer"
-                className="flex h-8 items-center gap-2.5 rounded-md px-2.5 text-[13.5px] font-medium text-text-secondary transition-colors hover:bg-bg hover:text-text"
+                className="flex h-8 items-center gap-2.5 rounded-md px-2.5 text-[13.5px] font-medium text-on-dark-muted transition-colors hover:bg-brand-hover hover:text-on-dark focus-visible:outline-2 focus-visible:outline-on-dark"
               >
                 <IconExternal />
                 Ver tienda
@@ -151,11 +160,11 @@ export function AdminLayout() {
             </div>
           )}
         </nav>
-        <div className="flex items-center gap-2.5 border-t border-border p-3">
+        <div className="flex items-center gap-2.5 border-t border-border-dark p-3">
           <Avatar name={admin.name} />
           <div className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate text-[13px] font-medium text-text">{admin.name}</span>
-            <span className="truncate text-[12px] text-text-muted">
+            <span className="truncate text-[13px] font-medium text-on-dark">{admin.name}</span>
+            <span className="truncate text-[12px] text-on-dark-muted">
               {ADMIN_ROLE_LABELS[admin.role]}
             </span>
           </div>
@@ -164,6 +173,7 @@ export function AdminLayout() {
               isIconOnly
               size="sm"
               variant="ghost"
+              className="text-on-dark-muted hover:bg-brand-hover hover:text-on-dark focus-visible:outline-2 focus-visible:outline-on-dark"
               aria-label="Cerrar sesión"
               isPending={logout.isPending}
               onPress={signOut}
@@ -175,8 +185,8 @@ export function AdminLayout() {
         </div>
       </aside>
 
-      <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-border bg-surface px-4 lg:hidden">
-        <BrandMark />
+      <header className="sticky top-0 z-10 flex h-14 items-center justify-between bg-brand px-4 lg:hidden">
+        <BrandMark tone="dark" />
         <Dropdown>
           <Dropdown.Trigger aria-label="Cuenta" className="rounded-full">
             <Avatar name={admin.name} />

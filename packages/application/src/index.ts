@@ -11,6 +11,7 @@ export * from './catalog/admin/admin-categories.use-cases.js';
 export * from './catalog/admin/admin-products.use-cases.js';
 export * from './catalog/admin/product-draft.input.js';
 export * from './catalog/admin/product-images.use-cases.js';
+export * from './catalog/admin/product-pieces.use-cases.js';
 
 export * from './inventory/stock.use-cases.js';
 

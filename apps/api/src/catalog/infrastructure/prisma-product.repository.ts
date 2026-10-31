@@ -135,7 +135,9 @@ export class PrismaProductRepository implements ProductRepository {
           }
         : {}),
       // Las alertas de stock ignoran lo archivado, salvo que se pida ese estado expresamente.
-      ...(criteria.stock && !criteria.status ? { status: { not: 'ARCHIVED' as const } } : {}),
+      ...((criteria.stock && !criteria.status) || criteria.excludeArchived
+        ? { status: { not: 'ARCHIVED' as const } }
+        : {}),
       ...(criteria.stock === 'out' ? { stock: 0 } : {}),
       ...(criteria.stock === 'low' ? { stock: { gt: 0, lte: threshold } } : {}),
       ...(criteria.query

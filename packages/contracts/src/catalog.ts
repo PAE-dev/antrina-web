@@ -4,7 +4,8 @@ export type ProductBadgeCode = 'NEW' | 'CUSTOMIZABLE' | 'LIMITED_EDITION';
 
 export type ProductSizeCode = 'MINI' | 'STANDARD' | 'LARGE' | 'SIGNATURE';
 
-export type ProductIntentionCode = 'abundancia' | 'amor' | 'proteccion' | 'felicidad' | 'mixto';
+export type ProductIntentionCode =
+  'abundancia' | 'amor' | 'proteccion' | 'felicidad' | 'suerte' | 'mixto';
 
 export type ZodiacSignCode =
   | 'ARIES'

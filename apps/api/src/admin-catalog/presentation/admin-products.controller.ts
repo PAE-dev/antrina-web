@@ -18,19 +18,24 @@ import {
   AdjustStockUseCase,
   type AdminPrincipal,
   ArchiveProductUseCase,
+  ClearStockUseCase,
   CreateCategoryUseCase,
   CreateProductUseCase,
   DeleteCategoryUseCase,
   DeleteProductImageUseCase,
+  GenerateProductPiecesUseCase,
   GetAdminProductUseCase,
   ListAdminCategoriesUseCase,
   ListAdminProductsUseCase,
+  ListInventoryUseCase,
+  ListProductPiecesUseCase,
   ListStockMovementsUseCase,
   ReorderProductImagesUseCase,
   RequestImageUploadUseCase,
   UpdateCategoryUseCase,
   UpdateProductImageAltUseCase,
   UpdateProductUseCase,
+  VoidProductPieceUseCase,
 } from '@antrina/application';
 import {
   type AddProductImageRequest,
@@ -39,9 +44,15 @@ import {
   type AdminProductDto,
   type AdminProductListResponse,
   type AdminStockFilterCode,
+  type ClearStockRequest,
+  type ClearStockResponse,
+  type GenerateProductPiecesRequest,
   type ImageUploadRequest,
   type ImageUploadTargetDto,
+  type InventoryResponse,
   type ProductImageDto,
+  type ProductPieceDto,
+  type ProductPieceListResponse,
   type ProductStatusCode,
   type ReorderProductImagesRequest,
   type StockMovementDto,
@@ -75,6 +86,10 @@ export class AdminProductsController {
     @Inject(UpdateProductImageAltUseCase) private readonly updateAlt: UpdateProductImageAltUseCase,
     @Inject(DeleteProductImageUseCase) private readonly deleteImage: DeleteProductImageUseCase,
     @Inject(AdjustStockUseCase) private readonly adjustStock: AdjustStockUseCase,
+    @Inject(ListProductPiecesUseCase) private readonly listPieces: ListProductPiecesUseCase,
+    @Inject(GenerateProductPiecesUseCase)
+    private readonly generatePieces: GenerateProductPiecesUseCase,
+    @Inject(VoidProductPieceUseCase) private readonly voidPiece: VoidProductPieceUseCase,
   ) {}
 
   @Get()
@@ -136,6 +151,30 @@ export class AdminProductsController {
     @CurrentAdmin() admin: AdminPrincipal,
   ): Promise<StockMovementDto> {
     return this.adjustStock.execute(id, body, admin.id);
+  }
+
+  @Get(':id/pieces')
+  pieces(@Param('id') id: string): Promise<ProductPieceListResponse> {
+    return this.listPieces.execute(id);
+  }
+
+  @Post(':id/pieces')
+  createPieces(
+    @Param('id') id: string,
+    @Body() body: GenerateProductPiecesRequest,
+    @CurrentAdmin() admin: AdminPrincipal,
+  ): Promise<ProductPieceListResponse> {
+    return this.generatePieces.execute(id, body, admin.id);
+  }
+
+  @Post(':id/pieces/:pieceId/void')
+  @HttpCode(HttpStatus.OK)
+  cancelPiece(
+    @Param('id') id: string,
+    @Param('pieceId') pieceId: string,
+    @CurrentAdmin() admin: AdminPrincipal,
+  ): Promise<ProductPieceDto> {
+    return this.voidPiece.execute(id, pieceId, admin.id);
   }
 
   @Post(':id/images/upload-url')
@@ -223,6 +262,33 @@ export class AdminCategoriesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id') id: string, @CurrentAdmin() admin: AdminPrincipal): Promise<void> {
     return this.deleteCategory.execute(id, admin.id);
+  }
+}
+
+@Controller('admin/inventory')
+@UseGuards(AdminOriginGuard, AdminSessionGuard)
+@RequirePermission('catalog.manage')
+export class AdminInventoryController {
+  constructor(
+    @Inject(ListInventoryUseCase) private readonly listInventory: ListInventoryUseCase,
+    @Inject(ClearStockUseCase) private readonly clearStock: ClearStockUseCase,
+  ) {}
+
+  @Get()
+  list(@Query('q') q?: string, @Query('stock') stock?: string): Promise<InventoryResponse> {
+    return this.listInventory.execute({
+      ...(q ? { q } : {}),
+      ...(stock ? { stock: stock as AdminStockFilterCode } : {}),
+    });
+  }
+
+  @Post('clear')
+  @HttpCode(HttpStatus.OK)
+  clear(
+    @Body() body: ClearStockRequest,
+    @CurrentAdmin() admin: AdminPrincipal,
+  ): Promise<ClearStockResponse> {
+    return this.clearStock.execute(body, admin.id);
   }
 }
 

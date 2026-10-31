@@ -55,6 +55,7 @@ export const INTENTION_LABELS: Record<ProductIntentionCode, string> = {
   amor: 'Amor',
   proteccion: 'Protección',
   felicidad: 'Felicidad',
+  suerte: 'Suerte',
   mixto: 'Mixto',
 };
 

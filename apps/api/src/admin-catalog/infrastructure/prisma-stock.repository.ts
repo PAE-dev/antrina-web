@@ -11,6 +11,8 @@ import {
 import { type Prisma } from '../../generated/prisma/client.js';
 import { PrismaService } from '../../shared/infrastructure/prisma/prisma.service.js';
 
+const CLEAR_TIMEOUT_MS = 30_000;
+
 const movementInclude = {
   product: {
     select: {
@@ -79,6 +81,50 @@ export class PrismaStockRepository implements StockRepository {
       });
       return toDomainMovement(record);
     });
+  }
+
+  clear(
+    productIds: readonly string[],
+    note: string | null,
+    actorId: string,
+  ): Promise<StockMovement[]> {
+    return this.prisma.$transaction(
+      async (tx) => {
+        const movements: StockMovement[] = [];
+        for (const productId of productIds) {
+          const product = await tx.product.findUnique({
+            where: { id: productId },
+            select: { stock: true },
+          });
+          if (!product) throw new DomainError('Producto no encontrado', 'product.not_found');
+          if (product.stock === 0) continue;
+          const { count } = await tx.product.updateMany({
+            where: { id: productId, stock: product.stock },
+            data: { stock: 0 },
+          });
+          if (count === 0) {
+            throw new DomainError(
+              'El stock cambió mientras se limpiaba. Vuelve a intentarlo.',
+              'stock.changed',
+            );
+          }
+          const record = await tx.stockMovement.create({
+            data: {
+              productId,
+              type: 'ADJUSTMENT',
+              quantity: -product.stock,
+              stockAfter: 0,
+              note,
+              adminUserId: actorId,
+            },
+            include: movementInclude,
+          });
+          movements.push(toDomainMovement(record));
+        }
+        return movements;
+      },
+      { timeout: CLEAR_TIMEOUT_MS },
+    );
   }
 
   async list(criteria: StockMovementCriteria): Promise<StockMovementPage> {

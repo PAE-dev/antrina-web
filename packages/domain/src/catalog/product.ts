@@ -22,6 +22,7 @@ export const PRODUCT_INTENTIONS = [
   'amor',
   'proteccion',
   'felicidad',
+  'suerte',
   'mixto',
 ] as const;
 

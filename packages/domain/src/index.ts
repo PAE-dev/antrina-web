@@ -6,10 +6,12 @@ export * from './catalog/category.js';
 export * from './catalog/product.js';
 export * from './catalog/product-draft.js';
 export * from './catalog/product-image.js';
+export * from './catalog/product-piece.js';
 export * from './catalog/ports/category.repository.js';
 export * from './catalog/ports/image-storage.js';
 export * from './catalog/ports/product.repository.js';
 export * from './catalog/ports/product-image.repository.js';
+export * from './catalog/ports/product-piece.repository.js';
 
 export * from './inventory/stock-movement.js';
 export * from './inventory/ports/stock.repository.js';

@@ -46,7 +46,9 @@ Contextos actuales:
   o el español), filtros `category`/`size`/`sign` en `/catalog/products` y `GET /catalog/product-index`
   (todos los activos con contenido por idioma: sitemap y feed de Google).
 - `admin-catalog` también gestiona categorías (`POST/PUT/DELETE /admin/categories`, dos niveles como
-  máximo) e inventario (`POST /admin/products/:id/stock`, `GET /admin/stock-movements`).
+  máximo), inventario (`POST /admin/products/:id/stock`, `GET /admin/stock-movements`,
+  `GET /admin/inventory` agrupado por categoría y `POST /admin/inventory/clear` para dejar varios en
+  cero) y códigos QR por pieza (`/admin/products/:id/pieces`).
 - `admin-sales`: ventas (`/admin/orders`), clientes (`/admin/customers`) y resumen
   (`/admin/dashboard`, días y meses en hora de Lima). Permiso `sales.manage`. Una venta descuenta el
   stock en la misma transacción y cancelarla lo devuelve.
@@ -68,6 +70,9 @@ Reservados para próximas fases: `cart` y `promotion` (entidad ya existe en domi
 - Oferta: `priceCents` es siempre el precio de venta y `compareAtPriceCents` el normal si hay oferta.
   `costCents` nunca sale en DTOs públicos.
 - Las líneas de venta copian `sku` y `name`: el historial no cambia si el producto se edita.
+- `ProductPiece` es una pieza física (o un par) con QR: `code` aleatorio, `serial` correlativo por
+  producto. La URL impresa es `pieceQrPath(code)` (`/q/<code>`) y **no puede cambiar**: ya está en
+  etiquetas. Los códigos no se borran, se anulan (`voidedAt`). No mueven el stock.
 
 Los errores de dominio (`DomainError(message, code)`) se traducen a HTTP en `DomainExceptionFilter`
 según el `code`: `auth.locked` → 423, `auth.forbidden` → 403, `auth.*` → 401, `*not_found` → 404,
@@ -235,14 +240,15 @@ archivo; `apps/admin/src/styles.css` lo importa y sobrescribe lo indicado en "Pa
 
 #### Panel (`apps/admin`)
 
-Lo anterior es para la tienda. El panel es una herramienta densa y neutra; sus excepciones viven
-solo en `apps/admin/src/styles.css`:
+Lo anterior es para la tienda. El panel es una herramienta densa con la paleta de la marca; sus
+excepciones viven solo en `apps/admin/src/styles.css`:
 
 - **Tipografía:** Geist Variable en todo (Geist Mono para SKU, URL y claves), sin Fraunces ni
   `type-*`. Clases `panel-title`, `panel-heading`, `panel-meta`, `panel-num` (cifras tabulares) y
   `panel-card`. Base 14px.
-- **Color:** superficies grises cálidas y blanco; azul marino solo en acción principal y estado
-  activo.
+- **Color:** nunca blanco. Barra lateral y cabecera móvil marino (`bg-brand`, rombo en la sección
+  activa), fondo hueso oscuro (`bg-bg`) y tarjetas y overlays hueso (`bg-surface`); acción principal
+  marino.
   Estados con `success`/`warning`/`danger` (+ `-tint`) vía `StatusBadge`.
 - **Formas:** radios 6/8px, también en botones (`--button-radius`, sin píldora); sombra solo en
   overlays (drawer, modal, popover).
