@@ -55,6 +55,11 @@ export class PrismaAdminUserRepository implements AdminUserRepository {
     return record ? toDomainUser(record) : null;
   }
 
+  async list(): Promise<AdminUser[]> {
+    const records = await this.prisma.adminUser.findMany({ orderBy: { createdAt: 'asc' } });
+    return records.map(toDomainUser);
+  }
+
   async create(input: NewAdminUser): Promise<AdminUser> {
     return toDomainUser(await this.prisma.adminUser.create({ data: input }));
   }
@@ -91,6 +96,12 @@ export class PrismaAdminSessionStore implements AdminSessionStore {
 
   async delete(id: string): Promise<void> {
     await this.prisma.adminSession.deleteMany({ where: { id } });
+  }
+
+  async deleteAllForUser(adminUserId: string, exceptSessionId?: string): Promise<void> {
+    await this.prisma.adminSession.deleteMany({
+      where: { adminUserId, ...(exceptSessionId ? { id: { not: exceptSessionId } } : {}) },
+    });
   }
 }
 

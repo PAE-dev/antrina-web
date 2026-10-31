@@ -117,6 +117,17 @@ const authUseCase = <T>(UseCase: new (deps: AdminAuthDeps) => T) => ({
     AdminSessionGuard,
     AuthRateLimitGuard,
   ],
-  exports: [GetCurrentAdminUseCase, AdminOriginGuard, AdminSessionGuard, AUDIT_LOG, CLOCK],
+  exports: [
+    GetCurrentAdminUseCase,
+    AdminOriginGuard,
+    AdminSessionGuard,
+    AuthRateLimitGuard,
+    ADMIN_AUTH_DEPS,
+    ADMIN_SESSION_STORE,
+    ADMIN_USER_REPOSITORY,
+    AUDIT_LOG,
+    CLOCK,
+    PASSWORD_HASHER,
+  ],
 })
 export class AdminAuthModule {}

@@ -22,6 +22,13 @@ function Icon({ size = 16, children, ...props }: IconProps) {
   );
 }
 
+export const IconKey = (props: IconProps) => (
+  <Icon {...props}>
+    <circle cx="8" cy="15" r="4" />
+    <path d="m11 12 9-9M16 7l3 3" />
+  </Icon>
+);
+
 export const IconBox = (props: IconProps) => (
   <Icon {...props}>
     <path d="M21 8 12 3 3 8v8l9 5 9-5V8Z" />

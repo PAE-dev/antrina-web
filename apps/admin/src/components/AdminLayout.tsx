@@ -1,5 +1,4 @@
 import { Button, Dropdown, Spinner, Toast, Tooltip } from '@heroui/react';
-import { type AdminMeDto } from '@antrina/contracts';
 import { type ReactNode } from 'react';
 import { Navigate, NavLink, Outlet, useNavigate } from 'react-router';
 import { useCurrentAdmin, useLogout } from '../auth/session';
@@ -12,15 +11,22 @@ import {
   IconExternal,
   IconHome,
   IconImage,
+  IconKey,
   IconLayers,
   IconLogout,
   IconReceipt,
+  IconShield,
   IconTag,
   IconUsers,
 } from './icons';
-import { initials } from '../lib/format';
+import { ADMIN_ROLE_LABELS, initials } from '../lib/format';
 
-const NAVIGATION: { title: string; items: { to: string; label: string; icon: ReactNode }[] }[] = [
+interface NavigationGroup {
+  title: string;
+  items: { to: string; label: string; icon: ReactNode; ownerOnly?: boolean }[];
+}
+
+const NAVIGATION: NavigationGroup[] = [
   {
     title: 'Negocio',
     items: [
@@ -47,12 +53,14 @@ const NAVIGATION: { title: string; items: { to: string; label: string; icon: Rea
     title: 'Contenido',
     items: [{ to: '/portada', label: 'Portada', icon: <IconImage /> }],
   },
+  {
+    title: 'Cuenta',
+    items: [
+      { to: '/usuarios', label: 'Usuarios', icon: <IconShield />, ownerOnly: true },
+      { to: '/mi-cuenta', label: 'Mi cuenta', icon: <IconKey /> },
+    ],
+  },
 ];
-
-const ROLE_LABELS: Record<AdminMeDto['role'], string> = {
-  OWNER: 'Propietario',
-  EDITOR: 'Editor',
-};
 
 function Avatar({ name }: { name: string }) {
   return (
@@ -101,6 +109,10 @@ export function AdminLayout() {
   if (!me.data) return <Navigate to="/login" replace />;
 
   const admin = me.data;
+  const navigation = NAVIGATION.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => !item.ownerOnly || admin.role === 'OWNER'),
+  }));
   const signOut = () =>
     logout.mutate(undefined, { onSettled: () => void navigate('/login', { replace: true }) });
 
@@ -114,7 +126,7 @@ export function AdminLayout() {
           aria-label="Secciones"
           className="flex flex-1 flex-col gap-5 overflow-y-auto px-3 pt-4"
         >
-          {NAVIGATION.map((group) => (
+          {navigation.map((group) => (
             <div key={group.title} className="flex flex-col gap-0.5">
               <p className="px-2.5 pb-1.5 text-[12px] font-medium text-text-muted">{group.title}</p>
               {group.items.map((item) => (
@@ -143,7 +155,9 @@ export function AdminLayout() {
           <Avatar name={admin.name} />
           <div className="flex min-w-0 flex-1 flex-col">
             <span className="truncate text-[13px] font-medium text-text">{admin.name}</span>
-            <span className="truncate text-[12px] text-text-muted">{ROLE_LABELS[admin.role]}</span>
+            <span className="truncate text-[12px] text-text-muted">
+              {ADMIN_ROLE_LABELS[admin.role]}
+            </span>
           </div>
           <Tooltip delay={300}>
             <Button
@@ -179,11 +193,13 @@ export function AdminLayout() {
               <Dropdown.Item id="who" textValue={admin.email} isDisabled>
                 <span className="text-[12px] text-text-muted">{admin.email}</span>
               </Dropdown.Item>
-              {NAVIGATION.flatMap((group) => group.items).map((item) => (
-                <Dropdown.Item key={item.to} id={item.to} textValue={item.label}>
-                  {item.label}
-                </Dropdown.Item>
-              ))}
+              {navigation
+                .flatMap((group) => group.items)
+                .map((item) => (
+                  <Dropdown.Item key={item.to} id={item.to} textValue={item.label}>
+                    {item.label}
+                  </Dropdown.Item>
+                ))}
               {STORE_URL ? (
                 <Dropdown.Item id="store" textValue="Ver tienda">
                   Ver tienda

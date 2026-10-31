@@ -10,6 +10,7 @@ export interface NewAdminUser {
 export interface AdminUserRepository {
   findByEmail(email: string): Promise<AdminUser | null>;
   findById(id: string): Promise<AdminUser | null>;
+  list(): Promise<AdminUser[]>;
   create(input: NewAdminUser): Promise<AdminUser>;
   save(user: AdminUser): Promise<void>;
 }

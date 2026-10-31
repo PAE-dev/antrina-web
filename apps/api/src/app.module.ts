@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AdminAuthModule } from './admin-auth/admin-auth.module.js';
 import { AdminCatalogModule } from './admin-catalog/admin-catalog.module.js';
 import { AdminSalesModule } from './admin-sales/admin-sales.module.js';
+import { AdminUsersModule } from './admin-users/admin-users.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
 import { CheckoutModule } from './checkout/checkout.module.js';
 import { ConfigModule } from './config/config.module.js';
@@ -21,6 +22,7 @@ import { SiteModule } from './site/site.module.js';
     AdminAuthModule,
     AdminCatalogModule,
     AdminSalesModule,
+    AdminUsersModule,
     SiteModule,
     AdminSiteModule,
   ],

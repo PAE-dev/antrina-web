@@ -8,6 +8,7 @@ import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router';
 import { AdminLayout } from './components/AdminLayout';
 import { isUnauthorized } from './lib/api';
+import { AccountPage } from './pages/AccountPage';
 import { CategoriesPage } from './pages/CategoriesPage';
 import { CustomerDrawer } from './pages/CustomerDrawer';
 import { CustomersPage } from './pages/CustomersPage';
@@ -20,6 +21,8 @@ import { ProductDrawer } from './pages/ProductDrawer';
 import { ProductsPage } from './pages/ProductsPage';
 import { SetupMfaPage } from './pages/SetupMfaPage';
 import { SiteImagesPage } from './pages/SiteImagesPage';
+import { UserDrawer } from './pages/UserDrawer';
+import { UsersPage } from './pages/UsersPage';
 import { VerifyMfaPage } from './pages/VerifyMfaPage';
 import { WhatsAppPage } from './pages/WhatsAppPage';
 import { ME_QUERY_KEY } from './auth/session';
@@ -67,6 +70,12 @@ const router = createBrowserRouter([
       },
       { path: '/whatsapp', element: <WhatsAppPage /> },
       { path: '/portada', element: <SiteImagesPage /> },
+      {
+        path: '/usuarios',
+        element: <UsersPage />,
+        children: [{ path: ':id', element: <UserDrawer /> }],
+      },
+      { path: '/mi-cuenta', element: <AccountPage /> },
     ],
   },
   { path: '*', element: <Navigate to="/resumen" replace /> },

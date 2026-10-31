@@ -20,6 +20,7 @@ export * from './sales/orders.use-cases.js';
 export * from './sales/sales.mappers.js';
 
 export * from './admin/admin-auth.deps.js';
+export * from './admin/admin-users.use-cases.js';
 export * from './admin/create-admin-user.use-case.js';
 export * from './admin/login.use-case.js';
 export * from './admin/session.use-cases.js';

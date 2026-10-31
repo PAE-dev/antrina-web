@@ -1,4 +1,5 @@
 import {
+  type AdminRoleCode,
   type OrderChannelCode,
   type OrderStatusCode,
   type PaymentMethodCode,
@@ -9,6 +10,11 @@ import {
   type StockMovementTypeCode,
   type ZodiacSignCode,
 } from '@antrina/contracts';
+
+export const ADMIN_ROLE_LABELS: Record<AdminRoleCode, string> = {
+  OWNER: 'Propietario',
+  EDITOR: 'Editor',
+};
 
 export const ORDER_STATUS_LABELS: Record<OrderStatusCode, string> = {
   PENDING: 'Pendiente de pago',

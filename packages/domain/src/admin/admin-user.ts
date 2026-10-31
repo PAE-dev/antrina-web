@@ -10,8 +10,9 @@ export const ADMIN_SECURITY = {
   pendingSessionTtlMs: 10 * 60 * 1000,
   sessionTtlMs: 8 * 60 * 60 * 1000,
   idleTimeoutMs: 30 * 60 * 1000,
-  /** Mínimo laxo: el panel es privado (solo altas por CLI). */
+  /** Mínimo laxo: el panel es privado (altas solo por un propietario o por CLI). */
   minPasswordLength: 1,
+  maxPasswordLength: 200,
 } as const;
 
 export interface AdminUserProps {
@@ -110,6 +111,19 @@ export class AdminUser {
 
   withTotpEnabled(now: Date): AdminUser {
     return new AdminUser({ ...this.props, totpEnabledAt: now });
+  }
+
+  withProfile(profile: { email: string; name: string; role: AdminRole }): AdminUser {
+    return new AdminUser({ ...this.props, ...profile, email: normalizeEmail(profile.email) });
+  }
+
+  withActive(isActive: boolean): AdminUser {
+    return new AdminUser({ ...this.props, isActive });
+  }
+
+  /** Una contraseña nueva también levanta el bloqueo por intentos fallidos. */
+  withPasswordHash(passwordHash: string): AdminUser {
+    return new AdminUser({ ...this.props, passwordHash, failedLogins: 0, lockedUntil: null });
   }
 
   can(permission: AdminPermission): boolean {

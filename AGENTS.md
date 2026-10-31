@@ -50,10 +50,13 @@ Contextos actuales:
 - `admin-sales`: ventas (`/admin/orders`), clientes (`/admin/customers`) y resumen
   (`/admin/dashboard`, días y meses en hora de Lima). Permiso `sales.manage`. Una venta descuenta el
   stock en la misma transacción y cancelarla lo devuelve.
+- `admin-users`: usuarios del panel (`/admin/users`, permiso `admins.manage`) y contraseña propia
+  (`PUT /admin/account/password`). Debe quedar siempre un propietario activo; nadie se desactiva a sí
+  mismo. Desactivar o asignar contraseña cierra las sesiones de esa persona.
 - `checkout` (puerto `PaymentGateway`, adapter que rechaza todo) y `notification` (puerto
   `OrderNotifier`, stub de WhatsApp que solo loguea).
 
-Reservados para próximas fases: `cart`, `promotion` (entidad ya existe en dominio), `admin-users`.
+Reservados para próximas fases: `cart` y `promotion` (entidad ya existe en dominio).
 
 ### Categorías, intención, oferta y stock
 
@@ -94,8 +97,9 @@ según el `code`: `auth.locked` → 423, `auth.forbidden` → 403, `auth.*` → 
 
 ### Seguridad del panel
 
-- Sin registro público: altas con `pnpm admin:create` (CLI). Roles `OWNER` (todo) y `EDITOR`
-  (catálogo); permisos en `AdminUser.can()`.
+- Sin registro público: altas desde el panel (Usuarios, solo `OWNER`) o con `pnpm admin:create` (CLI,
+  para el primer usuario). Roles `OWNER` (todo) y `EDITOR` (catálogo y ventas, sin usuarios); permisos en
+  `AdminUser.can()`. Las contraseñas nunca se devuelven ni van al `AuditLog`: solo se asignan.
 - Contraseña Argon2id (mín. 1 carácter). 2FA TOTP es **opcional**: sin app autenticadora, el login
   abre sesión completa. Si la cuenta tiene 2FA, pide el código; la semilla se guarda cifrada con
   AES-256-GCM (`ADMIN_ENCRYPTION_KEY`).
@@ -246,7 +250,8 @@ solo en `apps/admin/src/styles.css`:
   la lista (`/productos/:id`, `nuevo` para alta) con pestañas y pie fijo; confirmaciones con
   `ConfirmDialog`; feedback con `toast`. Iconos en `components/icons.tsx`; cabeceras, selects, tarjetas
   de cifras y paginación en `components/PageKit.tsx`. Secciones: Resumen, Ventas, Productos, Inventario,
-  Categorías, Clientes, WhatsApp (sin conectar: nunca mostrar mensajes inventados) y Portada.
+  Categorías, Clientes, WhatsApp (sin conectar: nunca mostrar mensajes inventados), Portada, Usuarios
+  (solo `OWNER`) y Mi cuenta.
 
 ## Comandos
 

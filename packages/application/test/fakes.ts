@@ -35,6 +35,9 @@ export class InMemoryAdminUsers implements AdminUserRepository {
   async findById(id: string) {
     return this.users.get(id) ?? null;
   }
+  async list() {
+    return [...this.users.values()];
+  }
   async create(input: NewAdminUser) {
     const user = AdminUser.create({
       id: `admin-${++this.seq}`,
@@ -90,6 +93,13 @@ export class InMemorySessions implements AdminSessionStore {
   }
   async delete(id: string) {
     this.sessions.delete(id);
+  }
+  async deleteAllForUser(adminUserId: string, exceptSessionId?: string) {
+    for (const session of [...this.sessions.values()]) {
+      if (session.adminUserId === adminUserId && session.id !== exceptSessionId) {
+        this.sessions.delete(session.id);
+      }
+    }
   }
 }
 

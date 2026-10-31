@@ -15,4 +15,6 @@ export interface AdminSessionStore {
   markMfaVerified(id: string, expiresAt: Date, now: Date): Promise<void>;
   touch(id: string, now: Date): Promise<void>;
   delete(id: string): Promise<void>;
+  /** Cierra todas las sesiones del usuario, salvo la indicada. */
+  deleteAllForUser(adminUserId: string, exceptSessionId?: string): Promise<void>;
 }
