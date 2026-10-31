@@ -1,6 +1,6 @@
 # AGENTS.md — Antrina
 
-E-commerce de árboles bonsái de cuarzo hechos a mano en un taller familiar de Lima, con venta
+E-commerce de árboles de cuarzo y otras piezas hechas a mano en un taller familiar de Lima, con venta
 multi-país y multi-idioma. Marca: lujo artesanal zen, "Arraigado en tu intención" / "Rooted in
 intention". Monorepo pnpm + Turborepo.
 Lee esto antes de tocar código: define **dónde va cada cambio** y qué está prohibido.
@@ -45,11 +45,26 @@ Contextos actuales:
 - Catálogo público para SEO: `GET /catalog/products/:slug?locale=` (ficha; acepta el slug del idioma
   o el español), filtros `category`/`size`/`sign` en `/catalog/products` y `GET /catalog/product-index`
   (todos los activos con contenido por idioma: sitemap y feed de Google).
+- `admin-catalog` también gestiona categorías (`POST/PUT/DELETE /admin/categories`, dos niveles como
+  máximo) e inventario (`POST /admin/products/:id/stock`, `GET /admin/stock-movements`).
+- `admin-sales`: ventas (`/admin/orders`), clientes (`/admin/customers`) y resumen
+  (`/admin/dashboard`, días y meses en hora de Lima). Permiso `sales.manage`. Una venta descuenta el
+  stock en la misma transacción y cancelarla lo devuelve.
 - `checkout` (puerto `PaymentGateway`, adapter que rechaza todo) y `notification` (puerto
   `OrderNotifier`, stub de WhatsApp que solo loguea).
 
-Reservados para próximas fases: `cart`, `order`, `promotion` (entidad ya existe en dominio),
-`admin-orders`, `admin-users`.
+Reservados para próximas fases: `cart`, `promotion` (entidad ya existe en dominio), `admin-users`.
+
+### Categorías, intención, oferta y stock
+
+- `Category` es el tipo de producto (`arboles-de-cuarzo` y las que se creen en el panel), con un solo
+  nivel de subcategoría. La **intención** (`Product.intention`, código de `PRODUCT_INTENTIONS`) es otro
+  dato, opcional: no confundirlos. El filtro `category` de la API incluye las subcategorías.
+- `Product.stock` solo cambia junto a un `StockMovement` (`StockRepository`, `OrderRepository` o el
+  stock inicial al crear). `ProductRepository.update` lo ignora a propósito.
+- Oferta: `priceCents` es siempre el precio de venta y `compareAtPriceCents` el normal si hay oferta.
+  `costCents` nunca sale en DTOs públicos.
+- Las líneas de venta copian `sku` y `name`: el historial no cambia si el producto se edita.
 
 Los errores de dominio (`DomainError(message, code)`) se traducen a HTTP en `DomainExceptionFilter`
 según el `code`: `auth.locked` → 423, `auth.forbidden` → 403, `auth.*` → 401, `*not_found` → 404,
@@ -122,6 +137,10 @@ según el `code`: `auth.locked` → 423, `auth.forbidden` → 403, `auth.*` → 
 - Rutas siempre con `routes` (`apps/web/src/lib/routes.ts`): segmentos y slugs traducidos
   (`/intencion/amor` ↔ `/en/intention/love`, `/arbol/<slug>` ↔ `/en/tree/<slug>`), `es` sin prefijo
   y `en` bajo `/en`.
+- Fichas con `productPath`: los árboles en `/arbol/<slug>` y el resto en `/producto/<slug>`
+  (`/en/product/<slug>`); la ruta equivocada redirige con 301. Categorías con `categoryPath`:
+  `/categoria/<slug>`, salvo los árboles, cuyo catálogo es `/arboles`. La etiqueta de una tarjeta sale
+  de `productTag` (intención o, si no tiene, categoría). No uses textos de "árbol" en lo que no lo es.
 - Cada página en `src/pages/` es un envoltorio fino por idioma (es y `en/`) que carga datos
   (`lib/page-data.ts`), fija el estado HTTP (404 si el slug no existe, 503 si la API falla, 301 al slug
   propio del idioma) y renderiza una vista de `components/views/`.
@@ -148,63 +167,84 @@ según el `code`: `auth.locked` → 423, `auth.forbidden` → 403, `auth.*` → 
   `noindex` + `robots.txt` que lo bloquea todo. Comparte la marca con la tienda pero tiene su propia
   capa visual de herramienta de trabajo (ver "Panel" abajo).
 
-### Sistema de diseño (obligatorio): "Galería mineral"
+### Sistema de diseño (obligatorio): "Marino"
 
+Marca: taller familiar de árboles de cuarzo en Lima. Artesanal, cálido, elegante, de gama alta.
 Fuente única: `packages/ui/src/styles/tokens.css` (variables en `:root` + `@theme inline`, clases
 de tipografía y layout). `apps/web/src/styles/global.css` solo importa Tailwind, HeroUI y ese
 archivo; `apps/admin/src/styles.css` lo importa y sobrescribe lo indicado en "Panel".
 
 - **Color:** solo tokens. Nada de hex sueltos, paletas de Tailwind (`red-500`…) ni degradados.
-  Proporción ~75% piedra, ~20% carbón, ~5% amatista + arcilla.
-  - Piedra: `bg-bg`, `bg-bg-alt`, `bg-surface` · Carbón: `text-text`, `text-text-secondary`,
-    `text-text-muted`.
-  - `bg-brand` / `hover:bg-brand-hover` / `bg-brand-tint` (amatista): logo, botón principal,
-    énfasis en títulos y estados activos. `accent` en Tailwind está reservado para HeroUI (= marca).
-  - `bg-quartz` (cuarzo rosa): superficies suaves y hover de tarjetas. `text-clay` / `bg-clay`
-    (arcilla): detalles pequeños (piedras, puntos), nunca texto largo.
-  - Bloques carbón con `.surface-dark` (historia, pie): texto `text-on-dark` /
-    `text-on-dark-muted`, bordes `border-border-dark`; ahí el énfasis pasa a cuarzo.
+  - Hueso `#F1EADF` (`bg-bg`, fondo de página) · hueso oscuro `#E8DFD0` (`bg-bg-alt`, `bg-quartz`:
+    secciones alternas, tarjetas, hover) · `bg-surface` (hueso claro para campos y overlays).
+  - Azul marino `#1B2A41` (`text-text`, `bg-brand`): títulos, texto, botones y pie.
+    `text-text-secondary` y `text-text-muted` son mezclas del marino sobre hueso (contraste AA).
+    `accent` en Tailwind está reservado para HeroUI (= marino).
+  - Terracota `#B8643F` (`bg-clay`): **solo detalles** (rombo, iconos, líneas). Nunca en texto pequeño.
+  - Terracota oscuro `#9A4F2F` (`text-clay-strong`): links, etiquetas, `*énfasis*` en títulos y
+    elementos destacados del menú.
+  - Niebla `#A9B4C2` (`bg-mist`): fondos secundarios, selección de texto y texto apagado sobre marino.
+  - Bloques marino con `.surface-dark` (historia, pie): texto `text-on-dark` / `text-on-dark-muted`,
+    bordes `border-border-dark`; ahí el énfasis de títulos pasa a terracota.
   - `border-border`, `border-border-strong`.
-- **Tipografía:** solo Bricolage Grotesque (títulos, 500–600, tracking negativo), Geist (texto) y
-  Geist Mono (etiquetas). Clases `type-display` (hero), `type-h1`, `type-h2`, `type-h3`,
-  `type-body`, `type-label` (mono), `type-menu`, `type-price` (mono). Sin serif, sin itálicas y
-  sin rótulos en mayúsculas con tracking. Para resaltar 1–2 palabras de un título escribe
-  `*palabras*` en el diccionario y renderiza con `<Emphasis>` (color marca).
-- **Secciones:** cada sección abre con `SectionIndex` ("01 — Intenciones", mono + línea fina) vía
-  `SectionHeading`; el número lo pasa la página (`index`) y la etiqueta corta viene del diccionario
+- **Tipografía (Google Fonts en `BaseLayout.astro`):** solo Fraunces y DM Sans; `font-mono` apunta a
+  DM Sans (no hay mono en la tienda).
+  - Títulos: Fraunces 600, `font-variation-settings: "SOFT" 30, "WONK" 0, "opsz" 144` (también en
+    cualquier `font-display`). `type-display` (hero) y `type-h1`: 64px escritorio / 40px móvil,
+    `line-height` 1.05, `letter-spacing` -0.01em. `type-h2` 40/30px. `type-h3` 24px.
+  - Texto: `type-body`, DM Sans 400, 17px, `line-height` 1.6, marino.
+  - Etiquetas: `type-label`, DM Sans 500, 12–13px, MAYÚSCULAS, `letter-spacing` 0.3em, terracota
+    oscuro. Avisos, legales y metadatos van en `type-meta` (13px, sin mayúsculas).
+  - `type-menu` y botones: DM Sans 500, 15px. `type-price`: DM Sans 500 con cifras tabulares.
+  - Para resaltar 1–2 palabras de un título escribe `*palabras*` en el diccionario y renderiza con
+    `<Emphasis>`. Sin itálicas.
+- **Rombo de marca:** el punto de la "i" del logo. `.rombo` (7px, terracota) para viñetas y marcadores;
+  `.rombo-divider` para separadores con línea fina. Nunca puntos redondos decorativos.
+- **Secciones:** cada sección abre con `SectionIndex` (rombo + "01 — Intenciones" en estilo etiqueta)
+  vía `SectionHeading`; el número lo pasa la página (`index`) y la etiqueta corta viene del diccionario
   (`label`).
-- **Botones:** píldora (`--button-radius`). `ButtonLink variant="primary"` (amatista) como máximo
-  **una vez por vista**; el resto `secondary` (contorno), `inverse` sobre carbón o `ArrowLink`
-  (texto subrayado con flecha). En islas, `Button` de HeroUI.
+- **Botones:** píldora (`--button-radius`). `ButtonLink variant="primary"` (fondo marino, texto hueso)
+  como máximo **una vez por vista**; el resto `secondary` (borde 1.5px marino, texto marino, fondo
+  transparente), `inverse` sobre marino o `ArrowLink` (texto terracota oscuro subrayado con flecha). En
+  islas, `Button` de HeroUI.
+- **Logo:** `Logo` usa `public/brand/antrina-logo.svg` sobre fondos claros y
+  `antrina-logo-negativo.svg` sobre marino (`tone="dark"`), 44px móvil / 48px escritorio. Favicons:
+  `favicon-32.png`, `favicon-192.png`, `favicon-512.png` y `apple-touch-icon.png`.
 - **Formas:** `rounded-sm` (4px) o `rounded-md` (6px) para tarjetas, imágenes y campos. Sin
   `box-shadow` salvo foco accesible y overlays (popover, modal, drawer). Separa con líneas de 1px.
-- **Cabecera:** franja carbón fina (mensaje + ES/EN) y una sola fila (logo, menú, iconos). Menús
-  con `Popover` (mega menú con piedra en mono), búsqueda en `Modal`, móvil con `Drawer` +
-  `Accordion`. Al hacer scroll usa `.header-glass` (única transparencia permitida junto al backdrop).
+- **Cabecera:** franja marino fina (mensaje + ES/EN) y una sola fila (logo, menú, iconos). Menús con
+  `Popover`, búsqueda en `Modal`, móvil con `Drawer` + `Accordion`. El menú "Categorías" solo aparece
+  si hay productos publicados fuera de los árboles. Al hacer scroll usa `.header-glass` (única
+  transparencia permitida junto al backdrop).
 - **Espaciado:** `.section` (80px móvil / 128px escritorio), `.container-page` (máx. 1360px),
-  `.measure` (máx. 620px para texto largo). Ante la duda, más espacio.
-- **Producto:** imagen 4:5 `rounded-md` sobre `bg-bg-alt`, nombre en Geist 500, precio en mono,
-  intención como `type-label`, zoom 1.03 en 400ms. **Nunca** descuentos visibles (ni tachados ni %).
-  Etiquetas permitidas con `Chip`: `NEW`, `CUSTOMIZABLE`, `LIMITED_EDITION`.
-- **Imágenes:** mientras no haya fotos reales, `PhotoPlaceholder` (rectángulo `bg-bg-alt` + texto
-  mono). Nunca ilustraciones genéricas ni recortes sobre blanco puro.
-- **Iconos:** línea fina, `strokeWidth` 1.5, color `text`. Sin emojis en la UI.
+  `.measure` (máx. 620px para texto largo). Mucho espacio: ante la duda, más.
+- **Producto:** fotos grandes, imagen 4:5 `rounded-md` sobre `bg-bg-alt`, nombre en DM Sans 500, precio
+  en `type-price`, etiqueta con `type-label`, zoom 1.03 en 400ms. Con oferta, precio normal tachado y
+  discreto junto al de oferta; **nunca** porcentajes ni etiquetas de descuento. Etiquetas permitidas
+  con `Chip`: `NEW`, `CUSTOMIZABLE`, `LIMITED_EDITION`.
+- **Imágenes:** mientras no haya fotos reales, `PhotoPlaceholder` (rectángulo `bg-bg-alt` + texto).
+  Nunca ilustraciones genéricas ni recortes sobre blanco puro.
+- **Iconos:** línea fina, `strokeWidth` 1.5, color `text`. Sin emojis, sin degradados y sin sombras
+  fuertes.
 
 #### Panel (`apps/admin`)
 
 Lo anterior es para la tienda. El panel es una herramienta densa y neutra; sus excepciones viven
 solo en `apps/admin/src/styles.css`:
 
-- **Tipografía:** Geist Variable en todo (Geist Mono para SKU, URL y claves), sin Bricolage ni
+- **Tipografía:** Geist Variable en todo (Geist Mono para SKU, URL y claves), sin Fraunces ni
   `type-*`. Clases `panel-title`, `panel-heading`, `panel-meta`, `panel-num` (cifras tabulares) y
   `panel-card`. Base 14px.
-- **Color:** superficies grises cálidas y blanco; amatista solo en acción principal y estado activo.
+- **Color:** superficies grises cálidas y blanco; azul marino solo en acción principal y estado
+  activo.
   Estados con `success`/`warning`/`danger` (+ `-tint`) vía `StatusBadge`.
 - **Formas:** radios 6/8px, también en botones (`--button-radius`, sin píldora); sombra solo en
   overlays (drawer, modal, popover).
 - **Patrones:** lista en tabla compacta (lista simple en móvil); crear/editar en `Drawer` lateral sobre
   la lista (`/productos/:id`, `nuevo` para alta) con pestañas y pie fijo; confirmaciones con
-  `ConfirmDialog`; feedback con `toast`. Iconos en `components/icons.tsx`.
+  `ConfirmDialog`; feedback con `toast`. Iconos en `components/icons.tsx`; cabeceras, selects, tarjetas
+  de cifras y paginación en `components/PageKit.tsx`. Secciones: Resumen, Ventas, Productos, Inventario,
+  Categorías, Clientes, WhatsApp (sin conectar: nunca mostrar mensajes inventados) y Portada.
 
 ## Comandos
 
@@ -212,8 +252,9 @@ solo en `apps/admin/src/styles.css`:
 nvm use                 # Node 22 (.nvmrc)
 pnpm install
 pnpm services:up        # Postgres 16 (:5433) + MinIO (:9000, consola :9001) + bucket público
-pnpm db:migrate         # migraciones Prisma (apps/api)
-pnpm db:seed            # intenciones + árboles de cuarzo de ejemplo
+pnpm db:migrate         # migraciones Prisma en local (apps/api)
+pnpm --filter @antrina/api db:deploy   # aplica migraciones en producción; Vercel no lo hace solo
+pnpm db:seed            # categoría "Árboles de cuarzo" + árboles de ejemplo
 pnpm admin:create --email <correo> --name <nombre> --role OWNER   # alta de administrador
 pnpm dev                # web :4321 + admin :5174 + api :3001 (+ watch de packages)
 pnpm dev:admin          # solo panel + api
@@ -228,7 +269,8 @@ también a `globalPassThroughEnv` en `turbo.json`.
 
 ## Antes de terminar una tarea
 
-`pnpm typecheck && pnpm lint && pnpm test && pnpm build` deben pasar. Si tocaste UI, revisa `/` y
+`pnpm typecheck && pnpm lint && pnpm test && pnpm build` deben pasar (para `pnpm dev` antes del
+build: borra `apps/api/dist` y tumba la API). Si tocaste UI, revisa `/` y
 `/en` en el navegador a 375px y 1440px; si tocaste el panel, `http://localhost:5174` a las mismas
 anchuras.
 
