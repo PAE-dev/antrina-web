@@ -10,9 +10,9 @@ export class ListCategoriesUseCase {
   constructor(private readonly categories: CategoryRepository) {}
 
   async execute(input: ListCategoriesInput): Promise<CategoryDto[]> {
-    const categories = await this.categories.findAll();
-    return categories
-      .toSorted((a, b) => a.sortOrder - b.sortOrder)
-      .map((category) => toCategoryDto(category, input.locale));
+    const rows = await this.categories.findAllWithCounts();
+    return rows
+      .toSorted((a, b) => a.category.sortOrder - b.category.sortOrder)
+      .map((row) => toCategoryDto(row, input.locale));
   }
 }

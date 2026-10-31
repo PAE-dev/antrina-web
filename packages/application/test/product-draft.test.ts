@@ -6,12 +6,16 @@ const base: UpsertProductRequest = {
   sku: 'ant-amor-01',
   categoryId: 'cat-1',
   priceCents: 45000,
+  compareAtPriceCents: null,
+  costCents: null,
   currency: 'PEN',
   stock: 3,
+  lowStockThreshold: 3,
   status: 'DRAFT',
   isFeatured: false,
   badge: null,
   size: 'STANDARD',
+  intention: 'amor',
   signs: ['TAURUS'],
   origin: '  Taller Antrina, Lima ',
   content: {
@@ -68,6 +72,31 @@ describe('borrador de producto desde el panel', () => {
         content: { es: { ...base.content.es, slug: 'con espacios' }, en: null },
       }),
     ).toThrow(expect.objectContaining({ code: 'product.invalid_slug' }));
+  });
+
+  it('acepta una oferta solo si es menor que el precio normal', () => {
+    const draft = toProductDraft({ ...base, priceCents: 40000, compareAtPriceCents: 45000 });
+    expect(draft.price.amountInCents).toBe(40000);
+    expect(draft.compareAtPrice?.amountInCents).toBe(45000);
+    expect(() => toProductDraft({ ...base, compareAtPriceCents: 45000 })).toThrow(
+      expect.objectContaining({ code: 'product.invalid_compare_at_price' }),
+    );
+    expect(() => toProductDraft({ ...base, compareAtPriceCents: 30000 })).toThrow(
+      expect.objectContaining({ code: 'product.invalid_compare_at_price' }),
+    );
+  });
+
+  it('valida la intención y permite productos sin ella', () => {
+    expect(toProductDraft({ ...base, intention: null }).intention).toBeNull();
+    expect(() => toProductDraft({ ...base, intention: 'suerte' as never })).toThrow(
+      expect.objectContaining({ code: 'input.invalid' }),
+    );
+  });
+
+  it('rechaza una alerta de stock negativa', () => {
+    expect(() => toProductDraft({ ...base, lowStockThreshold: -1 })).toThrow(
+      expect.objectContaining({ code: 'product.invalid_low_stock_threshold' }),
+    );
   });
 
   it('limpia el texto alternativo de las fotos', () => {

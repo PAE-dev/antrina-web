@@ -4,10 +4,10 @@ import { ArrowLink, ProductList } from '@antrina/ui';
 import { STONES, type StoneEntry } from '../../content/stones';
 import { getDictionary } from '../../i18n/dictionaries';
 import { getPageCopy } from '../../i18n/pages';
-import { intentionByCategory, intentionLabel, SIGNS } from '../../i18n/taxonomy';
+import { intentionByCategory, productTag, SIGNS } from '../../i18n/taxonomy';
 import StoreLayout from '../../layouts/StoreLayout.astro';
 import { cardImage } from '../../lib/images';
-import { alternatesFor, routes } from '../../lib/routes';
+import { alternatesFor, productPath, routes } from '../../lib/routes';
 import { article, breadcrumbs, type Crumb } from '../../lib/structured-data';
 import LinkPills from '../LinkPills.astro';
 import PageHeader from '../PageHeader.astro';
@@ -128,8 +128,8 @@ const facts = [
           locale={locale}
           badgeLabels={t.badges}
           imagePlaceholderLabel={t.productPhoto}
-          intentionOf={(item) => intentionLabel(locale, item.categorySlug)}
-          productHref={(item) => routes.product(locale, item.slug)}
+          intentionOf={(item) => productTag(locale, item)}
+          productHref={(item) => productPath(locale, item.slug, item.categorySlug)}
           imageLoader={cardImage}
         />
       </div>

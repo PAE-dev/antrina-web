@@ -2,6 +2,7 @@ import { type ProductSummaryDto } from '@antrina/contracts';
 import {
   type ImageUrlResolver,
   type Locale,
+  type ProductIntention,
   type ProductRepository,
   type ProductSize,
   type ZodiacSign,
@@ -11,6 +12,7 @@ import { toProductSummary } from './catalog.mappers.js';
 export interface ListProductsInput {
   locale: Locale;
   categorySlug?: string;
+  intention?: ProductIntention;
   size?: ProductSize;
   sign?: ZodiacSign;
   featuredOnly?: boolean;
@@ -29,6 +31,7 @@ export class ListProductsUseCase {
     const limit = Math.min(Math.max(input.limit ?? MAX_LIMIT, 1), MAX_LIMIT);
     const products = await this.products.findMany({
       ...(input.categorySlug ? { categorySlug: input.categorySlug } : {}),
+      ...(input.intention ? { intention: input.intention } : {}),
       ...(input.size ? { size: input.size } : {}),
       ...(input.sign ? { sign: input.sign } : {}),
       ...(input.featuredOnly ? { featuredOnly: true } : {}),

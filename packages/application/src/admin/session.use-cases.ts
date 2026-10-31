@@ -1,5 +1,6 @@
 import { type AdminMeDto } from '@antrina/contracts';
 import {
+  ADMIN_PERMISSIONS,
   type AdminPermission,
   type AdminSessionStore,
   type AdminUserRepository,
@@ -14,8 +15,6 @@ export interface AdminPrincipal extends AdminMeDto {
   sessionId: string;
   permissions: AdminPermission[];
 }
-
-const ALL_PERMISSIONS: AdminPermission[] = ['catalog.manage', 'admins.manage'];
 
 /** Resuelve el administrador de una cookie de sesión completa (2FA verificado) y renueva su actividad. */
 export class GetCurrentAdminUseCase {
@@ -47,7 +46,7 @@ export class GetCurrentAdminUseCase {
       name: user.name,
       role: user.role,
       sessionId: session.id,
-      permissions: ALL_PERMISSIONS.filter((permission) => user.can(permission)),
+      permissions: ADMIN_PERMISSIONS.filter((permission) => user.can(permission)),
     };
   }
 }

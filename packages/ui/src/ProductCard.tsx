@@ -10,7 +10,7 @@ interface ProductCardProps {
   product: ProductSummaryDto;
   href: string;
   locale: string;
-  /** Intención del árbol (p. ej. "Abundancia"), se muestra como etiqueta mono. */
+  /** Intención o categoría del producto, se muestra como etiqueta de marca. */
   intention: string;
   badgeLabels: BadgeLabels;
   imagePlaceholderLabel: string;
@@ -18,7 +18,7 @@ interface ProductCardProps {
   imageLoader?: ImageLoader;
 }
 
-/** Sin descuentos visibles: nunca mostrar precio tachado ni porcentajes. */
+/** Con oferta se ve el precio normal tachado, discreto. Nunca porcentajes ni etiquetas de descuento. */
 export function ProductCard({
   product,
   href,
@@ -62,11 +62,18 @@ export function ProductCard({
       <div className="flex flex-col gap-1">
         <div className="flex items-baseline justify-between gap-4">
           <h3 className="text-[16px] font-medium leading-snug tracking-[-0.015em] text-text">
-            <a href={href} className="transition-colors hover:text-brand">
+            <a href={href} className="transition-colors hover:text-clay-strong">
               {product.name}
             </a>
           </h3>
-          <p className="type-price shrink-0">{formatMoney(product.price, locale)}</p>
+          <p className="type-price flex shrink-0 flex-col items-end">
+            <span>{formatMoney(product.price, locale)}</span>
+            {product.compareAtPrice && (
+              <del className="text-[13px] font-normal text-text-muted">
+                {formatMoney(product.compareAtPrice, locale)}
+              </del>
+            )}
+          </p>
         </div>
         <p className="type-label">{intention}</p>
       </div>

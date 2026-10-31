@@ -1,7 +1,7 @@
 import { type APIRoute } from 'astro';
 import { intentionLabel } from '../../i18n/taxonomy';
 import { CATALOG_CACHE_CONTROL, getProductIndex } from '../../lib/catalog';
-import { routes } from '../../lib/routes';
+import { productPath, TREES_CATEGORY_SLUG } from '../../lib/routes';
 import { absoluteUrl, BRAND } from '../../lib/site';
 
 export const prerender = false;
@@ -41,25 +41,33 @@ export const GET: APIRoute = async () => {
     .map((product) => {
       const content = product.content.es;
       const [image, ...extraImages] = product.imageUrls;
-      const intention = intentionLabel('es', product.categorySlug);
+      const intention = product.intention ? intentionLabel('es', product.intention) : '';
+      const isTree = product.categorySlug === TREES_CATEGORY_SLUG;
+      const money = ({ amount, currency }: typeof product.price) =>
+        `${(amount / 100).toFixed(2)} ${currency}`;
       return [
         '<item>',
         tag('id', product.sku),
         plain('title', content.name.slice(0, TITLE_MAX)),
         plain('description', content.description.slice(0, DESCRIPTION_MAX)),
-        plain('link', absoluteUrl(routes.product('es', content.slug))),
+        plain('link', absoluteUrl(productPath('es', content.slug, product.categorySlug))),
         tag('image_link', image ?? ''),
         ...extraImages
           .slice(0, ADDITIONAL_IMAGES_MAX)
           .map((url) => tag('additional_image_link', url)),
         tag('availability', product.isPurchasable ? 'in_stock' : 'out_of_stock'),
-        tag('price', `${(product.price.amount / 100).toFixed(2)} ${product.price.currency}`),
+        // Con oferta, Google pide el precio normal en `price` y la oferta en `sale_price`.
+        tag('price', money(product.compareAtPrice ?? product.price)),
+        ...(product.compareAtPrice ? [tag('sale_price', money(product.price))] : []),
         tag('brand', BRAND.name),
         tag('condition', 'new'),
         tag('identifier_exists', 'no'),
         tag('google_product_category', GOOGLE_PRODUCT_CATEGORY),
-        tag('product_type', intention ? `Árboles de cuarzo > ${intention}` : 'Árboles de cuarzo'),
-        tag('material', 'Cuarzo y piedras naturales'),
+        tag(
+          'product_type',
+          intention ? `${product.categoryName} > ${intention}` : product.categoryName,
+        ),
+        ...(isTree ? [tag('material', 'Cuarzo y piedras naturales')] : []),
         '</item>',
       ].join('');
     });
@@ -70,7 +78,7 @@ export const GET: APIRoute = async () => {
     '<channel>',
     `<title>${xml(BRAND.name)}</title>`,
     `<link>${xml(absoluteUrl('/'))}</link>`,
-    '<description>Árboles de cuarzo hechos a mano en Lima</description>',
+    '<description>Árboles de cuarzo y piezas hechas a mano en Lima</description>',
     ...items,
     '</channel>',
     '</rss>',

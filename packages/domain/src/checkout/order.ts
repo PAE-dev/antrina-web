@@ -1,14 +1,14 @@
 import { type Locale } from '../shared/locale.js';
 import { type Money } from '../shared/money.js';
 
-export interface OrderLine {
+export interface CheckoutLine {
   productId: string;
   name: string;
   quantity: number;
   unitPrice: Money;
 }
 
-export interface Customer {
+export interface CheckoutCustomer {
   fullName: string;
   email: string;
   /** Número en formato E.164 (ej. +51987654321), usado para WhatsApp. */
@@ -22,8 +22,8 @@ export interface Customer {
 export interface OrderSummary {
   id: string;
   locale: Locale;
-  customer: Customer;
-  lines: OrderLine[];
+  customer: CheckoutCustomer;
+  lines: CheckoutLine[];
   total: Money;
   createdAt: Date;
 }

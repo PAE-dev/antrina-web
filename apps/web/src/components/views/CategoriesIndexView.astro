@@ -1,0 +1,81 @@
+---
+import { type CategoryDto, type LocaleCode } from '@antrina/contracts';
+import { getPageCopy } from '../../i18n/pages';
+import StoreLayout from '../../layouts/StoreLayout.astro';
+import { visibleRootCategories } from '../../lib/page-data';
+import { alternatesFor, categoryPath, routes } from '../../lib/routes';
+import { breadcrumbs, type Crumb } from '../../lib/structured-data';
+import PageHeader from '../PageHeader.astro';
+
+interface Props {
+  locale: LocaleCode;
+  categories: CategoryDto[];
+}
+
+const { locale, categories } = Astro.props;
+const copy = getPageCopy(locale);
+const text = copy.category;
+const roots = visibleRootCategories(categories);
+const trail: Crumb[] = [
+  { name: copy.home, path: routes.home(locale) },
+  { name: text.label, path: routes.category(locale) },
+];
+---
+
+<StoreLayout
+  locale={locale}
+  title={text.metaTitle}
+  description={text.metaDescription}
+  alternates={alternatesFor((code) => routes.category(code))}
+  jsonLd={[breadcrumbs(trail)]}
+>
+  <PageHeader
+    crumbs={trail}
+    crumbsLabel={copy.breadcrumb}
+    label={text.label}
+    title={text.title}
+    intro={text.intro}
+  />
+  <section class="border-t border-border pb-20 pt-10 md:pb-32 md:pt-12">
+    <div class="container-page">
+      {roots.length > 0 ? (
+        <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {roots.map((category) => {
+            const children = categories.filter(
+              (child) => child.parentId === category.id && child.productCount > 0,
+            );
+            return (
+              <li class="flex flex-col gap-6 rounded-md border border-border p-6 transition-colors duration-300 hover:bg-quartz md:p-8">
+                <a href={categoryPath(locale, category)} class="flex flex-col gap-3">
+                  <span aria-hidden="true" class="rombo" />
+                  <span class="type-h3">{category.name}</span>
+                  {category.description && (
+                    <span class="text-[14.5px] leading-relaxed text-text-secondary">
+                      {category.description}
+                    </span>
+                  )}
+                </a>
+                {children.length > 0 && (
+                  <ul class="flex flex-wrap gap-x-4 gap-y-1.5 text-[14.5px]">
+                    {children.map((child) => (
+                      <li>
+                        <a
+                          href={routes.category(locale, child.urlSlug)}
+                          class="text-clay-strong underline decoration-clay/50 underline-offset-4 hover:decoration-current"
+                        >
+                          {child.name}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p class="type-body">{text.empty}</p>
+      )}
+    </div>
+  </section>
+</StoreLayout>

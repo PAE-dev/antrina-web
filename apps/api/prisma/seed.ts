@@ -7,18 +7,16 @@ const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
 });
 
-/** Las categorías del catálogo son las intenciones de cada árbol. */
-const categories = [
-  { slug: 'abundancia', es: 'Abundancia', en: 'Abundance' },
-  { slug: 'amor', es: 'Amor', en: 'Love' },
-  { slug: 'proteccion', es: 'Protección', en: 'Protection' },
-  { slug: 'felicidad', es: 'Felicidad', en: 'Happiness' },
-  { slug: 'mixto', es: 'Mixto', en: 'Mixed' },
-];
+/** Categoría de los árboles. Las demás se crean desde el panel. */
+const TREES = {
+  slug: 'arboles-de-cuarzo',
+  es: { name: 'Árboles de cuarzo', slug: 'arboles-de-cuarzo' },
+  en: { name: 'Quartz trees', slug: 'quartz-trees' },
+};
 
 interface SeedProduct {
   sku: string;
-  category: string;
+  intention: string;
   priceCents: number;
   stock: number;
   featured?: boolean;
@@ -41,7 +39,7 @@ const products: SeedProduct[] = [
   {
     sku: 'BON-CIT-STD',
     signs: ['GEMINI'],
-    category: 'abundancia',
+    intention: 'abundancia',
     priceCents: 28900,
     stock: 10,
     featured: true,
@@ -59,7 +57,7 @@ const products: SeedProduct[] = [
   {
     sku: 'BON-ROS-STD',
     signs: ['TAURUS'],
-    category: 'amor',
+    intention: 'amor',
     priceCents: 28900,
     stock: 12,
     featured: true,
@@ -78,7 +76,7 @@ const products: SeedProduct[] = [
   {
     sku: 'BON-TUR-STD',
     signs: ['CAPRICORN', 'AQUARIUS'],
-    category: 'proteccion',
+    intention: 'proteccion',
     priceCents: 31900,
     stock: 8,
     featured: true,
@@ -97,7 +95,7 @@ const products: SeedProduct[] = [
   {
     sku: 'BON-CHK-FIR',
     signs: [],
-    category: 'mixto',
+    intention: 'mixto',
     priceCents: 89000,
     stock: 3,
     featured: true,
@@ -116,7 +114,7 @@ const products: SeedProduct[] = [
   {
     sku: 'BON-COR-STD',
     signs: ['ARIES'],
-    category: 'felicidad',
+    intention: 'felicidad',
     priceCents: 27900,
     stock: 10,
     es: {
@@ -133,7 +131,7 @@ const products: SeedProduct[] = [
   {
     sku: 'BON-AME-MIN',
     signs: ['AQUARIUS'],
-    category: 'proteccion',
+    intention: 'proteccion',
     priceCents: 14900,
     stock: 20,
     es: {
@@ -150,7 +148,7 @@ const products: SeedProduct[] = [
   {
     sku: 'BON-ROS-MIN',
     signs: ['TAURUS'],
-    category: 'amor',
+    intention: 'amor',
     priceCents: 14900,
     stock: 20,
     es: {
@@ -167,7 +165,7 @@ const products: SeedProduct[] = [
   {
     sku: 'BON-PIR-GRA',
     signs: [],
-    category: 'abundancia',
+    intention: 'abundancia',
     priceCents: 46900,
     stock: 5,
     badge: 'CUSTOMIZABLE',
@@ -185,47 +183,47 @@ const products: SeedProduct[] = [
 ];
 
 async function main(): Promise<void> {
-  const categoryIds = new Map<string, string>();
+  const category = await prisma.category.upsert({
+    where: { slug: TREES.slug },
+    update: {},
+    create: { slug: TREES.slug, sortOrder: 0 },
+  });
 
-  for (const [index, category] of categories.entries()) {
-    const saved = await prisma.category.upsert({
-      where: { slug: category.slug },
-      update: { sortOrder: index },
-      create: { slug: category.slug, sortOrder: index },
+  for (const locale of ['es', 'en'] as const) {
+    await prisma.categoryTranslation.upsert({
+      where: { categoryId_locale: { categoryId: category.id, locale } },
+      update: TREES[locale],
+      create: { categoryId: category.id, locale, ...TREES[locale] },
     });
-    categoryIds.set(category.slug, saved.id);
-
-    for (const locale of ['es', 'en'] as const) {
-      await prisma.categoryTranslation.upsert({
-        where: { categoryId_locale: { categoryId: saved.id, locale } },
-        update: { name: category[locale] },
-        create: { categoryId: saved.id, locale, name: category[locale] },
-      });
-    }
   }
 
   for (const product of products) {
-    const categoryId = categoryIds.get(product.category);
-    if (!categoryId) throw new Error(`Categoría desconocida: ${product.category}`);
-
     const data = {
-      categoryId,
+      categoryId: category.id,
       priceCents: product.priceCents,
       compareAtPriceCents: null,
       currency: 'PEN' as const,
-      stock: product.stock,
       status: 'ACTIVE' as const,
       isFeatured: product.featured ?? false,
       badge: product.badge ?? null,
       origin: 'Taller Antrina, Lima',
       size: SIZE_BY_SUFFIX[product.sku.split('-').at(-1) ?? ''] ?? null,
+      intention: product.intention,
       signs: product.signs,
     };
 
     const saved = await prisma.product.upsert({
       where: { sku: product.sku },
+      // El stock solo se fija al crear: volver a sembrar no pisa las existencias reales.
       update: data,
-      create: { sku: product.sku, ...data },
+      create: {
+        sku: product.sku,
+        ...data,
+        stock: product.stock,
+        stockMovements: {
+          create: { type: 'INITIAL', quantity: product.stock, stockAfter: product.stock },
+        },
+      },
     });
 
     for (const locale of ['es', 'en'] as const) {
@@ -237,7 +235,7 @@ async function main(): Promise<void> {
     }
   }
 
-  console.log(`Seed listo: ${categories.length} intenciones, ${products.length} árboles.`);
+  console.log(`Seed listo: ${products.length} árboles en "${TREES.es.name}".`);
 }
 
 main()

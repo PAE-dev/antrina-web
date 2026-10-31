@@ -39,28 +39,69 @@ enum DiscountType {
   FIXED_AMOUNT
 }
 
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum OrderChannel {
+  WHATSAPP
+  STORE
+  INSTAGRAM
+  FACEBOOK
+  IN_PERSON
+  OTHER
+}
+
+enum PaymentMethod {
+  YAPE
+  PLIN
+  TRANSFER
+  CASH
+  CARD
+  OTHER
+}
+
+enum StockMovementType {
+  INITIAL
+  RESTOCK
+  SALE
+  SALE_CANCELLED
+  ADJUSTMENT
+}
+
+/// Tipo de producto: categoría y, como máximo, un nivel de subcategoría (`parentId`).
 model Category {
   id           String                @id @default(cuid())
+  /// Slug en español; el de cada idioma vive en la traducción.
   slug         String                @unique
   sortOrder    Int                   @default(0)
   parentId     String?
-  parent       Category?             @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  parent       Category?             @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
   children     Category[]            @relation("CategoryTree")
   translations CategoryTranslation[]
   products     Product[]
   createdAt    DateTime              @default(now())
   updatedAt    DateTime              @updatedAt
+
+  @@index([parentId])
 }
 
 /// locale es un código corto ('es', 'en'). Se valida en el dominio; no es enum para no migrar al sumar idiomas.
 model CategoryTranslation {
-  id         String   @id @default(cuid())
-  categoryId String
-  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  locale     String
-  name       String
+  id          String   @id @default(cuid())
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  locale      String
+  name        String
+  slug        String
+  description String?
 
   @@unique([categoryId, locale])
+  @@unique([locale, slug])
 }
 
 model Product {
@@ -68,23 +109,114 @@ model Product {
   sku                 String               @unique
   categoryId          String
   category            Category             @relation(fields: [categoryId], references: [id])
+  /// Precio de venta actual. Si hay oferta, `compareAtPriceCents` guarda el precio normal.
   priceCents          Int
   compareAtPriceCents Int?
+  /// Costo interno para calcular el margen. Nunca se expone en la tienda.
+  costCents           Int?
   currency            Currency             @default(PEN)
+  /// Existencias actuales. Solo cambia junto a un StockMovement (ventas, entradas y ajustes).
   stock               Int                  @default(0)
+  /// Con este stock o menos, el panel avisa de stock bajo.
+  lowStockThreshold   Int                  @default(3)
   status              ProductStatus        @default(DRAFT)
   isFeatured          Boolean              @default(false)
   badge               ProductBadge?
   size                ProductSize?
+  /// Código de intención ('abundancia', 'amor'…), opcional. Se valida en el dominio.
+  intention           String?
   /// Códigos de signo zodiacal ('ARIES', 'TAURUS'…). Se validan en el dominio.
   signs               String[]             @default([])
   origin              String?
   translations        ProductTranslation[]
   images              ProductImage[]
+  orderLines          OrderLine[]
+  stockMovements      StockMovement[]
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
 
   @@index([status, isFeatured])
+  @@index([categoryId])
+  @@index([intention])
+}
+
+/// Historial de existencias: cada cambio de `Product.stock` deja una fila.
+model StockMovement {
+  id          String            @id @default(cuid())
+  productId   String
+  product     Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  type        StockMovementType
+  /// Positivo si entra, negativo si sale.
+  quantity    Int
+  stockAfter  Int
+  note        String?
+  orderId     String?
+  order       Order?            @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  adminUserId String?
+  adminUser   AdminUser?        @relation(fields: [adminUserId], references: [id], onDelete: SetNull)
+  createdAt   DateTime          @default(now())
+
+  @@index([productId, createdAt])
+  @@index([createdAt])
+}
+
+/// Cliente de la tienda. El teléfono (E.164) es la clave para unirlo con WhatsApp.
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?  @unique
+  email     String?
+  note      String?
+  orders    Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+}
+
+/// Venta, registrada a mano desde el panel o, en el futuro, desde el checkout de la tienda.
+model Order {
+  id            String          @id @default(cuid())
+  number        Int             @unique @default(autoincrement())
+  status        OrderStatus     @default(PAID)
+  channel       OrderChannel    @default(WHATSAPP)
+  paymentMethod PaymentMethod?
+  customerId    String?
+  customer      Customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  currency      Currency        @default(PEN)
+  subtotalCents Int
+  shippingCents Int             @default(0)
+  discountCents Int             @default(0)
+  totalCents    Int
+  note          String?
+  /// Fecha real de la venta; puede ser anterior a cuando se registró.
+  soldAt        DateTime        @default(now())
+  createdById   String?
+  createdBy     AdminUser?      @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  lines         OrderLine[]
+  movements     StockMovement[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([status, soldAt])
+  @@index([soldAt])
+  @@index([customerId])
+}
+
+/// `sku` y `name` son copia del momento de la venta: el producto puede cambiar después.
+model OrderLine {
+  id             String  @id @default(cuid())
+  orderId        String
+  order          Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId      String
+  product        Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  sku            String
+  name           String
+  quantity       Int
+  unitPriceCents Int
+
+  @@index([orderId])
+  @@index([productId])
 }
 
 /// Foto de producto guardada en el almacenamiento de objetos (MinIO local / Cloudflare R2).
@@ -162,22 +294,24 @@ enum AdminRole {
 
 /// Personal del panel de administración. Cuentas separadas de los clientes de la tienda.
 model AdminUser {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  name          String
-  passwordHash  String
-  role          AdminRole      @default(EDITOR)
+  id             String          @id @default(cuid())
+  email          String          @unique
+  name           String
+  passwordHash   String
+  role           AdminRole       @default(EDITOR)
   /// Secreto TOTP cifrado con AES-256-GCM. Pendiente de confirmar mientras totpEnabledAt sea null.
-  totpSecretEnc String?
-  totpEnabledAt DateTime?
-  failedLogins  Int            @default(0)
-  lockedUntil   DateTime?
-  isActive      Boolean        @default(true)
-  lastLoginAt   DateTime?
-  sessions      AdminSession[]
-  auditLogs     AuditLog[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  totpSecretEnc  String?
+  totpEnabledAt  DateTime?
+  failedLogins   Int             @default(0)
+  lockedUntil    DateTime?
+  isActive       Boolean         @default(true)
+  lastLoginAt    DateTime?
+  sessions       AdminSession[]
+  auditLogs      AuditLog[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  stockMovements StockMovement[]
+  orders         Order[]
 }
 
 /// Sesión del panel. Solo se guarda el hash SHA-256 del token de la cookie.

@@ -12,6 +12,7 @@ export interface Dictionary {
   shippingNote: string;
   header: HeaderLabels;
   nav: {
+    categories: string;
     intention: string;
     sign: string;
     size: string;
@@ -80,6 +81,7 @@ const es: Dictionary = {
     language: 'Idioma',
   },
   nav: {
+    categories: 'Categorías',
     intention: 'Por intención',
     sign: 'Por signo',
     size: 'Tamaños',
@@ -223,6 +225,7 @@ const en: Dictionary = {
     language: 'Language',
   },
   nav: {
+    categories: 'Categories',
     intention: 'By intention',
     sign: 'By sign',
     size: 'Sizes',

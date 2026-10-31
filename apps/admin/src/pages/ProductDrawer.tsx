@@ -5,8 +5,6 @@ import {
   Input,
   InputGroup,
   Label,
-  ListBox,
-  Select,
   Skeleton,
   Switch,
   Tabs,
@@ -23,23 +21,32 @@ import {
   type AdminCategoryDto,
   type AdminProductDto,
   type ProductBadgeCode,
+  type ProductIntentionCode,
   type ProductSizeCode,
   type ProductStatusCode,
+  type StockMovementListResponse,
   type UpsertProductRequest,
   type ZodiacSignCode,
 } from '@antrina/contracts';
+import { formatMoney } from '@antrina/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
+import { CategoryDialog, type CategoryDialogState } from '../components/CategoryDialog';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ErrorNotice } from '../components/ErrorNotice';
+import { IconPlus } from '../components/icons';
+import { Choice } from '../components/PageKit';
 import { PhotoManager } from '../components/PhotoManager';
 import { StatusBadge } from '../components/StatusBadge';
+import { StockDialog, type StockTarget } from '../components/StockDialog';
 import { api, STORE_URL } from '../lib/api';
 import {
   BADGE_LABELS,
   centsToInput,
   formatDate,
+  INTENTION_LABELS,
+  MOVEMENT_LABELS,
   parsePriceToCents,
   SIGN_LABELS,
   SIZE_LABELS,
@@ -48,16 +55,22 @@ import {
 } from '../lib/format';
 
 type Lang = 'es' | 'en';
-type Tab = 'detalles' | 'fotos' | 'google';
+type Tab = 'detalles' | 'fotos' | 'historial' | 'google';
 
-const TABS: readonly Tab[] = ['detalles', 'fotos', 'google'];
+const TABS: readonly Tab[] = ['detalles', 'fotos', 'historial', 'google'];
 /** Lo que Google suele mostrar antes de cortar con "…". */
 const META_TITLE_IDEAL = 60;
 const META_DESCRIPTION_IDEAL = 155;
 
 const NEW_ID = 'nuevo';
 const CLOSE_ANIMATION_MS = 220;
-const STORE_PATH: Record<Lang, string> = { es: '/arbol/', en: '/en/tree/' };
+const TREES_CATEGORY_SLUG = 'arboles-de-cuarzo';
+const STORE_PATH: Record<'tree' | 'other', Record<Lang, string>> = {
+  tree: { es: '/arbol/', en: '/en/tree/' },
+  other: { es: '/producto/', en: '/en/product/' },
+};
+const NO_SUBCATEGORY = 'NONE';
+const DEFAULT_LOW_STOCK = '3';
 const STORE_HOST = STORE_URL.replace(/^https?:\/\//, '') || 'antrina.vercel.app';
 
 interface ContentForm {
@@ -70,18 +83,29 @@ interface ContentForm {
 
 interface FormState {
   sku: string;
-  categoryId: string;
+  /** Categoría principal; `subcategoryId` es la subcategoría si la hay. */
+  rootCategoryId: string;
+  subcategoryId: string;
+  /** Precio normal. */
   price: string;
+  /** Precio de oferta; vacío = sin oferta. */
+  offerPrice: string;
+  cost: string;
+  /** Stock inicial al crear. Después se cambia con movimientos de inventario. */
   stock: string;
+  lowStockThreshold: string;
   status: ProductStatusCode;
   isFeatured: boolean;
   badge: ProductBadgeCode | 'NONE';
   size: ProductSizeCode | 'NONE';
+  intention: ProductIntentionCode | 'NONE';
   signs: ZodiacSignCode[];
   origin: string;
   content: Record<Lang, ContentForm>;
   /** Mientras no se edite a mano, el slug sigue al nombre. */
   slugEdited: Record<Lang, boolean>;
+  /** Mientras no se edite a mano, el SKU sigue al nombre. */
+  skuEdited: boolean;
 }
 
 const EMPTY_CONTENT: ContentForm = {
@@ -109,41 +133,58 @@ function contentRequest(content: ContentForm) {
   };
 }
 
-function initialState(product?: AdminProductDto): FormState {
+function initialState(
+  product: AdminProductDto | undefined,
+  categories: AdminCategoryDto[],
+): FormState {
   if (!product) {
     return {
       sku: '',
-      categoryId: '',
+      rootCategoryId: '',
+      subcategoryId: NO_SUBCATEGORY,
       price: '',
+      offerPrice: '',
+      cost: '',
       stock: '1',
+      lowStockThreshold: DEFAULT_LOW_STOCK,
       status: 'DRAFT',
       isFeatured: false,
       badge: 'NONE',
       size: 'NONE',
+      intention: 'NONE',
       signs: [],
       origin: 'Taller Antrina, Lima',
       content: { es: { ...EMPTY_CONTENT }, en: { ...EMPTY_CONTENT } },
       slugEdited: { es: false, en: false },
+      skuEdited: false,
     };
   }
+  const category = categories.find((item) => item.id === product.categoryId);
+  const hasOffer = product.compareAtPrice !== null;
   return {
     sku: product.sku,
-    categoryId: product.categoryId,
-    price: centsToInput(product.price.amount),
+    rootCategoryId: category?.parentId ?? product.categoryId,
+    subcategoryId: category?.parentId ? product.categoryId : NO_SUBCATEGORY,
+    price: centsToInput(product.compareAtPrice?.amount ?? product.price.amount),
+    offerPrice: hasOffer ? centsToInput(product.price.amount) : '',
+    cost: product.cost ? centsToInput(product.cost.amount) : '',
     stock: String(product.stock),
+    lowStockThreshold: String(product.lowStockThreshold),
     status: product.status,
     isFeatured: product.isFeatured,
     badge: product.badge ?? 'NONE',
     size: product.size ?? 'NONE',
+    intention: product.intention ?? 'NONE',
     signs: [...product.signs],
     origin: product.origin ?? '',
     content: { es: contentForm(product.content.es), en: contentForm(product.content.en) },
     slugEdited: { es: true, en: Boolean(product.content.en) },
+    skuEdited: true,
   };
 }
 
 /** Lo que se compara para saber si hay cambios sin guardar. */
-function snapshot({ slugEdited: _ignored, ...state }: FormState): string {
+function snapshot({ slugEdited: _slug, skuEdited: _sku, ...state }: FormState): string {
   return JSON.stringify(state);
 }
 
@@ -153,22 +194,36 @@ function toRequest(state: FormState): UpsertProductRequest | string {
   if (!es.slug.trim()) return 'Falta la URL en español.';
   if (en.name.trim() && !en.slug.trim()) return 'Falta la URL en inglés.';
   if (!state.sku.trim()) return 'Escribe el SKU.';
-  const priceCents = parsePriceToCents(state.price);
-  if (priceCents === null || priceCents <= 0)
+  const regularCents = parsePriceToCents(state.price);
+  if (regularCents === null || regularCents <= 0)
     return 'Escribe un precio válido, por ejemplo 289 o 289.50.';
+  const offerCents = state.offerPrice.trim() ? parsePriceToCents(state.offerPrice) : null;
+  if (state.offerPrice.trim() && (offerCents === null || offerCents <= 0))
+    return 'Escribe un precio de oferta válido o déjalo vacío.';
+  if (offerCents !== null && offerCents >= regularCents)
+    return 'El precio de oferta debe ser menor que el precio normal.';
+  const costCents = state.cost.trim() ? parsePriceToCents(state.cost) : null;
+  if (state.cost.trim() && costCents === null) return 'Escribe un costo válido o déjalo vacío.';
   const stock = Number(state.stock);
   if (!Number.isInteger(stock) || stock < 0) return 'El stock debe ser un número entero (0 o más).';
-  if (!state.categoryId) return 'Elige la intención del árbol.';
+  const lowStockThreshold = Number(state.lowStockThreshold);
+  if (!Number.isInteger(lowStockThreshold) || lowStockThreshold < 0)
+    return 'La alerta de stock debe ser un número entero (0 o más).';
+  if (!state.rootCategoryId) return 'Elige la categoría del producto.';
   return {
     sku: state.sku.trim(),
-    categoryId: state.categoryId,
-    priceCents,
+    categoryId: state.subcategoryId === NO_SUBCATEGORY ? state.rootCategoryId : state.subcategoryId,
+    priceCents: offerCents ?? regularCents,
+    compareAtPriceCents: offerCents === null ? null : regularCents,
+    costCents,
     currency: 'PEN',
     stock,
+    lowStockThreshold,
     status: state.status,
     isFeatured: state.isFeatured,
     badge: state.badge === 'NONE' ? null : state.badge,
     size: state.size === 'NONE' ? null : state.size,
+    intention: state.intention === 'NONE' ? null : state.intention,
     signs: state.signs,
     origin: state.origin.trim() || null,
     content: { es: contentRequest(es), en: en.name.trim() ? contentRequest(en) : null },
@@ -216,7 +271,7 @@ export function ProductDrawer() {
         <Drawer.Content placement="right">
           <Drawer.Dialog
             aria-label={isNew ? 'Nuevo producto' : 'Editar producto'}
-            className="w-full max-w-full p-0 sm:w-[min(720px,100vw)]"
+            className="w-full max-w-full p-0 sm:w-[min(760px,100vw)]"
           >
             {isLoading ? (
               <DrawerSkeleton />
@@ -327,6 +382,50 @@ function SearchPreview({
   );
 }
 
+function StockHistory({ productId }: { productId: string }) {
+  const movements = useQuery({
+    queryKey: ['admin', 'stock-movements', { productId }],
+    queryFn: () =>
+      api<StockMovementListResponse>(
+        'GET',
+        `${ADMIN_CATALOG_ROUTES.stockMovements}?productId=${productId}&pageSize=50`,
+      ),
+  });
+  if (movements.error) {
+    return <ErrorNotice error={movements.error} title="No se pudo cargar el historial" />;
+  }
+  if (movements.isPending) return <Skeleton className="h-24 w-full rounded-md" />;
+  return (
+    <ul className="flex flex-col divide-y divide-border rounded-md border border-border">
+      {movements.data.data.map((movement) => (
+        <li key={movement.id} className="flex items-center gap-3 px-3 py-2.5">
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span className="text-[13.5px] font-medium text-text">
+              {MOVEMENT_LABELS[movement.type]}
+              {movement.orderNumber && (
+                <span className="font-normal text-text-muted"> #{movement.orderNumber}</span>
+              )}
+            </span>
+            <span className="panel-meta truncate">
+              {formatDate(movement.createdAt)}
+              {movement.adminName && ` · ${movement.adminName}`}
+              {movement.note && ` · ${movement.note}`}
+            </span>
+          </div>
+          <span
+            className={`panel-num text-[13.5px] font-medium ${movement.quantity < 0 ? 'text-danger' : 'text-success'}`}
+          >
+            {movement.quantity > 0 ? `+${movement.quantity}` : movement.quantity}
+          </span>
+          <span className="panel-num w-10 text-right text-[13px] text-text-muted">
+            {movement.stockAfter}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function ProductEditor({
   product,
   categories,
@@ -343,8 +442,10 @@ function ProductEditor({
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedTab = TABS.find((value) => value === searchParams.get('tab')) ?? 'detalles';
   const tab: Tab = requestedTab === 'fotos' && !product ? 'detalles' : requestedTab;
-  const [state, setState] = useState<FormState>(() => initialState(product));
-  const [baseline, setBaseline] = useState(() => snapshot(initialState(product)));
+  const [state, setState] = useState<FormState>(() => initialState(product, categories));
+  const [baseline, setBaseline] = useState(() => snapshot(initialState(product, categories)));
+  const [categoryDialog, setCategoryDialog] = useState<CategoryDialogState | null>(null);
+  const [stockTarget, setStockTarget] = useState<StockTarget | null>(null);
   const [lang, setLang] = useState<Lang>('es');
   const [clientError, setClientError] = useState<string | null>(null);
   const [confirmArchive, setConfirmArchive] = useState(false);
@@ -401,7 +502,13 @@ function ProductEditor({
       const slugEdited = { ...current.slugEdited };
       if (field === 'name' && !current.slugEdited[lang]) content.slug = slugify(value);
       if (field === 'slug') slugEdited[lang] = true;
-      return { ...current, content: { ...current.content, [lang]: content }, slugEdited };
+      const followSku = field === 'name' && lang === 'es' && !current.skuEdited;
+      return {
+        ...current,
+        ...(followSku ? { sku: slugify(value).toUpperCase().slice(0, 32).replace(/-+$/, '') } : {}),
+        content: { ...current.content, [lang]: content },
+        slugEdited,
+      };
     });
 
   const submit = () => {
@@ -421,6 +528,26 @@ function ProductEditor({
 
   const content = state.content[lang];
   const enIsEmpty = !state.content.en.name.trim();
+  const rootCategories = categories.filter((category) => !category.parentId);
+  const rootCategory = categories.find((category) => category.id === state.rootCategoryId);
+  const subcategories = categories.filter((category) => category.parentId === state.rootCategoryId);
+  const isTree = rootCategory?.slug === TREES_CATEGORY_SLUG;
+  const storePath = STORE_PATH[isTree ? 'tree' : 'other'];
+  const regularCents = parsePriceToCents(state.price);
+  const offerCents = state.offerPrice.trim() ? parsePriceToCents(state.offerPrice) : null;
+  const costCents = state.cost.trim() ? parsePriceToCents(state.cost) : null;
+  const sellingCents = offerCents ?? regularCents;
+  const offerIsValid =
+    offerCents !== null && regularCents !== null && offerCents > 0 && offerCents < regularCents;
+  const discountPercent = offerIsValid
+    ? Math.round(((regularCents - offerCents) / regularCents) * 100)
+    : null;
+  const marginCents =
+    costCents !== null && sellingCents !== null && sellingCents > 0
+      ? sellingCents - costCents
+      : null;
+  const marginPercent =
+    marginCents !== null && sellingCents ? Math.round((marginCents / sellingCents) * 100) : null;
   const langToggle = (
     <ToggleButtonGroup
       size="sm"
@@ -483,6 +610,12 @@ function ProductEditor({
               )}
               <Tabs.Indicator />
             </Tabs.Tab>
+            {product && (
+              <Tabs.Tab id="historial" className="w-auto px-3 text-[13px]">
+                Historial
+                <Tabs.Indicator />
+              </Tabs.Tab>
+            )}
             <Tabs.Tab id="google" className="w-auto px-3 text-[13px]">
               Google
               <Tabs.Indicator />
@@ -509,7 +642,7 @@ function ProductEditor({
                   <Label>Nombre</Label>
                   <Input
                     maxLength={120}
-                    placeholder={lang === 'es' ? 'Árbol del amor' : 'Tree of love'}
+                    placeholder={lang === 'es' ? 'Vela de lavanda' : 'Lavender candle'}
                   />
                 </TextField>
                 <TextField
@@ -521,7 +654,7 @@ function ProductEditor({
                   <Label>URL</Label>
                   <InputGroup>
                     <InputGroup.Prefix className="font-mono text-[12px] text-text-muted">
-                      {STORE_PATH[lang]}
+                      {storePath[lang]}
                     </InputGroup.Prefix>
                     <InputGroup.Input maxLength={140} className="font-mono text-[13px]" />
                   </InputGroup>
@@ -539,14 +672,71 @@ function ProductEditor({
                 </TextField>
               </Section>
 
-              <Section title="Precio e inventario">
+              <Section
+                title="Categoría"
+                aside={
+                  <Button size="sm" variant="ghost" onPress={() => setCategoryDialog({})}>
+                    <IconPlus size={14} />
+                    Nueva categoría
+                  </Button>
+                }
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Choice
+                    label="Categoría"
+                    isRequired
+                    placeholder="Elige una categoría"
+                    value={state.rootCategoryId || null}
+                    onChange={(value) =>
+                      setState((current) => ({
+                        ...current,
+                        rootCategoryId: value,
+                        subcategoryId: NO_SUBCATEGORY,
+                      }))
+                    }
+                    options={rootCategories.map((category) => ({
+                      id: category.id,
+                      label: category.name,
+                    }))}
+                  />
+                  <Choice
+                    label="Subcategoría"
+                    value={state.subcategoryId}
+                    isDisabled={subcategories.length === 0}
+                    onChange={(value) => set('subcategoryId', value)}
+                    options={[
+                      {
+                        id: NO_SUBCATEGORY,
+                        label: subcategories.length === 0 ? 'No tiene' : 'Sin subcategoría',
+                      },
+                      ...subcategories.map((category) => ({
+                        id: category.id,
+                        label: category.name,
+                      })),
+                    ]}
+                  />
+                </div>
+                {rootCategory && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="self-start"
+                    onPress={() => setCategoryDialog({ parentId: rootCategory.id })}
+                  >
+                    <IconPlus size={14} />
+                    Añadir subcategoría a {rootCategory.name}
+                  </Button>
+                )}
+              </Section>
+
+              <Section title="Precio">
                 <div className="grid gap-4 sm:grid-cols-3">
                   <TextField
                     isRequired
                     value={state.price}
                     onChange={(value) => set('price', value)}
                   >
-                    <Label>Precio</Label>
+                    <Label>Precio normal</Label>
                     <InputGroup>
                       <InputGroup.Prefix className="text-[13px] text-text-muted">
                         S/
@@ -559,157 +749,211 @@ function ProductEditor({
                     </InputGroup>
                   </TextField>
                   <TextField
-                    isRequired
-                    type="number"
-                    value={state.stock}
-                    onChange={(value) => set('stock', value)}
+                    value={state.offerPrice}
+                    onChange={(value) => set('offerPrice', value)}
                   >
-                    <Label>Stock</Label>
+                    <Label>Precio de oferta</Label>
+                    <InputGroup>
+                      <InputGroup.Prefix className="text-[13px] text-text-muted">
+                        S/
+                      </InputGroup.Prefix>
+                      <InputGroup.Input
+                        inputMode="decimal"
+                        placeholder="Opcional"
+                        className="panel-num"
+                      />
+                    </InputGroup>
+                    {discountPercent !== null ? (
+                      <Description className="text-success">
+                        {discountPercent}% de descuento
+                      </Description>
+                    ) : state.offerPrice.trim() ? (
+                      <Description className="text-danger">
+                        Debe ser menor que el precio normal
+                      </Description>
+                    ) : null}
+                  </TextField>
+                  <TextField value={state.cost} onChange={(value) => set('cost', value)}>
+                    <Label>Costo</Label>
+                    <InputGroup>
+                      <InputGroup.Prefix className="text-[13px] text-text-muted">
+                        S/
+                      </InputGroup.Prefix>
+                      <InputGroup.Input
+                        inputMode="decimal"
+                        placeholder="Opcional"
+                        className="panel-num"
+                      />
+                    </InputGroup>
+                    {marginCents !== null ? (
+                      <Description className={marginCents < 0 ? 'text-danger' : undefined}>
+                        Ganas {formatMoney({ amount: marginCents, currency: 'PEN' }, 'es')} (
+                        {marginPercent}%)
+                      </Description>
+                    ) : (
+                      <Description>Solo lo ves tú. Calcula tu margen.</Description>
+                    )}
+                  </TextField>
+                </div>
+                <p className="panel-meta">
+                  Con oferta, la tienda muestra el precio normal tachado junto al de oferta.
+                </p>
+              </Section>
+
+              <Section title="Inventario">
+                <div className="grid gap-4 sm:grid-cols-3">
+                  {product ? (
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[13px] font-medium text-text">Stock</span>
+                      <div className="flex h-9 items-center justify-between gap-2 rounded-md border border-border px-3">
+                        <span
+                          className={`panel-num text-[14px] font-medium ${product.stock === 0 ? 'text-danger' : 'text-text'}`}
+                        >
+                          {product.stock}
+                        </span>
+                        <button
+                          type="button"
+                          className="text-[12.5px] font-medium text-text-secondary hover:text-text hover:underline"
+                          onClick={() =>
+                            setStockTarget({
+                              id: product.id,
+                              name: product.content.es.name,
+                              stock: product.stock,
+                            })
+                          }
+                        >
+                          Cambiar
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <TextField
+                      isRequired
+                      type="number"
+                      value={state.stock}
+                      onChange={(value) => set('stock', value)}
+                    >
+                      <Label>Stock inicial</Label>
+                      <Input min={0} step={1} className="panel-num" />
+                    </TextField>
+                  )}
+                  <TextField
+                    type="number"
+                    value={state.lowStockThreshold}
+                    onChange={(value) => set('lowStockThreshold', value)}
+                  >
+                    <Label>Avisar con</Label>
                     <Input min={0} step={1} className="panel-num" />
+                    <Description>unidades o menos</Description>
                   </TextField>
                   <TextField
                     isRequired
                     value={state.sku}
-                    onChange={(value) => set('sku', value.toUpperCase())}
+                    onChange={(value) =>
+                      setState((current) => ({
+                        ...current,
+                        sku: value.toUpperCase(),
+                        skuEdited: true,
+                      }))
+                    }
                   >
                     <Label>SKU</Label>
                     <Input
                       maxLength={32}
-                      placeholder="ANT-AMOR-01"
+                      placeholder="VELA-LAVANDA"
                       className="font-mono text-[13px]"
                     />
+                    <Description>Código interno único.</Description>
                   </TextField>
                 </div>
-                <p className="panel-meta">
-                  Precio en soles. La tienda nunca muestra descuentos ni precios tachados.
-                </p>
               </Section>
 
-              <Section title="Organización">
+              <Section title="En la tienda">
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Select
-                    isRequired
-                    placeholder="Elige una intención"
-                    selectedKey={state.categoryId || null}
-                    onSelectionChange={(key) => set('categoryId', String(key ?? ''))}
-                  >
-                    <Label>Intención</Label>
-                    <Select.Trigger>
-                      <Select.Value />
-                      <Select.Indicator />
-                    </Select.Trigger>
-                    <Select.Popover>
-                      <ListBox>
-                        {categories.map((category) => (
-                          <ListBox.Item
-                            key={category.id}
-                            id={category.id}
-                            textValue={category.name}
-                          >
-                            {category.name}
-                          </ListBox.Item>
-                        ))}
-                      </ListBox>
-                    </Select.Popover>
-                  </Select>
-                  <Select
-                    selectedKey={state.status}
-                    onSelectionChange={(key) => set('status', key as ProductStatusCode)}
-                  >
-                    <Label>Estado</Label>
-                    <Select.Trigger>
-                      <Select.Value />
-                      <Select.Indicator />
-                    </Select.Trigger>
-                    <Select.Popover>
-                      <ListBox>
-                        {(Object.keys(STATUS_LABELS) as ProductStatusCode[]).map((code) => (
-                          <ListBox.Item key={code} id={code} textValue={STATUS_LABELS[code]}>
-                            {STATUS_LABELS[code]}
-                          </ListBox.Item>
-                        ))}
-                      </ListBox>
-                    </Select.Popover>
-                  </Select>
-                  <Select
-                    selectedKey={state.badge}
-                    onSelectionChange={(key) => set('badge', key as FormState['badge'])}
-                  >
-                    <Label>Etiqueta</Label>
-                    <Select.Trigger>
-                      <Select.Value />
-                      <Select.Indicator />
-                    </Select.Trigger>
-                    <Select.Popover>
-                      <ListBox>
-                        <ListBox.Item id="NONE" textValue="Ninguna">
-                          Ninguna
-                        </ListBox.Item>
-                        {(Object.keys(BADGE_LABELS) as ProductBadgeCode[]).map((code) => (
-                          <ListBox.Item key={code} id={code} textValue={BADGE_LABELS[code]}>
-                            {BADGE_LABELS[code]}
-                          </ListBox.Item>
-                        ))}
-                      </ListBox>
-                    </Select.Popover>
-                  </Select>
-                  <Select
-                    selectedKey={state.size}
-                    onSelectionChange={(key) => set('size', key as FormState['size'])}
-                  >
-                    <Label>Tamaño</Label>
-                    <Select.Trigger>
-                      <Select.Value />
-                      <Select.Indicator />
-                    </Select.Trigger>
-                    <Select.Popover>
-                      <ListBox>
-                        <ListBox.Item id="NONE" textValue="Sin tamaño">
-                          Sin tamaño
-                        </ListBox.Item>
-                        {(Object.keys(SIZE_LABELS) as ProductSizeCode[]).map((code) => (
-                          <ListBox.Item key={code} id={code} textValue={SIZE_LABELS[code]}>
-                            {SIZE_LABELS[code]}
-                          </ListBox.Item>
-                        ))}
-                      </ListBox>
-                    </Select.Popover>
-                  </Select>
+                  <Choice
+                    label="Estado"
+                    value={state.status}
+                    onChange={(value) => set('status', value as ProductStatusCode)}
+                    options={(Object.keys(STATUS_LABELS) as ProductStatusCode[]).map((code) => ({
+                      id: code,
+                      label: STATUS_LABELS[code],
+                    }))}
+                  />
+                  <Choice
+                    label="Etiqueta"
+                    value={state.badge}
+                    onChange={(value) => set('badge', value as FormState['badge'])}
+                    options={[
+                      { id: 'NONE', label: 'Ninguna' },
+                      ...(Object.keys(BADGE_LABELS) as ProductBadgeCode[]).map((code) => ({
+                        id: code,
+                        label: BADGE_LABELS[code],
+                      })),
+                    ]}
+                  />
+                  <Choice
+                    label="Intención"
+                    value={state.intention}
+                    onChange={(value) => set('intention', value as FormState['intention'])}
+                    options={[
+                      { id: 'NONE', label: 'Sin intención' },
+                      ...(Object.keys(INTENTION_LABELS) as ProductIntentionCode[]).map((code) => ({
+                        id: code,
+                        label: INTENTION_LABELS[code],
+                      })),
+                    ]}
+                  />
                   <TextField value={state.origin} onChange={(value) => set('origin', value)}>
                     <Label>Origen</Label>
                     <Input maxLength={120} />
                   </TextField>
+                  {isTree && (
+                    <Choice
+                      label="Tamaño del árbol"
+                      value={state.size}
+                      onChange={(value) => set('size', value as FormState['size'])}
+                      options={[
+                        { id: 'NONE', label: 'Sin tamaño' },
+                        ...(Object.keys(SIZE_LABELS) as ProductSizeCode[]).map((code) => ({
+                          id: code,
+                          label: SIZE_LABELS[code],
+                        })),
+                      ]}
+                    />
+                  )}
                 </div>
-                <TagGroup
-                  selectionMode="multiple"
-                  selectedKeys={state.signs}
-                  onSelectionChange={(keys) =>
-                    set(
-                      'signs',
-                      (Object.keys(SIGN_LABELS) as ZodiacSignCode[]).filter((code) =>
-                        keys === 'all' ? true : keys.has(code),
-                      ),
-                    )
-                  }
-                  size="sm"
-                  className="flex flex-col gap-2"
-                >
-                  <Label>Signos</Label>
-                  <TagGroup.List className="flex flex-wrap gap-1.5">
-                    {(Object.keys(SIGN_LABELS) as ZodiacSignCode[]).map((code) => (
-                      <Tag key={code} id={code} textValue={SIGN_LABELS[code]}>
-                        {SIGN_LABELS[code]}
-                      </Tag>
-                    ))}
-                  </TagGroup.List>
-                  <Description>
-                    Signos cuya piedra lleva el árbol. Aparece en la página de cada signo.
-                  </Description>
-                </TagGroup>
+                {isTree && (
+                  <TagGroup
+                    selectionMode="multiple"
+                    selectedKeys={state.signs}
+                    onSelectionChange={(keys) =>
+                      set(
+                        'signs',
+                        (Object.keys(SIGN_LABELS) as ZodiacSignCode[]).filter((code) =>
+                          keys === 'all' ? true : keys.has(code),
+                        ),
+                      )
+                    }
+                    size="sm"
+                    className="flex flex-col gap-2"
+                  >
+                    <Label>Signos</Label>
+                    <TagGroup.List className="flex flex-wrap gap-1.5">
+                      {(Object.keys(SIGN_LABELS) as ZodiacSignCode[]).map((code) => (
+                        <Tag key={code} id={code} textValue={SIGN_LABELS[code]}>
+                          {SIGN_LABELS[code]}
+                        </Tag>
+                      ))}
+                    </TagGroup.List>
+                    <Description>
+                      Signos cuya piedra lleva el árbol. Aparece en la página de cada signo.
+                    </Description>
+                  </TagGroup>
+                )}
                 <Switch
                   isSelected={state.isFeatured}
                   onChange={(value) => set('isFeatured', value)}
-                  className="flex w-full items-center justify-between gap-4 rounded-md border border-border px-4 py-3"
+                  className="flex w-full flex-row items-center justify-between gap-4 rounded-md border border-border px-4 py-3"
                 >
                   <Switch.Content>
                     <Label className="text-[13.5px] font-medium">Destacado en la portada</Label>
@@ -728,16 +972,20 @@ function ProductEditor({
             {product && <PhotoManager productId={product.id} images={product.images} />}
           </Tabs.Panel>
 
+          <Tabs.Panel id="historial" className="p-0">
+            {product && <StockHistory productId={product.id} />}
+          </Tabs.Panel>
+
           <Tabs.Panel id="google" className="p-0">
             <div className="flex flex-col gap-6">
               <Section title="Cómo se ve en Google" aside={langToggle}>
                 <SearchPreview
-                  url={`${STORE_HOST}${STORE_PATH[lang]}${content.slug || '…'}`}
-                  title={content.metaTitle.trim() || content.name.trim() || 'Nombre del árbol'}
+                  url={`${STORE_HOST}${storePath[lang]}${content.slug || '…'}`}
+                  title={content.metaTitle.trim() || content.name.trim() || 'Nombre del producto'}
                   description={
                     content.metaDescription.trim() ||
                     content.description.trim() ||
-                    'Describe el árbol en una o dos frases.'
+                    'Describe el producto en una o dos frases.'
                   }
                 />
                 <TextField
@@ -804,6 +1052,20 @@ function ProductEditor({
           </Button>
         </div>
       </Drawer.Footer>
+
+      <CategoryDialog
+        state={categoryDialog}
+        categories={categories}
+        onClose={() => setCategoryDialog(null)}
+        onSaved={(saved) =>
+          setState((current) => ({
+            ...current,
+            rootCategoryId: saved.parentId ?? saved.id,
+            subcategoryId: saved.parentId ? saved.id : NO_SUBCATEGORY,
+          }))
+        }
+      />
+      <StockDialog target={stockTarget} onClose={() => setStockTarget(null)} />
 
       {product && (
         <ConfirmDialog

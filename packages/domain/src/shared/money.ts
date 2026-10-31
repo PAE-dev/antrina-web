@@ -4,6 +4,8 @@ export const SUPPORTED_CURRENCIES = ['PEN', 'USD'] as const;
 
 export type Currency = (typeof SUPPORTED_CURRENCIES)[number];
 
+export const DEFAULT_CURRENCY = 'PEN' satisfies Currency;
+
 /**
  * Montos siempre en la unidad mínima (céntimos) para evitar errores de punto flotante.
  */

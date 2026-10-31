@@ -1,9 +1,10 @@
 ---
 import CatalogView from '../../../components/views/CatalogView.astro';
 import { CATALOG_CACHE_CONTROL, listProducts } from '../../../lib/catalog';
+import { TREES_CATEGORY_SLUG } from '../../../lib/routes';
 
 export const prerender = false;
-const products = await listProducts({ locale: 'en' });
+const products = await listProducts({ locale: 'en', category: TREES_CATEGORY_SLUG });
 Astro.response.headers.set('Cache-Control', CATALOG_CACHE_CONTROL);
 ---
 

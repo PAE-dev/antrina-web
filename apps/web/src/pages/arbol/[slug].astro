@@ -5,7 +5,7 @@ import ProductView from '../../components/views/ProductView.astro';
 import { getPageCopy } from '../../i18n/pages';
 import { CATALOG_CACHE_CONTROL } from '../../lib/catalog';
 import { loadProduct } from '../../lib/page-data';
-import { alternatesFor, routes } from '../../lib/routes';
+import { alternatesFor, productPath, routes } from '../../lib/routes';
 
 export const prerender = false;
 const slug = Astro.params.slug ?? '';
@@ -14,7 +14,8 @@ const copy = getPageCopy('es');
 
 if (data.status === 'ok') {
   const ownSlug = data.product.slugs.es;
-  if (ownSlug && ownSlug !== slug) return Astro.redirect(routes.product('es', ownSlug), 301);
+  const expected = productPath('es', ownSlug ?? slug, data.product.categorySlug);
+  if (expected !== routes.product('es', slug)) return Astro.redirect(expected, 301);
   Astro.response.headers.set('Cache-Control', CATALOG_CACHE_CONTROL);
 } else if (data.status === 'not_found') {
   Astro.response.status = 404;

@@ -3,8 +3,15 @@ import { type APIRoute } from 'astro';
 import { STONES } from '../content/stones';
 import { HREFLANG, LOCALES } from '../i18n/config';
 import { INTENTIONS, SIGNS, SIZES } from '../i18n/taxonomy';
-import { CATALOG_CACHE_CONTROL, getProductIndex } from '../lib/catalog';
-import { type Alternates, alternatesFor, routes } from '../lib/routes';
+import { CATALOG_CACHE_CONTROL, getCategories, getProductIndex } from '../lib/catalog';
+import { visibleRootCategories } from '../lib/page-data';
+import {
+  type Alternates,
+  alternatesFor,
+  productPath,
+  routes,
+  TREES_CATEGORY_SLUG,
+} from '../lib/routes';
 import { absoluteUrl } from '../lib/site';
 
 export const prerender = false;
@@ -67,8 +74,22 @@ function render(entries: Entry[]): string {
 }
 
 export const GET: APIRoute = async () => {
-  const products = await getProductIndex();
+  const [products, categories] = await Promise.all([getProductIndex(), getCategories('es')]);
+  const visibleRoots = visibleRootCategories(categories ?? []);
+  /** Principales con productos y subcategorías con productos; los árboles ya están en `catalog`. */
+  const categoryPages = (categories ?? []).filter(
+    (category) =>
+      category.slug !== TREES_CATEGORY_SLUG &&
+      (visibleRoots.some((root) => root.id === category.id) || category.productCount > 0),
+  );
   const entries: Entry[] = [
+    ...(categoryPages.length > 0 ? [page((locale) => routes.category(locale))] : []),
+    ...categoryPages.map((category) => ({
+      alternates: alternatesFor((locale) => {
+        const slug = category.slugs[locale];
+        return slug ? routes.category(locale, slug) : null;
+      }),
+    })),
     page(routes.home),
     page(routes.catalog),
     page((locale) => routes.intention(locale)),
@@ -87,7 +108,7 @@ export const GET: APIRoute = async () => {
     ...(products ?? []).map((product) => ({
       alternates: alternatesFor((locale) => {
         const content = product.content[locale];
-        return content ? routes.product(locale, content.slug) : null;
+        return content ? productPath(locale, content.slug, product.categorySlug) : null;
       }),
       lastmod: product.updatedAt,
       images: product.imageUrls,

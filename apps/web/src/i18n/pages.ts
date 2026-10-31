@@ -39,6 +39,22 @@ export interface PageCopy {
     metaDescription: (size: string, text: string) => string;
   };
   collection: { empty: string; emptyCta: string; others: string };
+  category: {
+    label: string;
+    title: string;
+    intro: string;
+    metaTitle: string;
+    metaDescription: string;
+    /** Título de la página de una categoría. */
+    pageTitle: (name: string) => string;
+    /** Intro si la categoría no tiene descripción propia. */
+    pageIntro: (name: string) => string;
+    pageMetaDescription: (name: string) => string;
+    empty: string;
+    all: string;
+    unavailableTitle: string;
+    count: (n: number) => string;
+  };
   product: {
     order: string;
     orderNote: string;
@@ -48,11 +64,18 @@ export interface PageCopy {
     outOfStock: string;
     details: string;
     intention: string;
+    category: string;
     size: string;
     signs: string;
     stones: string;
     origin: string;
     sku: string;
+    /** Estado agotado de lo que no es un árbol: no se hace a pedido. */
+    outOfStockItem: string;
+    /** Meta descripción de lo que no es un árbol. */
+    itemMetaDescription: (name: string, category: string) => string;
+    /** Mensaje "no se pudo cargar" de lo que no es un árbol. */
+    itemUnavailableTitle: string;
     uniqueTitle: string;
     uniqueText: string;
     shippingTitle: string;
@@ -166,6 +189,24 @@ const es: PageCopy = {
     emptyCta: 'Crea tu árbol',
     others: 'Ver otras',
   },
+  category: {
+    label: 'Categorías',
+    title: 'Todo lo que hacemos *en el taller*',
+    intro:
+      'Explora nuestras piezas por categoría. Todo hecho con dedicación en nuestro taller familiar de Lima.',
+    metaTitle: 'Categorías de productos',
+    metaDescription:
+      'Explora los productos de Antrina por categoría: árboles de cuarzo y más piezas de nuestro taller familiar en Lima, con envíos a todo el Perú y el mundo.',
+    pageTitle: (name) => name,
+    pageIntro: (name) =>
+      `${name} de nuestro taller familiar en Lima, con envíos a todo el Perú y el mundo.`,
+    pageMetaDescription: (name) =>
+      `Compra ${name.toLowerCase()} de Antrina, taller familiar de Lima. Piezas cuidadas una por una, con envíos a todo el Perú y el mundo.`,
+    empty: 'Estamos preparando nuevas piezas para esta categoría. Vuelve pronto.',
+    all: 'Todo',
+    unavailableTitle: 'No pudimos cargar esta categoría',
+    count: (n) => (n === 1 ? '1 producto' : `${n} productos`),
+  },
   product: {
     order: 'Pedir por WhatsApp',
     orderNote: 'Te respondemos en horario de taller para coordinar el pago y el envío.',
@@ -175,11 +216,16 @@ const es: PageCopy = {
     outOfStock: 'Agotado · podemos hacerte uno similar',
     details: 'Detalles',
     intention: 'Intención',
+    category: 'Categoría',
     size: 'Tamaño',
     signs: 'Signos',
     stones: 'Piedras',
     origin: 'Origen',
     sku: 'Código',
+    outOfStockItem: 'Agotado',
+    itemMetaDescription: (name, category) =>
+      `${name}: ${category.toLowerCase()} de Antrina, taller familiar de Lima. Envíos a todo el Perú y el mundo.`,
+    itemUnavailableTitle: 'No pudimos cargar este producto',
     uniqueTitle: 'Una pieza única',
     uniqueText:
       'Cada árbol se arma a mano y la forma de las piedras decide la de las ramas: el tuyo será muy parecido al de las fotos, pero no idéntico.',
@@ -314,6 +360,22 @@ const en: PageCopy = {
     emptyCta: 'Create your tree',
     others: 'See other',
   },
+  category: {
+    label: 'Categories',
+    title: 'Everything we make *in the workshop*',
+    intro: 'Browse our pieces by category. All made with care in our family workshop in Lima.',
+    metaTitle: 'Product categories',
+    metaDescription:
+      'Browse Antrina products by category: quartz trees and more pieces from our family workshop in Lima, Peru, shipped worldwide.',
+    pageTitle: (name) => name,
+    pageIntro: (name) => `${name} from our family workshop in Lima, shipped worldwide.`,
+    pageMetaDescription: (name) =>
+      `Shop ${name.toLowerCase()} from Antrina, a family workshop in Lima, Peru. Carefully made pieces, shipped worldwide.`,
+    empty: 'We are preparing new pieces for this category. Please check back soon.',
+    all: 'All',
+    unavailableTitle: 'We couldn’t load this category',
+    count: (n) => (n === 1 ? '1 product' : `${n} products`),
+  },
   product: {
     order: 'Order on WhatsApp',
     orderNote: 'We reply during workshop hours to arrange payment and shipping.',
@@ -323,11 +385,16 @@ const en: PageCopy = {
     outOfStock: 'Sold out · we can make you a similar one',
     details: 'Details',
     intention: 'Intention',
+    category: 'Category',
     size: 'Size',
     signs: 'Signs',
     stones: 'Stones',
     origin: 'Origin',
     sku: 'Code',
+    outOfStockItem: 'Sold out',
+    itemMetaDescription: (name, category) =>
+      `${name}: ${category.toLowerCase()} from Antrina, a family workshop in Lima, Peru. Shipped worldwide.`,
+    itemUnavailableTitle: 'We couldn’t load this product',
     uniqueTitle: 'One of a kind',
     uniqueText:
       'Every tree is built by hand and the shape of the stones decides the shape of the branches: yours will look very much like the photos, but never identical.',

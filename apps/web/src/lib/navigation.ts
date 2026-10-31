@@ -1,4 +1,4 @@
-import { type LocaleCode } from '@antrina/contracts';
+import { type CategoryDto, type LocaleCode } from '@antrina/contracts';
 import {
   type FooterColumn,
   type LocaleOption,
@@ -8,11 +8,35 @@ import {
 import { LOCALE_LABEL, LOCALES, localePath } from '../i18n/config';
 import { type Dictionary } from '../i18n/dictionaries';
 import { INTENTIONS, SIGNS, SIZES } from '../i18n/taxonomy';
-import { type Alternates, routes } from './routes';
+import { visibleRootCategories } from './page-data';
+import { type Alternates, categoryPath, routes, TREES_CATEGORY_SLUG } from './routes';
 import { WHATSAPP_NUMBER } from './site';
 
-export function buildMainNavigation(locale: LocaleCode, t: Dictionary): NavCategory[] {
+/** El menú "Categorías" solo tiene sentido cuando hay algo más que árboles. */
+function shopCategories(categories: CategoryDto[]): CategoryDto[] {
+  const visible = visibleRootCategories(categories);
+  return visible.some((category) => category.slug !== TREES_CATEGORY_SLUG) ? visible : [];
+}
+
+export function buildMainNavigation(
+  locale: LocaleCode,
+  t: Dictionary,
+  categories: CategoryDto[] = [],
+): NavCategory[] {
+  const shop = shopCategories(categories);
   return [
+    ...(shop.length > 0
+      ? [
+          {
+            label: t.nav.categories,
+            href: routes.category(locale),
+            items: shop.map((category) => ({
+              label: category.name,
+              href: categoryPath(locale, category),
+            })),
+          },
+        ]
+      : []),
     {
       label: t.nav.intention,
       href: routes.intention(locale),
@@ -42,15 +66,23 @@ export function buildMainNavigation(locale: LocaleCode, t: Dictionary): NavCateg
     { label: t.nav.createTree, href: routes.createTree(locale), items: [], isHighlighted: true },
     { label: t.nav.meanings, href: routes.meanings(locale), items: [] },
     { label: t.nav.corporate, href: routes.corporate(locale), items: [] },
-    { label: t.nav.story, href: routes.story(locale), items: [] },
+    // Con "Categorías" el menú ya es largo: la historia sigue a mano en el pie.
+    ...(shop.length > 0 ? [] : [{ label: t.nav.story, href: routes.story(locale), items: [] }]),
   ];
 }
 
-export function buildFooterColumns(locale: LocaleCode, t: Dictionary): FooterColumn[] {
+export function buildFooterColumns(
+  locale: LocaleCode,
+  t: Dictionary,
+  categories: CategoryDto[] = [],
+): FooterColumn[] {
   return [
     {
       title: t.footer.shop,
       links: [
+        ...(shopCategories(categories).length > 0
+          ? [{ label: t.nav.categories, href: routes.category(locale) }]
+          : []),
         { label: t.nav.intention, href: routes.intention(locale) },
         { label: t.nav.sign, href: routes.sign(locale) },
         { label: t.nav.size, href: routes.size(locale) },

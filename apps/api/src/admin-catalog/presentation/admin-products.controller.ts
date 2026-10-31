@@ -15,29 +15,39 @@ import {
 } from '@nestjs/common';
 import {
   AddProductImageUseCase,
+  AdjustStockUseCase,
   type AdminPrincipal,
   ArchiveProductUseCase,
+  CreateCategoryUseCase,
   CreateProductUseCase,
+  DeleteCategoryUseCase,
   DeleteProductImageUseCase,
   GetAdminProductUseCase,
   ListAdminCategoriesUseCase,
   ListAdminProductsUseCase,
+  ListStockMovementsUseCase,
   ReorderProductImagesUseCase,
   RequestImageUploadUseCase,
+  UpdateCategoryUseCase,
   UpdateProductImageAltUseCase,
   UpdateProductUseCase,
 } from '@antrina/application';
 import {
   type AddProductImageRequest,
+  type AdjustStockRequest,
   type AdminCategoryDto,
   type AdminProductDto,
   type AdminProductListResponse,
+  type AdminStockFilterCode,
   type ImageUploadRequest,
   type ImageUploadTargetDto,
   type ProductImageDto,
   type ProductStatusCode,
   type ReorderProductImagesRequest,
+  type StockMovementDto,
+  type StockMovementListResponse,
   type UpdateProductImageAltRequest,
+  type UpsertCategoryRequest,
   type UpsertProductRequest,
 } from '@antrina/contracts';
 import {
@@ -64,12 +74,15 @@ export class AdminProductsController {
     private readonly reorderImages: ReorderProductImagesUseCase,
     @Inject(UpdateProductImageAltUseCase) private readonly updateAlt: UpdateProductImageAltUseCase,
     @Inject(DeleteProductImageUseCase) private readonly deleteImage: DeleteProductImageUseCase,
+    @Inject(AdjustStockUseCase) private readonly adjustStock: AdjustStockUseCase,
   ) {}
 
   @Get()
   list(
     @Query('q') q?: string,
     @Query('status') status?: string,
+    @Query('categoryId') categoryId?: string,
+    @Query('stock') stock?: string,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
   ): Promise<AdminProductListResponse> {
@@ -78,6 +91,8 @@ export class AdminProductsController {
     return this.listProducts.execute({
       ...(q ? { q } : {}),
       ...(status ? { status: status as ProductStatusCode } : {}),
+      ...(categoryId ? { categoryId } : {}),
+      ...(stock ? { stock: stock as AdminStockFilterCode } : {}),
       ...(parsedPage ? { page: parsedPage } : {}),
       ...(parsedPageSize ? { pageSize: parsedPageSize } : {}),
     });
@@ -112,6 +127,15 @@ export class AdminProductsController {
     @CurrentAdmin() admin: AdminPrincipal,
   ): Promise<AdminProductDto> {
     return this.archiveProduct.execute(id, admin.id);
+  }
+
+  @Post(':id/stock')
+  changeStock(
+    @Param('id') id: string,
+    @Body() body: AdjustStockRequest,
+    @CurrentAdmin() admin: AdminPrincipal,
+  ): Promise<StockMovementDto> {
+    return this.adjustStock.execute(id, body, admin.id);
   }
 
   @Post(':id/images/upload-url')
@@ -168,10 +192,60 @@ export class AdminProductsController {
 export class AdminCategoriesController {
   constructor(
     @Inject(ListAdminCategoriesUseCase) private readonly listCategories: ListAdminCategoriesUseCase,
+    @Inject(CreateCategoryUseCase) private readonly createCategory: CreateCategoryUseCase,
+    @Inject(UpdateCategoryUseCase) private readonly updateCategory: UpdateCategoryUseCase,
+    @Inject(DeleteCategoryUseCase) private readonly deleteCategory: DeleteCategoryUseCase,
   ) {}
 
   @Get()
   list(): Promise<AdminCategoryDto[]> {
     return this.listCategories.execute();
+  }
+
+  @Post()
+  create(
+    @Body() body: UpsertCategoryRequest,
+    @CurrentAdmin() admin: AdminPrincipal,
+  ): Promise<AdminCategoryDto> {
+    return this.createCategory.execute(body, admin.id);
+  }
+
+  @Put(':id')
+  update(
+    @Param('id') id: string,
+    @Body() body: UpsertCategoryRequest,
+    @CurrentAdmin() admin: AdminPrincipal,
+  ): Promise<AdminCategoryDto> {
+    return this.updateCategory.execute(id, body, admin.id);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  remove(@Param('id') id: string, @CurrentAdmin() admin: AdminPrincipal): Promise<void> {
+    return this.deleteCategory.execute(id, admin.id);
+  }
+}
+
+@Controller('admin/stock-movements')
+@UseGuards(AdminOriginGuard, AdminSessionGuard)
+@RequirePermission('catalog.manage')
+export class AdminStockMovementsController {
+  constructor(
+    @Inject(ListStockMovementsUseCase) private readonly listMovements: ListStockMovementsUseCase,
+  ) {}
+
+  @Get()
+  list(
+    @Query('productId') productId?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ): Promise<StockMovementListResponse> {
+    const parsedPage = parsePositiveInt(page);
+    const parsedPageSize = parsePositiveInt(pageSize);
+    return this.listMovements.execute({
+      ...(productId ? { productId } : {}),
+      ...(parsedPage ? { page: parsedPage } : {}),
+      ...(parsedPageSize ? { pageSize: parsedPageSize } : {}),
+    });
   }
 }

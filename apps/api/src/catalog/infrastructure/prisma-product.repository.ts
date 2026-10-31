@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   type AdminProductCriteria,
   DomainError,
+  type InventorySummary,
   type Locale,
   type Product,
   type ProductCriteria,
@@ -30,17 +31,21 @@ function translationRows(draft: ProductDraft) {
   );
 }
 
+/** Sin `stock`: las existencias solo cambian junto a un StockMovement. */
 function scalarData(draft: ProductDraft) {
   return {
     sku: draft.sku,
     categoryId: draft.categoryId,
     priceCents: draft.price.amountInCents,
+    compareAtPriceCents: draft.compareAtPrice?.amountInCents ?? null,
+    costCents: draft.cost?.amountInCents ?? null,
     currency: draft.price.currency,
-    stock: draft.stock,
+    lowStockThreshold: draft.lowStockThreshold,
     status: draft.status,
     isFeatured: draft.isFeatured,
     badge: draft.badge,
     size: draft.size,
+    intention: draft.intention,
     signs: [...draft.signs],
     origin: draft.origin,
   };
@@ -57,7 +62,7 @@ function translateWriteError(error: unknown): never {
       throw new DomainError('Ya existe un producto con ese slug', 'product.duplicate_slug');
     }
     if (error.code === 'P2003') {
-      throw new DomainError('La intención (categoría) no existe', 'product.invalid_category');
+      throw new DomainError('La categoría no existe', 'product.invalid_category');
     }
     if (error.code === 'P2025') {
       throw new DomainError('Producto no encontrado', 'product.not_found');
@@ -75,7 +80,14 @@ export class PrismaProductRepository implements ProductRepository {
       where: {
         status: 'ACTIVE',
         ...(criteria.featuredOnly ? { isFeatured: true } : {}),
-        ...(criteria.categorySlug ? { category: { slug: criteria.categorySlug } } : {}),
+        ...(criteria.categorySlug
+          ? {
+              category: {
+                OR: [{ slug: criteria.categorySlug }, { parent: { slug: criteria.categorySlug } }],
+              },
+            }
+          : {}),
+        ...(criteria.intention ? { intention: criteria.intention } : {}),
         ...(criteria.size ? { size: criteria.size } : {}),
         ...(criteria.sign ? { signs: { has: criteria.sign } } : {}),
       },
@@ -112,8 +124,20 @@ export class PrismaProductRepository implements ProductRepository {
   }
 
   async findManyForAdmin(criteria: AdminProductCriteria): Promise<ProductPage> {
+    const threshold = this.prisma.product.fields.lowStockThreshold;
     const where: Prisma.ProductWhereInput = {
       ...(criteria.status ? { status: criteria.status } : {}),
+      ...(criteria.categoryId
+        ? {
+            category: {
+              OR: [{ id: criteria.categoryId }, { parentId: criteria.categoryId }],
+            },
+          }
+        : {}),
+      // Las alertas de stock ignoran lo archivado, salvo que se pida ese estado expresamente.
+      ...(criteria.stock && !criteria.status ? { status: { not: 'ARCHIVED' as const } } : {}),
+      ...(criteria.stock === 'out' ? { stock: 0 } : {}),
+      ...(criteria.stock === 'low' ? { stock: { gt: 0, lte: threshold } } : {}),
       ...(criteria.query
         ? {
             OR: [
@@ -138,10 +162,41 @@ export class PrismaProductRepository implements ProductRepository {
     return { items: records.map(toDomainProduct), total };
   }
 
-  async create(draft: ProductDraft): Promise<Product> {
+  async inventorySummary(): Promise<InventorySummary> {
+    const rows = await this.prisma.product.findMany({
+      where: { status: { not: 'ARCHIVED' } },
+      select: { status: true, stock: true, lowStockThreshold: true, costCents: true },
+    });
+    return {
+      activeProducts: rows.filter((row) => row.status === 'ACTIVE').length,
+      lowStockCount: rows.filter((row) => row.stock > 0 && row.stock <= row.lowStockThreshold)
+        .length,
+      outOfStockCount: rows.filter((row) => row.stock === 0).length,
+      unitsInStock: rows.reduce((sum, row) => sum + row.stock, 0),
+      stockCostCents: rows.reduce((sum, row) => sum + row.stock * (row.costCents ?? 0), 0),
+    };
+  }
+
+  async create(draft: ProductDraft, actorId?: string): Promise<Product> {
     try {
       const record = await this.prisma.product.create({
-        data: { ...scalarData(draft), translations: { create: translationRows(draft) } },
+        data: {
+          ...scalarData(draft),
+          stock: draft.stock,
+          translations: { create: translationRows(draft) },
+          ...(draft.stock > 0
+            ? {
+                stockMovements: {
+                  create: {
+                    type: 'INITIAL',
+                    quantity: draft.stock,
+                    stockAfter: draft.stock,
+                    adminUserId: actorId ?? null,
+                  },
+                },
+              }
+            : {}),
+        },
         include: productInclude,
       });
       return toDomainProduct(record);

@@ -30,10 +30,11 @@ const matches = (...texts: string[]) => {
 
 const results = terms.length
   ? products.filter((product) => {
-      const intention = intentionByCategory(product.categorySlug);
+      const intention = product.intention ? intentionByCategory(product.intention) : undefined;
       return matches(
         product.name,
         product.description,
+        product.category.name,
         intention?.copy[locale].label ?? '',
         intention?.copy[locale].stones ?? '',
       );
@@ -89,7 +90,7 @@ const links = terms.length
         />
         <button
           type="submit"
-          class="h-12 rounded-full bg-text px-6 text-[15px] font-medium text-on-dark transition-colors hover:bg-brand"
+          class="h-12 rounded-full bg-text px-6 text-[15px] font-medium text-on-dark transition-colors hover:bg-brand-hover"
         >
           {copy.search.submit}
         </button>

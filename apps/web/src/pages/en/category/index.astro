@@ -1,0 +1,10 @@
+---
+import CategoriesIndexView from '../../../components/views/CategoriesIndexView.astro';
+import { CATALOG_CACHE_CONTROL, getCategories } from '../../../lib/catalog';
+
+export const prerender = false;
+const categories = (await getCategories('en')) ?? [];
+Astro.response.headers.set('Cache-Control', CATALOG_CACHE_CONTROL);
+---
+
+<CategoriesIndexView locale="en" categories={categories} />

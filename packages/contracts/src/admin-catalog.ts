@@ -1,4 +1,9 @@
-import { type ProductBadgeCode, type ProductSizeCode, type ZodiacSignCode } from './catalog.js';
+import {
+  type ProductBadgeCode,
+  type ProductIntentionCode,
+  type ProductSizeCode,
+  type ZodiacSignCode,
+} from './catalog.js';
 import { type CurrencyCode, type LocaleCode, type MoneyDto } from './common.js';
 
 export type ProductStatusCode = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
@@ -36,10 +41,16 @@ export interface AdminProductListItemDto {
   id: string;
   sku: string;
   name: string;
+  categoryId: string;
   categorySlug: string;
   status: ProductStatusCode;
+  /** Precio de venta actual: el de oferta si hay oferta. */
   price: MoneyDto;
+  /** Precio normal cuando hay oferta. */
+  compareAtPrice: MoneyDto | null;
   stock: number;
+  lowStockThreshold: number;
+  isLowStock: boolean;
   isFeatured: boolean;
   badge: ProductBadgeCode | null;
   coverUrl: string | null;
@@ -52,12 +63,19 @@ export interface AdminProductDto {
   sku: string;
   categoryId: string;
   categorySlug: string;
+  /** Precio de venta actual: el de oferta si hay oferta. */
   price: MoneyDto;
+  /** Precio normal cuando hay oferta. */
+  compareAtPrice: MoneyDto | null;
+  /** Costo interno; nunca sale a la tienda. */
+  cost: MoneyDto | null;
   stock: number;
+  lowStockThreshold: number;
   status: ProductStatusCode;
   isFeatured: boolean;
   badge: ProductBadgeCode | null;
   size: ProductSizeCode | null;
+  intention: ProductIntentionCode | null;
   signs: ZodiacSignCode[];
   origin: string | null;
   content: ProductContentByLocaleDto;
@@ -65,9 +83,15 @@ export interface AdminProductDto {
   updatedAt: string;
 }
 
+export type AdminStockFilterCode = 'low' | 'out';
+
 export interface AdminProductListQuery {
   q?: string;
   status?: ProductStatusCode;
+  /** Incluye las subcategorías. */
+  categoryId?: string;
+  /** `low`: stock bajo con existencias. `out`: agotado. */
+  stock?: AdminStockFilterCode;
   page?: number;
   pageSize?: number;
 }
@@ -82,14 +106,21 @@ export interface AdminProductListResponse {
 export interface UpsertProductRequest {
   sku: string;
   categoryId: string;
-  /** Céntimos. */
+  /** Céntimos. Precio de venta actual: el de oferta si hay oferta. */
   priceCents: number;
+  /** Céntimos. Precio normal cuando hay oferta; debe ser mayor que `priceCents`. */
+  compareAtPriceCents: number | null;
+  /** Céntimos. Costo interno para calcular el margen. */
+  costCents: number | null;
   currency: CurrencyCode;
+  /** Solo se usa al crear: después el stock cambia con movimientos de inventario. */
   stock: number;
+  lowStockThreshold: number;
   status: ProductStatusCode;
   isFeatured: boolean;
   badge: ProductBadgeCode | null;
   size: ProductSizeCode | null;
+  intention: ProductIntentionCode | null;
   signs: ZodiacSignCode[];
   origin: string | null;
   content: ProductContentByLocaleDto;
@@ -122,10 +153,68 @@ export interface UpdateProductImageAltRequest {
   alt: ImageAltDto;
 }
 
+export interface CategoryContentDto {
+  name: string;
+  slug: string;
+  description: string | null;
+}
+
 export interface AdminCategoryDto {
   id: string;
   slug: string;
+  /** Nombre en español. */
   name: string;
+  parentId: string | null;
+  sortOrder: number;
+  productCount: number;
+  childCount: number;
+  content: { es: CategoryContentDto; en: CategoryContentDto | null };
+}
+
+export interface UpsertCategoryRequest {
+  /** Categoría superior; null = categoría principal. Solo se admite un nivel de subcategoría. */
+  parentId: string | null;
+  sortOrder: number;
+  content: { es: CategoryContentDto; en: CategoryContentDto | null };
+}
+
+export type StockMovementTypeCode =
+  'INITIAL' | 'RESTOCK' | 'SALE' | 'SALE_CANCELLED' | 'ADJUSTMENT';
+
+export interface StockMovementDto {
+  id: string;
+  productId: string;
+  productName: string;
+  productSku: string;
+  type: StockMovementTypeCode;
+  /** Positivo si entra, negativo si sale. */
+  quantity: number;
+  stockAfter: number;
+  note: string | null;
+  orderId: string | null;
+  orderNumber: number | null;
+  adminName: string | null;
+  createdAt: string;
+}
+
+export interface StockMovementListQuery {
+  productId?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface StockMovementListResponse {
+  data: StockMovementDto[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface AdjustStockRequest {
+  /** `RESTOCK`: entrada de unidades. `ADJUSTMENT`: corrección, positiva o negativa. */
+  type: 'RESTOCK' | 'ADJUSTMENT';
+  quantity: number;
+  note: string | null;
 }
 
 export const ADMIN_CATALOG_ROUTES = {
@@ -137,4 +226,7 @@ export const ADMIN_CATALOG_ROUTES = {
   imagesOrder: (id: string) => `/admin/products/${id}/images/order`,
   image: (id: string, imageId: string) => `/admin/products/${id}/images/${imageId}`,
   categories: '/admin/categories',
+  category: (id: string) => `/admin/categories/${id}`,
+  productStock: (id: string) => `/admin/products/${id}/stock`,
+  stockMovements: '/admin/stock-movements',
 } as const;

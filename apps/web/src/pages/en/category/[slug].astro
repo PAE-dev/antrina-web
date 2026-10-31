@@ -1,0 +1,41 @@
+---
+import CategoryView from '../../../components/views/CategoryView.astro';
+import MessageView from '../../../components/views/MessageView.astro';
+import NotFoundView from '../../../components/views/NotFoundView.astro';
+import { getPageCopy } from '../../../i18n/pages';
+import { CATALOG_CACHE_CONTROL } from '../../../lib/catalog';
+import { loadCategory } from '../../../lib/page-data';
+import { alternatesFor, routes, TREES_CATEGORY_SLUG } from '../../../lib/routes';
+
+export const prerender = false;
+const data = await loadCategory('en', Astro.params.slug ?? '');
+const copy = getPageCopy('en');
+
+if (data.status === 'ok') {
+  // Los árboles tienen su propio catálogo: una sola URL para Google.
+  if (data.category.slug === TREES_CATEGORY_SLUG) {
+    return Astro.redirect(routes.catalog('en'), 301);
+  }
+  Astro.response.headers.set('Cache-Control', CATALOG_CACHE_CONTROL);
+} else if (data.status === 'not_found') {
+  Astro.response.status = 404;
+} else {
+  Astro.response.status = 503;
+  Astro.response.headers.set('Retry-After', '60');
+}
+---
+
+{data.status === 'ok' ? (
+  <CategoryView locale="en" {...data} />
+) : data.status === 'not_found' ? (
+  <NotFoundView locale="en" />
+) : (
+  <MessageView
+    locale="en"
+    alternates={alternatesFor((code) => routes.category(code))}
+    label="503"
+    title={copy.category.unavailableTitle}
+    text={copy.product.unavailableText}
+    cta={{ label: copy.notFound.cta, href: routes.home('en') }}
+  />
+)}

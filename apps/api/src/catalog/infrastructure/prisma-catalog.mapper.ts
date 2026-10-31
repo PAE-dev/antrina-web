@@ -1,15 +1,18 @@
 import {
   Category,
+  type CategoryContent,
   DEFAULT_LOCALE,
   DomainError,
   type ImageAlt,
   isImageContentType,
   isLocale,
+  isProductIntention,
   isZodiacSign,
   type Locale,
   type Localized,
   Money,
   Product,
+  type ProductCategoryContent,
   type ProductContent,
   type ProductImage,
 } from '@antrina/domain';
@@ -19,7 +22,9 @@ export const productImageInclude = { translations: true } satisfies Prisma.Produ
 
 export const productInclude = {
   translations: true,
-  category: { select: { slug: true } },
+  category: {
+    select: { slug: true, translations: { select: { locale: true, name: true, slug: true } } },
+  },
   images: { include: productImageInclude, orderBy: { position: 'asc' } },
 } satisfies Prisma.ProductInclude;
 
@@ -74,22 +79,32 @@ export function toDomainProduct(record: ProductRecord): Product {
     metaDescription: row.metaDescription,
   }));
 
+  const categoryContent = toLocalized<ProductCategoryContent>(
+    record.categoryId,
+    record.category.translations,
+    (row) => ({ name: row.name, slug: row.slug }),
+  );
+
   return Product.create({
     id: record.id,
     sku: record.sku,
     categoryId: record.categoryId,
     categorySlug: record.category.slug,
+    categoryContent,
     price: Money.ofCents(record.priceCents, record.currency),
     compareAtPrice:
       record.compareAtPriceCents === null
         ? null
         : Money.ofCents(record.compareAtPriceCents, record.currency),
+    cost: record.costCents === null ? null : Money.ofCents(record.costCents, record.currency),
     stock: record.stock,
+    lowStockThreshold: record.lowStockThreshold,
     images: record.images.map(toDomainProductImage),
     status: record.status,
     isFeatured: record.isFeatured,
     badge: record.badge,
     size: record.size,
+    intention: isProductIntention(record.intention) ? record.intention : null,
     signs: record.signs.filter(isZodiacSign),
     origin: record.origin,
     content,
@@ -98,8 +113,10 @@ export function toDomainProduct(record: ProductRecord): Product {
 }
 
 export function toDomainCategory(record: CategoryRecord): Category {
-  const name = toLocalized<{ name: string }>(record.id, record.translations, (row) => ({
+  const content = toLocalized<CategoryContent>(record.id, record.translations, (row) => ({
     name: row.name,
+    slug: row.slug,
+    description: row.description,
   }));
 
   return Category.create({
@@ -107,8 +124,6 @@ export function toDomainCategory(record: CategoryRecord): Category {
     slug: record.slug,
     parentId: record.parentId,
     sortOrder: record.sortOrder,
-    name: Object.fromEntries(
-      Object.entries(name).map(([locale, value]) => [locale, value.name]),
-    ) as Localized<string>,
+    content,
   });
 }

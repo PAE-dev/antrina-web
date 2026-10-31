@@ -3,39 +3,45 @@ import { type LocaleCode, type ProductSummaryDto } from '@antrina/contracts';
 import { ButtonLink, ProductList } from '@antrina/ui';
 import { getDictionary } from '../i18n/dictionaries';
 import { getPageCopy } from '../i18n/pages';
-import { intentionLabel } from '../i18n/taxonomy';
+import { productTag } from '../i18n/taxonomy';
 import { cardImage } from '../lib/images';
-import { routes } from '../lib/routes';
+import { productPath, routes, TREES_CATEGORY_SLUG } from '../lib/routes';
 
 interface Props {
   locale: LocaleCode;
   products: ProductSummaryDto[];
+  /** Mensaje si la colección está vacía; por defecto invita a encargar un árbol. */
+  empty?: string;
 }
 
-const { locale, products } = Astro.props;
+const { locale, products, empty } = Astro.props;
 const t = getDictionary(locale);
 const copy = getPageCopy(locale);
+const onlyTrees = products.every((product) => product.categorySlug === TREES_CATEGORY_SLUG);
+const count = onlyTrees ? copy.catalog.count : copy.category.count;
 ---
 
 <section class="border-t border-border pb-20 pt-10 md:pb-32 md:pt-12">
   <div class="container-page flex flex-col gap-10">
-    <p class="type-label">{copy.catalog.count(products.length)}</p>
+    <p class="type-label">{count(products.length)}</p>
     {products.length > 0 ? (
       <ProductList
         products={products}
         locale={locale}
         badgeLabels={t.badges}
         imagePlaceholderLabel={t.productPhoto}
-        intentionOf={(product) => intentionLabel(locale, product.categorySlug)}
-        productHref={(product) => routes.product(locale, product.slug)}
+        intentionOf={(product) => productTag(locale, product)}
+        productHref={(product) => productPath(locale, product.slug, product.categorySlug)}
         imageLoader={cardImage}
       />
     ) : (
       <div class="flex flex-col items-start gap-6 rounded-md bg-bg-alt p-8 md:p-12">
-        <p class="type-body measure">{copy.collection.empty}</p>
-        <ButtonLink href={routes.createTree(locale)} withArrow>
-          {copy.collection.emptyCta}
-        </ButtonLink>
+        <p class="type-body measure">{empty ?? copy.collection.empty}</p>
+        {!empty && (
+          <ButtonLink href={routes.createTree(locale)} withArrow>
+            {copy.collection.emptyCta}
+          </ButtonLink>
+        )}
       </div>
     )}
   </div>

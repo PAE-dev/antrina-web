@@ -4,6 +4,8 @@ export type ProductBadgeCode = 'NEW' | 'CUSTOMIZABLE' | 'LIMITED_EDITION';
 
 export type ProductSizeCode = 'MINI' | 'STANDARD' | 'LARGE' | 'SIGNATURE';
 
+export type ProductIntentionCode = 'abundancia' | 'amor' | 'proteccion' | 'felicidad' | 'mixto';
+
 export type ZodiacSignCode =
   | 'ARIES'
   | 'TAURUS'
@@ -18,13 +20,22 @@ export type ZodiacSignCode =
   | 'AQUARIUS'
   | 'PISCES';
 
+export interface ProductCategoryRefDto {
+  name: string;
+  slug: string;
+}
+
 export interface ProductSummaryDto {
   id: string;
   sku: string;
   slug: string;
   name: string;
   description: string;
+  /** Slug en español: identifica la categoría en filtros. */
   categorySlug: string;
+  /** Nombre y URL de la categoría en este idioma. */
+  category: ProductCategoryRefDto;
+  intention: ProductIntentionCode | null;
   origin: string | null;
   imageUrl: string | null;
   imageAlt: string | null;
@@ -64,8 +75,12 @@ export interface ProductIndexItemDto {
   id: string;
   sku: string;
   categorySlug: string;
+  /** Nombre de la categoría en español. */
+  categoryName: string;
+  intention: ProductIntentionCode | null;
   size: ProductSizeCode | null;
   price: MoneyDto;
+  compareAtPrice: MoneyDto | null;
   isPurchasable: boolean;
   imageUrls: string[];
   content: Partial<Record<LocaleCode, ProductIndexContentDto>> & { es: ProductIndexContentDto };
@@ -74,14 +89,23 @@ export interface ProductIndexItemDto {
 
 export interface CategoryDto {
   id: string;
+  /** Slug en español: el valor del filtro `category`. */
   slug: string;
+  /** Slug de la URL en este idioma. */
+  urlSlug: string;
+  /** Slug de la URL en cada idioma traducido. */
+  slugs: Partial<Record<LocaleCode, string>>;
   name: string;
+  description: string | null;
   parentId: string | null;
+  /** Productos publicados asignados directamente a esta categoría. */
+  productCount: number;
 }
 
 export interface ListProductsQuery {
   locale?: LocaleCode;
   category?: string;
+  intention?: ProductIntentionCode;
   size?: ProductSizeCode;
   sign?: ZodiacSignCode;
   featured?: boolean;

@@ -7,7 +7,7 @@ export const PRODUCT_STATUSES = ['DRAFT', 'ACTIVE', 'ARCHIVED'] as const;
 
 export type ProductStatus = (typeof PRODUCT_STATUSES)[number];
 
-/** Etiqueta editorial visible en catálogo. Nunca representa descuentos. */
+/** Etiqueta editorial visible en catálogo. Las ofertas se ven en el precio, no con una etiqueta. */
 export const PRODUCT_BADGES = ['NEW', 'CUSTOMIZABLE', 'LIMITED_EDITION'] as const;
 
 export type ProductBadge = (typeof PRODUCT_BADGES)[number];
@@ -15,6 +15,21 @@ export type ProductBadge = (typeof PRODUCT_BADGES)[number];
 export const PRODUCT_SIZES = ['MINI', 'STANDARD', 'LARGE', 'SIGNATURE'] as const;
 
 export type ProductSize = (typeof PRODUCT_SIZES)[number];
+
+/** Propósito con el que se elige una pieza. Opcional: no todo producto tiene intención. */
+export const PRODUCT_INTENTIONS = [
+  'abundancia',
+  'amor',
+  'proteccion',
+  'felicidad',
+  'mixto',
+] as const;
+
+export type ProductIntention = (typeof PRODUCT_INTENTIONS)[number];
+
+export function isProductIntention(value: unknown): value is ProductIntention {
+  return typeof value === 'string' && (PRODUCT_INTENTIONS as readonly string[]).includes(value);
+}
 
 export const ZODIAC_SIGNS = [
   'ARIES',
@@ -47,20 +62,33 @@ export interface ProductContent {
   metaDescription: string | null;
 }
 
+export interface ProductCategoryContent {
+  name: string;
+  slug: string;
+}
+
 export interface ProductProps {
   id: string;
   sku: string;
   categoryId: string;
+  /** Slug en español: identifica la categoría en filtros. */
   categorySlug: string;
+  /** Nombre y URL de la categoría en cada idioma, para la tienda. */
+  categoryContent: Localized<ProductCategoryContent>;
   price: Money;
   compareAtPrice: Money | null;
+  /** Costo interno para calcular el margen; nunca sale a la tienda. */
+  cost: Money | null;
   stock: number;
+  /** Con este stock o menos el panel avisa de stock bajo. */
+  lowStockThreshold: number;
   /** Ordenadas por `position`; la primera es la portada. */
   images: ProductImage[];
   status: ProductStatus;
   isFeatured: boolean;
   badge: ProductBadge | null;
   size: ProductSize | null;
+  intention: ProductIntention | null;
   signs: readonly ZodiacSign[];
   /** Origen artesanal (ej. "Taller Antrina, Lima"). */
   origin: string | null;
@@ -101,12 +129,28 @@ export class Product {
     return this.props.categorySlug;
   }
 
+  categoryContentFor(locale: Locale): ProductCategoryContent {
+    return pickLocalized(this.props.categoryContent, locale);
+  }
+
   get price(): Money {
     return this.props.price;
   }
 
   get compareAtPrice(): Money | null {
     return this.props.compareAtPrice;
+  }
+
+  get cost(): Money | null {
+    return this.props.cost;
+  }
+
+  get lowStockThreshold(): number {
+    return this.props.lowStockThreshold;
+  }
+
+  get intention(): ProductIntention | null {
+    return this.props.intention;
   }
 
   get images(): readonly ProductImage[] {
@@ -160,6 +204,10 @@ export class Product {
 
   isPurchasable(): boolean {
     return this.props.status === 'ACTIVE' && this.props.stock > 0;
+  }
+
+  isLowStock(): boolean {
+    return this.props.stock <= this.props.lowStockThreshold;
   }
 
   isOnSale(): boolean {

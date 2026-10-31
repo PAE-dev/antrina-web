@@ -117,11 +117,13 @@ export class AdminUser {
   }
 }
 
-export type AdminPermission = 'catalog.manage' | 'admins.manage';
+export const ADMIN_PERMISSIONS = ['catalog.manage', 'sales.manage', 'admins.manage'] as const;
+
+export type AdminPermission = (typeof ADMIN_PERMISSIONS)[number];
 
 const ROLE_PERMISSIONS: Record<AdminRole, readonly AdminPermission[]> = {
-  OWNER: ['catalog.manage', 'admins.manage'],
-  EDITOR: ['catalog.manage'],
+  OWNER: ['catalog.manage', 'sales.manage', 'admins.manage'],
+  EDITOR: ['catalog.manage', 'sales.manage'],
 };
 
 export function normalizeEmail(email: string): string {

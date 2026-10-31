@@ -26,7 +26,7 @@ export function LoginPage() {
       setPassword('');
       if (result.status === 'AUTHENTICATED') {
         void queryClient.invalidateQueries({ queryKey: ME_QUERY_KEY });
-        void navigate('/productos', { replace: true });
+        void navigate('/resumen', { replace: true });
         return;
       }
       void navigate(result.status === 'MFA_REQUIRED' ? '/login/verificar' : '/configurar-2fa');

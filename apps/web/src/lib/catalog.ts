@@ -1,5 +1,7 @@
 import {
   CATALOG_ROUTES,
+  type CategoryDto,
+  type ListCategoriesResponse,
   type ListProductsQuery,
   type ListProductsResponse,
   type LocaleCode,
@@ -66,6 +68,7 @@ export async function listProducts(query: ListProductsQuery): Promise<ProductSum
     return getFallbackProducts(query.locale ?? 'es').filter(
       (product) =>
         (!query.category || product.categorySlug === query.category) &&
+        (!query.intention || product.intention === query.intention) &&
         (!query.size || product.size === query.size) &&
         (!query.sign || product.signs.includes(query.sign)),
     );
@@ -92,6 +95,16 @@ export async function getProductIndex(): Promise<ProductIndexItemDto[] | null> {
     return (await getJson<ProductIndexResponse>(CATALOG_ROUTES.productIndex)).data;
   } catch (error) {
     warn('índice no disponible', error);
+    return null;
+  }
+}
+
+/** Categorías con su URL en este idioma. `null` si la API no responde. */
+export async function getCategories(locale: LocaleCode): Promise<CategoryDto[] | null> {
+  try {
+    return (await getJson<ListCategoriesResponse>(CATALOG_ROUTES.categories, { locale })).data;
+  } catch (error) {
+    warn('categorías no disponibles', error);
     return null;
   }
 }

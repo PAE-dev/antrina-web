@@ -11,7 +11,13 @@ import {
   type ProductDetailDto,
   type ProductIndexResponse,
 } from '@antrina/contracts';
-import { isZodiacSign, PRODUCT_SIZES, type ProductSize, resolveLocale } from '@antrina/domain';
+import {
+  isProductIntention,
+  isZodiacSign,
+  PRODUCT_SIZES,
+  type ProductSize,
+  resolveLocale,
+} from '@antrina/domain';
 import { parseBoolean, parsePositiveInt } from '../../shared/presentation/query-parsers.js';
 
 const isProductSize = (value: string | undefined): value is ProductSize =>
@@ -30,6 +36,7 @@ export class CatalogController {
   async products(
     @Query('locale') locale?: string,
     @Query('category') category?: string,
+    @Query('intention') intention?: string,
     @Query('size') size?: string,
     @Query('sign') sign?: string,
     @Query('featured') featured?: string,
@@ -40,6 +47,7 @@ export class CatalogController {
       locale: resolveLocale(locale),
       featuredOnly: parseBoolean(featured),
       ...(category ? { categorySlug: category } : {}),
+      ...(isProductIntention(intention) ? { intention } : {}),
       ...(isProductSize(size) ? { size } : {}),
       ...(isZodiacSign(sign) ? { sign } : {}),
       ...(parsedLimit ? { limit: parsedLimit } : {}),

@@ -340,6 +340,14 @@ export const signByCode = (code: ZodiacSignCode) => SIGNS.find((entry) => entry.
 
 export const sizeByCode = (code: ProductSizeCode) => SIZES.find((entry) => entry.code === code);
 
+/** Etiqueta de un producto: su intención o, si no tiene, su categoría. */
+export function productTag(
+  locale: LocaleCode,
+  product: { intention: string | null; category: { name: string } },
+): string {
+  return product.intention ? intentionLabel(locale, product.intention) : product.category.name;
+}
+
 export function intentionLabel(locale: LocaleCode, category: string): string {
   return intentionByCategory(category)?.copy[locale].label ?? '';
 }

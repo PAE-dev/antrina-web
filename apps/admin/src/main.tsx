@@ -8,12 +8,20 @@ import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router';
 import { AdminLayout } from './components/AdminLayout';
 import { isUnauthorized } from './lib/api';
+import { CategoriesPage } from './pages/CategoriesPage';
+import { CustomerDrawer } from './pages/CustomerDrawer';
+import { CustomersPage } from './pages/CustomersPage';
+import { DashboardPage } from './pages/DashboardPage';
+import { InventoryPage } from './pages/InventoryPage';
 import { LoginPage } from './pages/LoginPage';
+import { OrderDrawer } from './pages/OrderDrawer';
+import { OrdersPage } from './pages/OrdersPage';
 import { ProductDrawer } from './pages/ProductDrawer';
 import { ProductsPage } from './pages/ProductsPage';
 import { SetupMfaPage } from './pages/SetupMfaPage';
 import { SiteImagesPage } from './pages/SiteImagesPage';
 import { VerifyMfaPage } from './pages/VerifyMfaPage';
+import { WhatsAppPage } from './pages/WhatsAppPage';
 import { ME_QUERY_KEY } from './auth/session';
 
 /** Si la sesión caduca a mitad de una acción, el layout redirige al login. */
@@ -39,15 +47,29 @@ const router = createBrowserRouter([
   {
     element: <AdminLayout />,
     children: [
+      { path: '/resumen', element: <DashboardPage /> },
+      {
+        path: '/ventas',
+        element: <OrdersPage />,
+        children: [{ path: ':id', element: <OrderDrawer /> }],
+      },
       {
         path: '/productos',
         element: <ProductsPage />,
         children: [{ path: ':id', element: <ProductDrawer /> }],
       },
+      { path: '/inventario', element: <InventoryPage /> },
+      { path: '/categorias', element: <CategoriesPage /> },
+      {
+        path: '/clientes',
+        element: <CustomersPage />,
+        children: [{ path: ':id', element: <CustomerDrawer /> }],
+      },
+      { path: '/whatsapp', element: <WhatsAppPage /> },
       { path: '/portada', element: <SiteImagesPage /> },
     ],
   },
-  { path: '*', element: <Navigate to="/productos" replace /> },
+  { path: '*', element: <Navigate to="/resumen" replace /> },
 ]);
 
 const root = document.getElementById('root');

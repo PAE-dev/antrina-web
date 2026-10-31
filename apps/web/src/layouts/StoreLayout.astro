@@ -2,6 +2,7 @@
 import { type LocaleCode } from '@antrina/contracts';
 import { AnnouncementBar, SiteFooter, SiteHeader } from '@antrina/ui';
 import { getDictionary } from '../i18n/dictionaries';
+import { getCategories } from '../lib/catalog';
 import {
   buildFooterColumns,
   buildMainNavigation,
@@ -27,6 +28,7 @@ interface Props {
 const { locale, alternates, ...seo } = Astro.props;
 const t = getDictionary(locale);
 const locales = localeOptionsFor(locale, alternates);
+const categories = (await getCategories(locale)) ?? [];
 ---
 
 <BaseLayout locale={locale} alternates={alternates} {...seo}>
@@ -43,7 +45,7 @@ const locales = localeOptionsFor(locale, alternates);
     accountHref={routes.account(locale)}
     cartHref={routes.cart(locale)}
     cartCount={0}
-    navigation={buildMainNavigation(locale, t)}
+    navigation={buildMainNavigation(locale, t, categories)}
     locales={locales}
     labels={t.header}
   />
@@ -55,7 +57,7 @@ const locales = localeOptionsFor(locale, alternates);
     homeLabel={t.header.home}
     slogan={t.footer.slogan}
     tagline={t.footer.tagline}
-    columns={buildFooterColumns(locale, t)}
+    columns={buildFooterColumns(locale, t, categories)}
     socials={SOCIAL_LINKS}
     socialLabel={t.footer.socialLabel}
     locales={locales}

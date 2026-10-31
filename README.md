@@ -1,14 +1,12 @@
 # Antrina
 
-Tienda de árboles bonsái de cuarzo hechos a mano en nuestro taller familiar de Lima.
+Tienda de árboles de cuarzo y otras piezas hechas a mano en nuestro taller familiar de Lima.
 _Arraigado en tu intención._
 
 Monorepo con **Astro 7 + HeroUI v3** (storefront), **Vite + React + HeroUI v3** (panel de
 administración) y **NestJS 12 + Prisma 7 + PostgreSQL** (API), organizado con arquitectura hexagonal.
-El sistema de diseño "Galería mineral" (paleta piedra/carbón con amatista, tipografía Bricolage
-Grotesque + Geist + Geist Mono, layout) vive en `packages/ui/src/styles/tokens.css`, lo comparten la
-tienda y el panel, y está documentado en
-[AGENTS.md](AGENTS.md#sistema-de-diseño-obligatorio-galería-mineral).
+El sistema de diseño "Marino" (azul marino, hueso y terracota, tipografía Fraunces + DM Sans, rombo
+de marca) vive en `packages/ui/src/styles/tokens.css` y lo comparten la tienda y el panel.
 
 ## Requisitos
 
@@ -28,6 +26,9 @@ pnpm db:seed
 pnpm dev
 ```
 
+Producción (Supabase): antes de publicar una versión con migraciones nuevas, aplícalas con
+`DATABASE_URL=<url directa> pnpm --filter @antrina/api db:deploy`. Vercel no lo hace solo.
+
 - Web: http://localhost:4321 (español) y http://localhost:4321/en/
 - Panel: http://localhost:5174
 - API: http://localhost:3001/catalog/products?featured=true&locale=es
@@ -44,12 +45,18 @@ consola.
 pnpm admin:create --email taller@antrina.com --name "Taller Antrina" --role OWNER
 ```
 
-1. Entra en http://localhost:5174 con ese correo y contraseña.
-2. La primera vez se pide vincular una app autenticadora (Google Authenticator, 1Password, Authy…)
-   escaneando el QR. A partir de ahí cada acceso pide contraseña + código de 6 dígitos.
-3. En **Productos** se crean y editan productos (español obligatorio, inglés opcional), precio en
-   soles, stock, estado (borrador / publicado / archivado), intención, etiqueta y destacado.
-4. Al editar un producto se suben las fotos: se optimizan en el navegador (WebP, máx. 2400 px), se
+1. Entra en http://localhost:5174 con ese correo y contraseña. El 2FA es opcional.
+2. **Resumen:** ventas de hoy y del mes, ingresos de 30 días, más vendidos y stock por reponer.
+3. **Ventas:** registra una venta (productos, cliente, canal, pago, envío y descuento). El stock se
+   descuenta solo y, si la cancelas, vuelve. Estados: pendiente, pagada, enviada y entregada.
+4. **Productos:** categoría y subcategoría, precio normal, precio de oferta, costo (solo interno),
+   stock inicial, alerta de stock, estado y etiqueta. Español obligatorio, inglés opcional.
+5. **Inventario:** entradas, salidas y conteos por cantidad, con historial de cada movimiento.
+6. **Categorías:** categorías con un nivel de subcategoría. Las que tienen productos publicados
+   aparecen en la tienda (`/categoria/<slug>`).
+7. **Clientes y WhatsApp:** los clientes se crean al vender con su teléfono. La vista de WhatsApp
+   abre el chat con mensajes listos; recibir mensajes en el panel llegará con la API de WhatsApp.
+8. Al editar un producto se suben las fotos: se optimizan en el navegador (WebP, máx. 2400 px), se
    suben directo al almacenamiento con una URL firmada y se ordenan arrastrando; la primera es la
    portada en la tienda. Cada foto lleva texto alternativo en es/en.
 
@@ -70,7 +77,7 @@ El mismo código usa MinIO en local y R2 en producción; solo cambian las variab
 apps/
   web/        Astro storefront (i18n es/en)
   admin/      Panel de administración (Vite + React + HeroUI)
-  api/        NestJS: catalog, checkout, notification, admin-auth, admin-catalog
+  api/        NestJS: catalog, checkout, notification, admin-auth, admin-catalog, admin-sales
 packages/
   domain/       entidades, value objects y puertos
   application/  casos de uso (+ tests Vitest)
@@ -84,10 +91,9 @@ Convenciones, fronteras entre capas y recetas para extender: ver [AGENTS.md](AGE
 ## Roadmap
 
 1. **Fase 1:** monorepo, catálogo de solo lectura, home con identidad de marca.
-2. **Panel admin (actual):** acceso con 2FA, productos, stock y fotos.
+2. **Panel admin (actual):** resumen, ventas, inventario, categorías, clientes y fotos.
 3. Páginas de intención, signo, tamaño y producto; "Crea tu árbol" (configurador).
 4. Carrito y checkout con pasarela peruana (Culqi / Niubiz / Yape).
-5. Notificación de pedidos por WhatsApp Cloud API.
-6. Panel admin: pedidos, promociones (sin descuentos visibles en home ni catálogo) y gestión de
-   administradores.
+5. WhatsApp Cloud API: conectar el número y recibir mensajes en el panel.
+6. Panel admin: promociones y gestión de administradores.
 7. Multi-país: monedas, impuestos y envíos por país.

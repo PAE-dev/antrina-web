@@ -1,0 +1,62 @@
+---
+import { type CategoryDto, type LocaleCode, type ProductSummaryDto } from '@antrina/contracts';
+import { getPageCopy } from '../../i18n/pages';
+import { alternatesFor, routes } from '../../lib/routes';
+import { type Crumb } from '../../lib/structured-data';
+import LinkPills from '../LinkPills.astro';
+import CollectionView from './CollectionView.astro';
+
+interface Props {
+  locale: LocaleCode;
+  category: CategoryDto;
+  parent: CategoryDto | undefined;
+  siblings: CategoryDto[];
+  products: ProductSummaryDto[];
+}
+
+const { locale, category, parent, siblings, products } = Astro.props;
+const copy = getPageCopy(locale);
+const root = parent ?? category;
+const crumbs: Crumb[] = [
+  { name: copy.category.label, path: routes.category(locale) },
+  ...(parent ? [{ name: parent.name, path: routes.category(locale, parent.urlSlug) }] : []),
+  { name: category.name, path: routes.category(locale, category.urlSlug) },
+];
+const isTranslated = Boolean(category.slugs[locale]);
+---
+
+<CollectionView
+  locale={locale}
+  alternates={alternatesFor((code) => {
+    const slug = category.slugs[code];
+    return slug ? routes.category(code, slug) : null;
+  })}
+  metaTitle={category.name}
+  metaDescription={category.description ?? copy.category.pageMetaDescription(category.name)}
+  crumbs={crumbs}
+  label={parent?.name ?? copy.category.label}
+  title={copy.category.pageTitle(category.name)}
+  intro={category.description ?? copy.category.pageIntro(category.name)}
+  products={products}
+  empty={copy.category.empty}
+  noindex={!isTranslated}
+>
+  {siblings.length > 0 && (
+    <LinkPills
+      slot="header"
+      label={root.name}
+      links={[
+        {
+          label: copy.category.all,
+          href: routes.category(locale, root.urlSlug),
+          isActive: !parent,
+        },
+        ...siblings.map((item) => ({
+          label: item.name,
+          href: routes.category(locale, item.urlSlug),
+          isActive: item.id === category.id,
+        })),
+      ]}
+    />
+  )}
+</CollectionView>

@@ -1,24 +1,21 @@
-import { Button, SearchField, Skeleton, Tabs } from '@heroui/react';
+import { Button, SearchField, Skeleton, Tabs, Tooltip } from '@heroui/react';
 import {
   ADMIN_CATALOG_ROUTES,
   type AdminCategoryDto,
+  type AdminProductListItemDto,
   type AdminProductListResponse,
+  type AdminStockFilterCode,
   type ProductStatusCode,
 } from '@antrina/contracts';
 import { formatMoney } from '@antrina/ui';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Link, Outlet, useNavigate } from 'react-router';
+import { Link, Outlet, useNavigate, useSearchParams } from 'react-router';
 import { ErrorNotice } from '../components/ErrorNotice';
-import {
-  IconBox,
-  IconChevronLeft,
-  IconChevronRight,
-  IconImage,
-  IconPlus,
-  IconStar,
-} from '../components/icons';
+import { IconBox, IconImage, IconPlus, IconReceipt, IconStar } from '../components/icons';
+import { Choice, Pagination, TH } from '../components/PageKit';
 import { StatusBadge } from '../components/StatusBadge';
+import { StockDialog, type StockTarget } from '../components/StockDialog';
 import { api } from '../lib/api';
 import { formatShortDate } from '../lib/format';
 
@@ -32,20 +29,51 @@ const FILTERS: { id: StatusFilter; label: string }[] = [
   { id: 'ARCHIVED', label: 'Archivados' },
 ];
 
-const TH = 'h-10 px-4 text-left text-[12px] font-medium text-text-muted';
+const ALL = 'ALL';
+
+function ProductPrice({ product }: { product: AdminProductListItemDto }) {
+  return (
+    <span className="flex flex-col items-end">
+      <span className="panel-num whitespace-nowrap text-[13.5px] font-medium text-text">
+        {formatMoney(product.price, 'es')}
+      </span>
+      {product.compareAtPrice && (
+        <span className="panel-num whitespace-nowrap text-[12px] text-text-muted line-through">
+          {formatMoney(product.compareAtPrice, 'es')}
+        </span>
+      )}
+    </span>
+  );
+}
+
+function stockTone(product: AdminProductListItemDto): string {
+  if (product.stock === 0) return 'font-medium text-danger';
+  if (product.isLowStock) return 'font-medium text-warning';
+  return 'text-text-secondary';
+}
 
 export function ProductsPage() {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<StatusFilter>('ALL');
+  const [stock, setStock] = useState<AdminStockFilterCode | typeof ALL>(ALL);
   const [page, setPage] = useState(1);
+  const [stockTarget, setStockTarget] = useState<StockTarget | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const categoryId = searchParams.get('categoria') ?? ALL;
+  const setCategory = (value: string) => {
+    setSearchParams(value === ALL ? {} : { categoria: value }, { replace: true });
+    setPage(1);
+  };
 
   const params = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE) });
   if (query.trim()) params.set('q', query.trim());
   if (status !== 'ALL') params.set('status', status);
+  if (categoryId !== ALL) params.set('categoryId', categoryId);
+  if (stock !== ALL) params.set('stock', stock);
 
   const products = useQuery({
-    queryKey: ['admin', 'products', { query: query.trim(), status, page }],
+    queryKey: ['admin', 'products', { query: query.trim(), status, categoryId, stock, page }],
     queryFn: () =>
       api<AdminProductListResponse>('GET', `${ADMIN_CATALOG_ROUTES.products}?${params.toString()}`),
     placeholderData: keepPreviousData,
@@ -55,12 +83,31 @@ export function ProductsPage() {
     queryFn: () => api<AdminCategoryDto[]>('GET', ADMIN_CATALOG_ROUTES.categories),
     staleTime: 5 * 60_000,
   });
-  const categoryNames = new Map(categories.data?.map((c) => [c.slug, c.name]));
+  const allCategories = categories.data ?? [];
+  const categoryById = new Map(allCategories.map((category) => [category.id, category]));
+  /** "Velas › Aromáticas" para las subcategorías. */
+  const categoryLabel = (id: string) => {
+    const category = categoryById.get(id);
+    if (!category) return '';
+    const parent = category.parentId ? categoryById.get(category.parentId) : undefined;
+    return parent ? `${parent.name} › ${category.name}` : category.name;
+  };
+  const categoryOptions = [
+    { id: ALL, label: 'Todas las categorías' },
+    ...allCategories
+      .filter((category) => !category.parentId)
+      .flatMap((root) => [
+        { id: root.id, label: root.name },
+        ...allCategories
+          .filter((child) => child.parentId === root.id)
+          .map((child) => ({ id: child.id, label: child.name, indent: true })),
+      ]),
+  ];
 
   const total = products.data?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const rows = products.data?.data ?? [];
-  const isFiltered = Boolean(query.trim()) || status !== 'ALL';
+  const isFiltered =
+    Boolean(query.trim()) || status !== 'ALL' || categoryId !== ALL || stock !== ALL;
   const open = (id: string) => void navigate(`/productos/${id}`);
 
   return (
@@ -69,7 +116,7 @@ export function ProductsPage() {
         <div className="flex flex-col gap-1">
           <h1 className="panel-title">Productos</h1>
           <p className="text-[13.5px] text-text-secondary">
-            Árboles del catálogo, su precio, stock y fotos.
+            Todo tu catálogo: categoría, precio, oferta, stock y fotos.
           </p>
         </div>
         <Button variant="primary" size="md" onPress={() => open('nuevo')}>
@@ -79,7 +126,7 @@ export function ProductsPage() {
       </div>
 
       <div className="panel-card overflow-hidden">
-        <div className="flex flex-col gap-3 border-b border-border p-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-3 border-b border-border p-3">
           <Tabs
             selectedKey={status}
             onSelectionChange={(key) => {
@@ -98,21 +145,44 @@ export function ProductsPage() {
               </Tabs.List>
             </Tabs.ListContainer>
           </Tabs>
-          <SearchField
-            aria-label="Buscar por nombre o SKU"
-            value={query}
-            onChange={(value) => {
-              setQuery(value);
-              setPage(1);
-            }}
-            className="md:w-72"
-          >
-            <SearchField.Group>
-              <SearchField.SearchIcon />
-              <SearchField.Input placeholder="Buscar por nombre o SKU" />
-              <SearchField.ClearButton />
-            </SearchField.Group>
-          </SearchField>
+          <div className="flex flex-col gap-2 md:flex-row">
+            <SearchField
+              aria-label="Buscar por nombre o SKU"
+              value={query}
+              onChange={(value) => {
+                setQuery(value);
+                setPage(1);
+              }}
+              className="flex-1"
+            >
+              <SearchField.Group>
+                <SearchField.SearchIcon />
+                <SearchField.Input placeholder="Buscar por nombre o SKU" />
+                <SearchField.ClearButton />
+              </SearchField.Group>
+            </SearchField>
+            <Choice
+              ariaLabel="Filtrar por categoría"
+              value={categoryId}
+              onChange={setCategory}
+              options={categoryOptions}
+              className="md:w-56"
+            />
+            <Choice
+              ariaLabel="Filtrar por existencias"
+              value={stock}
+              onChange={(value) => {
+                setStock(value as typeof stock);
+                setPage(1);
+              }}
+              options={[
+                { id: ALL, label: 'Cualquier stock' },
+                { id: 'low', label: 'Stock bajo' },
+                { id: 'out', label: 'Agotados' },
+              ]}
+              className="md:w-44"
+            />
+          </div>
         </div>
 
         {products.error ? (
@@ -143,7 +213,7 @@ export function ProductsPage() {
               </p>
               <p className="text-[13px] text-text-muted">
                 {isFiltered
-                  ? 'Prueba con otro nombre, SKU o estado.'
+                  ? 'Prueba con otro nombre, categoría o filtro.'
                   : 'Crea el primero y súbele fotos.'}
               </p>
             </div>
@@ -183,12 +253,8 @@ export function ProductsPage() {
                       </span>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-1">
-                      <span className="panel-num text-[13.5px] font-medium text-text">
-                        {formatMoney(product.price, 'es')}
-                      </span>
-                      <span
-                        className={`panel-num text-[12px] ${product.stock === 0 ? 'font-medium text-danger' : 'text-text-muted'}`}
-                      >
+                      <ProductPrice product={product} />
+                      <span className={`panel-num text-[12px] ${stockTone(product)}`}>
                         {product.stock === 0 ? 'Agotado' : `${product.stock} en stock`}
                       </span>
                     </div>
@@ -204,7 +270,7 @@ export function ProductsPage() {
                       Producto
                     </th>
                     <th scope="col" className={`${TH} hidden md:table-cell`}>
-                      Intención
+                      Categoría
                     </th>
                     <th scope="col" className={TH}>
                       Estado
@@ -216,7 +282,7 @@ export function ProductsPage() {
                       Precio
                     </th>
                     <th scope="col" className={`${TH} hidden lg:table-cell`}>
-                      Actualizado
+                      <span className="sr-only">Acciones</span>
                     </th>
                   </tr>
                 </thead>
@@ -270,23 +336,53 @@ export function ProductsPage() {
                         </div>
                       </td>
                       <td className="hidden px-4 text-[13px] text-text-secondary md:table-cell">
-                        {categoryNames.get(product.categorySlug) ?? product.categorySlug}
+                        {categoryLabel(product.categoryId)}
                       </td>
                       <td className="px-4">
                         <StatusBadge status={product.status} />
                       </td>
                       <td className="panel-num hidden px-4 text-right text-[13px] sm:table-cell">
-                        {product.stock === 0 ? (
-                          <span className="font-medium text-danger">Agotado</span>
-                        ) : (
-                          <span className="text-text-secondary">{product.stock}</span>
-                        )}
+                        <button
+                          type="button"
+                          title="Cambiar stock"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setStockTarget({
+                              id: product.id,
+                              name: product.name,
+                              stock: product.stock,
+                            });
+                          }}
+                          className={`rounded-sm px-2 py-1 transition-colors hover:bg-bg-alt ${stockTone(product)}`}
+                        >
+                          {product.stock === 0 ? 'Agotado' : product.stock}
+                        </button>
                       </td>
-                      <td className="panel-num whitespace-nowrap px-4 text-right text-[13.5px] font-medium text-text">
-                        {formatMoney(product.price, 'es')}
+                      <td className="px-4 text-right">
+                        <ProductPrice product={product} />
                       </td>
-                      <td className="hidden whitespace-nowrap px-4 text-[13px] text-text-muted lg:table-cell">
-                        {formatShortDate(product.updatedAt)}
+                      <td
+                        className="hidden px-2 lg:table-cell"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <div className="flex items-center justify-end gap-2">
+                          <span className="whitespace-nowrap text-[12px] text-text-muted">
+                            {formatShortDate(product.updatedAt)}
+                          </span>
+                          <Tooltip delay={300}>
+                            <Button
+                              isIconOnly
+                              size="sm"
+                              variant="ghost"
+                              aria-label={`Registrar venta de ${product.name}`}
+                              isDisabled={product.stock === 0}
+                              onPress={() => void navigate(`/ventas/nueva?producto=${product.id}`)}
+                            >
+                              <IconReceipt />
+                            </Button>
+                            <Tooltip.Content>Vender</Tooltip.Content>
+                          </Tooltip>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -296,41 +392,10 @@ export function ProductsPage() {
           </>
         )}
 
-        {total > 0 && (
-          <div className="flex items-center justify-between gap-4 border-t border-border px-4 py-2.5">
-            <span className="panel-num text-[12.5px] text-text-muted">
-              {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} de {total}
-            </span>
-            {totalPages > 1 && (
-              <div className="flex items-center gap-1">
-                <Button
-                  isIconOnly
-                  size="sm"
-                  variant="ghost"
-                  aria-label="Página anterior"
-                  isDisabled={page <= 1}
-                  onPress={() => setPage((p) => p - 1)}
-                >
-                  <IconChevronLeft />
-                </Button>
-                <span className="panel-num px-1 text-[12.5px] text-text-secondary">
-                  {page} / {totalPages}
-                </span>
-                <Button
-                  isIconOnly
-                  size="sm"
-                  variant="ghost"
-                  aria-label="Página siguiente"
-                  isDisabled={page >= totalPages}
-                  onPress={() => setPage((p) => p + 1)}
-                >
-                  <IconChevronRight />
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
+        <Pagination page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />
       </div>
+
+      <StockDialog target={stockTarget} onClose={() => setStockTarget(null)} />
 
       <Outlet />
     </div>

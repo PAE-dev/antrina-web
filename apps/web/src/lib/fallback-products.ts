@@ -5,6 +5,8 @@ type FallbackSeed = Omit<ProductSummaryDto, 'name' | 'slug' | 'description'> & {
 };
 
 const ORIGIN = 'Taller Antrina, Lima';
+const TREES_CATEGORY_SLUG = 'arboles-de-cuarzo';
+const TREES_CATEGORY = { name: 'Árboles de cuarzo', slug: TREES_CATEGORY_SLUG };
 
 /** Se muestra solo si la API no responde, para que la landing nunca quede vacía. */
 const SEED: FallbackSeed[] = [
@@ -13,7 +15,9 @@ const SEED: FallbackSeed[] = [
     size: 'STANDARD',
     signs: ['GEMINI'],
     sku: 'BON-CIT-STD',
-    categorySlug: 'abundancia',
+    categorySlug: TREES_CATEGORY_SLUG,
+    category: TREES_CATEGORY,
+    intention: 'abundancia',
     origin: ORIGIN,
     imageUrl: null,
     imageAlt: null,
@@ -32,7 +36,9 @@ const SEED: FallbackSeed[] = [
     size: 'STANDARD',
     signs: ['TAURUS'],
     sku: 'BON-ROS-STD',
-    categorySlug: 'amor',
+    categorySlug: TREES_CATEGORY_SLUG,
+    category: TREES_CATEGORY,
+    intention: 'amor',
     origin: ORIGIN,
     imageUrl: null,
     imageAlt: null,
@@ -51,7 +57,9 @@ const SEED: FallbackSeed[] = [
     size: 'STANDARD',
     signs: ['CAPRICORN', 'AQUARIUS'],
     sku: 'BON-TUR-STD',
-    categorySlug: 'proteccion',
+    categorySlug: TREES_CATEGORY_SLUG,
+    category: TREES_CATEGORY,
+    intention: 'proteccion',
     origin: ORIGIN,
     imageUrl: null,
     imageAlt: null,
@@ -70,7 +78,9 @@ const SEED: FallbackSeed[] = [
     size: 'SIGNATURE',
     signs: [],
     sku: 'BON-CHK-FIR',
-    categorySlug: 'mixto',
+    categorySlug: TREES_CATEGORY_SLUG,
+    category: TREES_CATEGORY,
+    intention: 'mixto',
     origin: ORIGIN,
     imageUrl: null,
     imageAlt: null,

@@ -1,10 +1,10 @@
 import { type Money } from '../../shared/money.js';
-import { type Customer } from '../order.js';
+import { type CheckoutCustomer } from '../order.js';
 
 export interface ChargeRequest {
   orderId: string;
   amount: Money;
-  customer: Customer;
+  customer: CheckoutCustomer;
   /** Token de tarjeta/billetera generado en el frontend por la pasarela (Culqi, Niubiz, Yape...). */
   sourceToken: string;
 }

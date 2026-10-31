@@ -6,21 +6,53 @@ import { useCurrentAdmin, useLogout } from '../auth/session';
 import { STORE_URL } from '../lib/api';
 import { BrandMark } from './BrandMark';
 import { ErrorNotice } from './ErrorNotice';
-import { IconBox, IconExternal, IconImage, IconLogout } from './icons';
+import {
+  IconBox,
+  IconChat,
+  IconExternal,
+  IconHome,
+  IconImage,
+  IconLayers,
+  IconLogout,
+  IconReceipt,
+  IconTag,
+  IconUsers,
+} from './icons';
+import { initials } from '../lib/format';
+
+const NAVIGATION: { title: string; items: { to: string; label: string; icon: ReactNode }[] }[] = [
+  {
+    title: 'Negocio',
+    items: [
+      { to: '/resumen', label: 'Resumen', icon: <IconHome /> },
+      { to: '/ventas', label: 'Ventas', icon: <IconReceipt /> },
+    ],
+  },
+  {
+    title: 'Catálogo',
+    items: [
+      { to: '/productos', label: 'Productos', icon: <IconBox /> },
+      { to: '/inventario', label: 'Inventario', icon: <IconLayers /> },
+      { to: '/categorias', label: 'Categorías', icon: <IconTag /> },
+    ],
+  },
+  {
+    title: 'Clientes',
+    items: [
+      { to: '/clientes', label: 'Clientes', icon: <IconUsers /> },
+      { to: '/whatsapp', label: 'WhatsApp', icon: <IconChat /> },
+    ],
+  },
+  {
+    title: 'Contenido',
+    items: [{ to: '/portada', label: 'Portada', icon: <IconImage /> }],
+  },
+];
 
 const ROLE_LABELS: Record<AdminMeDto['role'], string> = {
   OWNER: 'Propietario',
   EDITOR: 'Editor',
 };
-
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('');
-}
 
 function Avatar({ name }: { name: string }) {
   return (
@@ -78,19 +110,20 @@ export function AdminLayout() {
         <div className="flex h-14 items-center px-4">
           <BrandMark />
         </div>
-        <nav aria-label="Secciones" className="flex flex-1 flex-col gap-6 px-3 pt-4">
-          <div className="flex flex-col gap-0.5">
-            <p className="px-2.5 pb-1.5 text-[12px] font-medium text-text-muted">Catálogo</p>
-            <NavItem to="/productos" icon={<IconBox />}>
-              Productos
-            </NavItem>
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <p className="px-2.5 pb-1.5 text-[12px] font-medium text-text-muted">Contenido</p>
-            <NavItem to="/portada" icon={<IconImage />}>
-              Portada
-            </NavItem>
-          </div>
+        <nav
+          aria-label="Secciones"
+          className="flex flex-1 flex-col gap-5 overflow-y-auto px-3 pt-4"
+        >
+          {NAVIGATION.map((group) => (
+            <div key={group.title} className="flex flex-col gap-0.5">
+              <p className="px-2.5 pb-1.5 text-[12px] font-medium text-text-muted">{group.title}</p>
+              {group.items.map((item) => (
+                <NavItem key={item.to} to={item.to} icon={item.icon}>
+                  {item.label}
+                </NavItem>
+              ))}
+            </div>
+          ))}
           {STORE_URL && (
             <div className="flex flex-col gap-0.5">
               <p className="px-2.5 pb-1.5 text-[12px] font-medium text-text-muted">Tienda</p>
@@ -138,8 +171,7 @@ export function AdminLayout() {
             <Dropdown.Menu
               aria-label="Cuenta"
               onAction={(key) => {
-                if (key === 'products') void navigate('/productos');
-                if (key === 'site') void navigate('/portada');
+                if (typeof key === 'string' && key.startsWith('/')) void navigate(key);
                 if (key === 'store') window.open(STORE_URL, '_blank', 'noreferrer');
                 if (key === 'logout') signOut();
               }}
@@ -147,12 +179,11 @@ export function AdminLayout() {
               <Dropdown.Item id="who" textValue={admin.email} isDisabled>
                 <span className="text-[12px] text-text-muted">{admin.email}</span>
               </Dropdown.Item>
-              <Dropdown.Item id="products" textValue="Productos">
-                Productos
-              </Dropdown.Item>
-              <Dropdown.Item id="site" textValue="Portada">
-                Portada
-              </Dropdown.Item>
+              {NAVIGATION.flatMap((group) => group.items).map((item) => (
+                <Dropdown.Item key={item.to} id={item.to} textValue={item.label}>
+                  {item.label}
+                </Dropdown.Item>
+              ))}
               {STORE_URL ? (
                 <Dropdown.Item id="store" textValue="Ver tienda">
                   Ver tienda

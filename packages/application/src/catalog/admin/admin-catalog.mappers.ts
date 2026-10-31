@@ -5,7 +5,8 @@ import {
   type ProductImageDto,
 } from '@antrina/contracts';
 import {
-  type Category,
+  type CategoryContent,
+  type CategoryWithCounts,
   DEFAULT_LOCALE,
   type ImageUrlResolver,
   type Product,
@@ -36,10 +37,14 @@ export function toAdminProductListItem(
     id: product.id,
     sku: product.sku,
     name: product.contentFor(DEFAULT_LOCALE).name,
+    categoryId: product.categoryId,
     categorySlug: product.categorySlug,
     status: product.status,
     price: toMoneyDto(product.price),
+    compareAtPrice: product.compareAtPrice ? toMoneyDto(product.compareAtPrice) : null,
     stock: product.stock,
+    lowStockThreshold: product.lowStockThreshold,
+    isLowStock: product.isLowStock(),
     isFeatured: product.isFeatured,
     badge: product.badge,
     coverUrl: cover ? imageUrls.publicUrl(cover.storageKey) : null,
@@ -55,11 +60,15 @@ export function toAdminProductDto(product: Product, imageUrls: ImageUrlResolver)
     categoryId: product.categoryId,
     categorySlug: product.categorySlug,
     price: toMoneyDto(product.price),
+    compareAtPrice: product.compareAtPrice ? toMoneyDto(product.compareAtPrice) : null,
+    cost: product.cost ? toMoneyDto(product.cost) : null,
     stock: product.stock,
+    lowStockThreshold: product.lowStockThreshold,
     status: product.status,
     isFeatured: product.isFeatured,
     badge: product.badge,
     size: product.size,
+    intention: product.intention,
     signs: [...product.signs],
     origin: product.origin,
     content: {
@@ -71,6 +80,22 @@ export function toAdminProductDto(product: Product, imageUrls: ImageUrlResolver)
   };
 }
 
-export function toAdminCategoryDto(category: Category): AdminCategoryDto {
-  return { id: category.id, slug: category.slug, name: category.nameFor(DEFAULT_LOCALE) };
+const categoryContent = (content: CategoryContent) => ({ ...content });
+
+export function toAdminCategoryDto({
+  category,
+  productCount,
+  childCount,
+}: CategoryWithCounts): AdminCategoryDto {
+  const { es, en } = category.content;
+  return {
+    id: category.id,
+    slug: category.slug,
+    name: category.nameFor(DEFAULT_LOCALE),
+    parentId: category.parentId,
+    sortOrder: category.sortOrder,
+    productCount,
+    childCount,
+    content: { es: categoryContent(es), en: en ? categoryContent(en) : null },
+  };
 }

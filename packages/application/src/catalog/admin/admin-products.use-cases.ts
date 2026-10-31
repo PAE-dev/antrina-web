@@ -1,28 +1,21 @@
 import {
-  type AdminCategoryDto,
   type AdminProductDto,
   type AdminProductListQuery,
   type AdminProductListResponse,
   type UpsertProductRequest,
 } from '@antrina/contracts';
 import {
+  ADMIN_STOCK_FILTERS,
   type AuditLog,
-  type CategoryRepository,
   type ImageUrlResolver,
   PRODUCT_STATUSES,
   type Product,
   type ProductRepository,
 } from '@antrina/domain';
 import { notFound, requireOneOf } from '../../shared/input.js';
-import {
-  toAdminCategoryDto,
-  toAdminProductDto,
-  toAdminProductListItem,
-} from './admin-catalog.mappers.js';
+import { parsePaging } from '../../shared/paging.js';
+import { toAdminProductDto, toAdminProductListItem } from './admin-catalog.mappers.js';
 import { draftFromProduct, toProductDraft } from './product-draft.input.js';
-
-const MAX_PAGE_SIZE = 100;
-const DEFAULT_PAGE_SIZE = 20;
 
 export const productNotFound = () => notFound('Producto', 'product.not_found');
 
@@ -39,8 +32,7 @@ export class ListAdminProductsUseCase {
   ) {}
 
   async execute(query: AdminProductListQuery): Promise<AdminProductListResponse> {
-    const pageSize = clampInt(query.pageSize, DEFAULT_PAGE_SIZE, 1, MAX_PAGE_SIZE);
-    const page = clampInt(query.page, 1, 1, 10_000);
+    const { page, pageSize, limit, offset } = parsePaging(query);
     const q = query.q?.trim().slice(0, 100);
     const status = query.status
       ? requireOneOf(query.status, PRODUCT_STATUSES, 'status')
@@ -48,8 +40,10 @@ export class ListAdminProductsUseCase {
     const result = await this.products.findManyForAdmin({
       ...(q ? { query: q } : {}),
       ...(status ? { status } : {}),
-      limit: pageSize,
-      offset: (page - 1) * pageSize,
+      ...(query.categoryId ? { categoryId: query.categoryId } : {}),
+      ...(query.stock ? { stock: requireOneOf(query.stock, ADMIN_STOCK_FILTERS, 'stock') } : {}),
+      limit,
+      offset,
     });
     return {
       data: result.items.map((product) => toAdminProductListItem(product, this.imageUrls)),
@@ -79,7 +73,7 @@ export class CreateProductUseCase {
   ) {}
 
   async execute(input: UpsertProductRequest, actorId: string): Promise<AdminProductDto> {
-    const product = await this.products.create(toProductDraft(input));
+    const product = await this.products.create(toProductDraft(input), actorId);
     await this.audit.record({
       adminUserId: actorId,
       action: 'product.created',
@@ -142,28 +136,16 @@ export class ArchiveProductUseCase {
   }
 }
 
-export class ListAdminCategoriesUseCase {
-  constructor(private readonly categories: CategoryRepository) {}
-
-  async execute(): Promise<AdminCategoryDto[]> {
-    const categories = await this.categories.findAll();
-    return categories.map(toAdminCategoryDto);
-  }
-}
-
-function clampInt(value: unknown, fallback: number, min: number, max: number): number {
-  const parsed = typeof value === 'number' ? value : Number(value);
-  if (!Number.isFinite(parsed)) return fallback;
-  return Math.min(Math.max(Math.trunc(parsed), min), max);
-}
-
 function diffProduct(before: Product, after: Product): Record<string, unknown> {
   const pick = (product: Product) => ({
     sku: product.sku,
     categoryId: product.categoryId,
     priceCents: product.price.amountInCents,
+    compareAtPriceCents: product.compareAtPrice?.amountInCents ?? null,
+    costCents: product.cost?.amountInCents ?? null,
     currency: product.price.currency,
-    stock: product.stock,
+    lowStockThreshold: product.lowStockThreshold,
+    intention: product.intention,
     status: product.status,
     isFeatured: product.isFeatured,
     badge: product.badge,

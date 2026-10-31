@@ -12,11 +12,11 @@ import {
   ZodiacGrid,
 } from '@antrina/ui';
 import { getDictionary } from '../i18n/dictionaries';
-import { INTENTIONS, intentionLabel, SIGNS } from '../i18n/taxonomy';
+import { INTENTIONS, productTag, SIGNS } from '../i18n/taxonomy';
 import StoreLayout from '../layouts/StoreLayout.astro';
 import { getFeaturedProducts, getSiteImages } from '../lib/catalog';
 import { cardImage, SIZES, toImageSource } from '../lib/images';
-import { alternatesFor, routes } from '../lib/routes';
+import { alternatesFor, productPath, routes } from '../lib/routes';
 import { organization, website } from '../lib/structured-data';
 
 interface Props {
@@ -72,8 +72,8 @@ const hero = siteImages.hero;
     locale={locale}
     badgeLabels={t.badges}
     imagePlaceholderLabel={t.productPhoto}
-    intentionOf={(product) => intentionLabel(locale, product.categorySlug)}
-    productHref={(product) => routes.product(locale, product.slug)}
+    intentionOf={(product) => productTag(locale, product)}
+    productHref={(product) => productPath(locale, product.slug, product.categorySlug)}
     imageLoader={cardImage}
     viewAll={{ label: t.bestsellers.viewAll, href: routes.catalog(locale) }}
   />

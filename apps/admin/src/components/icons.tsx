@@ -109,6 +109,75 @@ export const IconGrip = (props: IconProps) => (
   </Icon>
 );
 
+export const IconHome = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M4 20V10l8-6 8 6v10" />
+    <path d="M4 20h16M10 20v-6h4v6" />
+  </Icon>
+);
+
+export const IconReceipt = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z" />
+    <path d="M9.5 8h5M9.5 12h5" />
+  </Icon>
+);
+
+export const IconLayers = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="m12 3 9 5-9 5-9-5 9-5Z" />
+    <path d="m3 13 9 5 9-5" />
+  </Icon>
+);
+
+export const IconTag = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9-9-9Z" />
+    <circle cx="8" cy="8" r="1.25" />
+  </Icon>
+);
+
+export const IconUsers = (props: IconProps) => (
+  <Icon {...props}>
+    <circle cx="9" cy="8" r="3.5" />
+    <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
+    <path d="M16 4.8a3.5 3.5 0 0 1 0 6.4M18 14.5c1.8.8 3 2.9 3 5.5" />
+  </Icon>
+);
+
+export const IconChat = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M4 12a8 8 0 1 1 3.4 6.5L3 20l1.5-4.4A7.9 7.9 0 0 1 4 12Z" />
+    <path d="M9 12h.01M12.5 12h.01M16 12h.01" />
+  </Icon>
+);
+
+export const IconPencil = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M4 20h4L19 9l-4-4L4 16v4Z" />
+    <path d="m13.5 6.5 4 4" />
+  </Icon>
+);
+
+export const IconTrash = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" />
+  </Icon>
+);
+
+export const IconMinus = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M5 12h14" />
+  </Icon>
+);
+
+export const IconAlert = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M12 4 2.5 20h19L12 4Z" />
+    <path d="M12 10v4.5M12 17.5h.01" />
+  </Icon>
+);
+
 export const IconShield = (props: IconProps) => (
   <Icon {...props}>
     <path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6l-7-3Z" />

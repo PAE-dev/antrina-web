@@ -1,11 +1,13 @@
 import { type UpsertProductRequest } from '@antrina/contracts';
 import {
+  type Currency,
   DomainError,
   type ImageAlt,
   META_DESCRIPTION_MAX,
   META_TITLE_MAX,
   Money,
   PRODUCT_BADGES,
+  PRODUCT_INTENTIONS,
   PRODUCT_SIZES,
   PRODUCT_STATUSES,
   type Product,
@@ -26,6 +28,12 @@ import {
 } from '../../shared/input.js';
 
 const MAX_ALT_LENGTH = 200;
+const DEFAULT_LOW_STOCK_THRESHOLD = 3;
+
+function optionalMoney(value: unknown, field: string, currency: Currency): Money | null {
+  if (value === null || value === undefined) return null;
+  return Money.ofCents(requireInteger(value, field), currency);
+}
 
 function parseContent(value: unknown, locale: string): ProductContent {
   if (typeof value !== 'object' || value === null) {
@@ -64,15 +72,19 @@ export function toProductDraft(input: UpsertProductRequest): ProductDraft {
   }
   const rawContent = content as Record<string, unknown>;
   const en = rawContent.en ? parseContent(rawContent.en, 'en') : null;
+  const currency = requireOneOf(input.currency, SUPPORTED_CURRENCIES, 'currency');
 
   const draft: ProductDraft = {
     sku: requireString(input.sku, 'sku', 64).trim().toUpperCase(),
     categoryId: requireString(input.categoryId, 'categoryId', 64),
-    price: Money.ofCents(
-      requireInteger(input.priceCents, 'priceCents'),
-      requireOneOf(input.currency, SUPPORTED_CURRENCIES, 'currency'),
-    ),
+    price: Money.ofCents(requireInteger(input.priceCents, 'priceCents'), currency),
+    compareAtPrice: optionalMoney(input.compareAtPriceCents, 'compareAtPriceCents', currency),
+    cost: optionalMoney(input.costCents, 'costCents', currency),
     stock: requireInteger(input.stock, 'stock'),
+    lowStockThreshold: requireInteger(
+      input.lowStockThreshold ?? DEFAULT_LOW_STOCK_THRESHOLD,
+      'lowStockThreshold',
+    ),
     status: requireOneOf(input.status, PRODUCT_STATUSES, 'status'),
     isFeatured: requireBoolean(input.isFeatured, 'isFeatured'),
     badge: input.badge === null ? null : requireOneOf(input.badge, PRODUCT_BADGES, 'badge'),
@@ -80,6 +92,10 @@ export function toProductDraft(input: UpsertProductRequest): ProductDraft {
       input.size === null || input.size === undefined
         ? null
         : requireOneOf(input.size, PRODUCT_SIZES, 'size'),
+    intention:
+      input.intention === null || input.intention === undefined
+        ? null
+        : requireOneOf(input.intention, PRODUCT_INTENTIONS, 'intention'),
     signs: parseSigns(input.signs),
     origin: optionalString(input.origin, 'origin', 200)?.trim() || null,
     content: { es: parseContent(rawContent.es, 'es'), ...(en ? { en } : {}) },
@@ -92,11 +108,15 @@ export function draftFromProduct(product: Product): ProductDraft {
     sku: product.sku,
     categoryId: product.categoryId,
     price: product.price,
+    compareAtPrice: product.compareAtPrice,
+    cost: product.cost,
     stock: product.stock,
+    lowStockThreshold: product.lowStockThreshold,
     status: product.status,
     isFeatured: product.isFeatured,
     badge: product.badge,
     size: product.size,
+    intention: product.intention,
     signs: product.signs,
     origin: product.origin,
     content: product.content,

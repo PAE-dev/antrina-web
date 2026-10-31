@@ -5,7 +5,7 @@ import {
   type ProductSummaryDto,
 } from '@antrina/contracts';
 import {
-  type Category,
+  type CategoryWithCounts,
   type ImageUrlResolver,
   type Locale,
   type Product,
@@ -27,6 +27,8 @@ export function toProductSummary(
     name: content.name,
     description: content.description,
     categorySlug: product.categorySlug,
+    category: { ...product.categoryContentFor(locale) },
+    intention: product.intention,
     origin: product.origin,
     imageUrl: cover ? imageUrls.publicUrl(cover.storageKey) : null,
     imageAlt: cover ? (cover.alt[locale] ?? content.name) : null,
@@ -79,8 +81,11 @@ export function toProductIndexItem(
     id: product.id,
     sku: product.sku,
     categorySlug: product.categorySlug,
+    categoryName: product.categoryContentFor('es').name,
+    intention: product.intention,
     size: product.size,
     price: toMoneyDto(product.price),
+    compareAtPrice: product.compareAtPrice ? toMoneyDto(product.compareAtPrice) : null,
     isPurchasable: product.isPurchasable(),
     imageUrls: product.images.map((image) => imageUrls.publicUrl(image.storageKey)),
     content: { ...translated, es: indexContent(product.content.es) },
@@ -88,11 +93,21 @@ export function toProductIndexItem(
   };
 }
 
-export function toCategoryDto(category: Category, locale: Locale): CategoryDto {
+export function toCategoryDto(
+  { category, activeProductCount }: CategoryWithCounts,
+  locale: Locale,
+): CategoryDto {
+  const content = category.contentFor(locale);
   return {
     id: category.id,
     slug: category.slug,
-    name: category.nameFor(locale),
+    urlSlug: content.slug,
+    slugs: Object.fromEntries(
+      category.locales.map((code) => [code, category.content[code]?.slug ?? content.slug]),
+    ),
+    name: content.name,
+    description: content.description,
     parentId: category.parentId,
+    productCount: activeProductCount,
   };
 }

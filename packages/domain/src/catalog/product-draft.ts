@@ -4,6 +4,7 @@ import { type Money } from '../shared/money.js';
 import {
   type ProductBadge,
   type ProductContent,
+  type ProductIntention,
   type ProductSize,
   type ProductStatus,
   type ZodiacSign,
@@ -14,11 +15,17 @@ export interface ProductDraft {
   sku: string;
   categoryId: string;
   price: Money;
+  /** Precio normal cuando hay oferta (`price` es entonces el precio de oferta). */
+  compareAtPrice: Money | null;
+  cost: Money | null;
+  /** Stock inicial al crear. Después solo cambia con movimientos de inventario. */
   stock: number;
+  lowStockThreshold: number;
   status: ProductStatus;
   isFeatured: boolean;
   badge: ProductBadge | null;
   size: ProductSize | null;
+  intention: ProductIntention | null;
   signs: readonly ZodiacSign[];
   origin: string | null;
   content: Localized<ProductContent>;
@@ -40,8 +47,14 @@ export function validateProductDraft(draft: ProductDraft): ProductDraft {
     invalid('El SKU solo admite mayúsculas, números y guiones (máx. 32)', 'sku');
   }
   if (draft.price.amountInCents <= 0) invalid('El precio debe ser mayor que cero', 'price');
+  if (draft.compareAtPrice && !draft.compareAtPrice.isGreaterThan(draft.price)) {
+    invalid('El precio de oferta debe ser menor que el precio normal', 'compare_at_price');
+  }
   if (!Number.isInteger(draft.stock) || draft.stock < 0)
     invalid('El stock no puede ser negativo', 'stock');
+  if (!Number.isInteger(draft.lowStockThreshold) || draft.lowStockThreshold < 0) {
+    invalid('La alerta de stock no puede ser negativa', 'low_stock_threshold');
+  }
   if (draft.origin !== null && draft.origin.length > 120)
     invalid('El origen es demasiado largo', 'origin');
 
