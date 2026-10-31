@@ -31,7 +31,7 @@ export function IntentionCardList({ items }: { items: IntentionItem[] }) {
               </div>
               <Card.Header className="gap-3">
                 <Card.Title className="type-h3">{item.title}</Card.Title>
-                <p className="type-label text-clay">{item.stones}</p>
+                <p className="type-label">{item.stones}</p>
                 <Card.Description className="text-[14.5px] leading-relaxed text-text-secondary">
                   {item.text}
                 </Card.Description>

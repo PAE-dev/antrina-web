@@ -30,8 +30,8 @@ export function ZodiacList({ signs }: { signs: ZodiacSign[] }) {
               <span className="font-display text-[22px] font-medium leading-none tracking-[-0.03em] text-text">
                 {sign.name}
               </span>
-              <span className="type-label inline-flex items-center gap-2 text-text-secondary">
-                <span aria-hidden="true" className="size-1.5 rounded-full bg-clay" />
+              <span className="type-label inline-flex items-center gap-2.5">
+                <span aria-hidden="true" className="rombo" />
                 {sign.stone}
               </span>
             </span>

@@ -56,7 +56,7 @@ export function NewsletterSignup({
               {submitLabel}
             </Button>
           </form>
-          <p className="type-label px-5">{disclaimer}</p>
+          <p className="type-meta px-5">{disclaimer}</p>
         </div>
       </div>
     </section>

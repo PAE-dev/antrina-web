@@ -60,7 +60,7 @@ export function SiteFooter({
                     <li key={link.href}>
                       <a
                         href={link.href}
-                        className="text-[15px] text-on-dark transition-colors hover:text-quartz"
+                        className="text-[15px] text-on-dark transition-colors hover:text-mist"
                       >
                         {link.label}
                       </a>
@@ -92,7 +92,7 @@ export function SiteFooter({
               })}
             </ul>
           </div>
-          <div className="type-label flex items-center gap-6">
+          <div className="type-meta flex items-center gap-6">
             <p>
               © {new Date().getFullYear()} Antrina. {rights}
             </p>

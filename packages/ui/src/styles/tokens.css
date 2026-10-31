@@ -1,34 +1,42 @@
 /*
- * Sistema de diseño Antrina: "Galería mineral". Fuente única de tokens para la tienda y el panel.
- * Proporción: ~75% piedra, ~20% carbón, ~5% amatista + arcilla.
+ * Sistema de diseño Antrina: "Marino". Fuente única de tokens para la tienda y el panel.
+ * Paleta de marca: azul marino, hueso, hueso oscuro, terracota, terracota oscuro y niebla.
  * Única fuente de color del proyecto: ningún componente usa hex sueltos.
  * Se importa después de `tailwindcss` y `@heroui/styles`.
  */
 :root {
-  --color-bg: #f3f1ed;
-  --color-bg-alt: #e8e4dd;
-  --color-surface: #fbfaf8;
-  --color-text: #171513;
-  --color-text-secondary: #57524c;
-  --color-text-muted: #8b857e;
-  --color-brand: #4a2c6a;
-  --color-brand-hover: #3a2155;
-  --color-brand-tint: #eee9f4;
-  --color-quartz: #ecd9d0;
-  --color-clay: #a85a42;
-  --color-border: #e1ddd6;
-  --color-border-strong: #cbc5bc;
-  /* Texto sobre bloques carbón (historia, empresas, pie). */
-  --color-on-dark: #f3f1ed;
-  --color-on-dark-muted: #a7a19a;
-  --color-border-dark: #34302c;
+  /* Hueso (fondo), hueso oscuro (secciones alternas y tarjetas) y un hueso claro para campos. */
+  --color-bg: #f1eadf;
+  --color-bg-alt: #e8dfd0;
+  --color-surface: #f8f4ee;
+  /* Azul marino: títulos, texto, botones y pie. Secundario y apagado son mezclas sobre hueso. */
+  --color-text: #1b2a41;
+  --color-text-secondary: #465061;
+  --color-text-muted: #5f6773;
+  --color-brand: #1b2a41;
+  --color-brand-hover: #2c3e5c;
+  --color-brand-tint: #dbdad6;
+  /* Superficie suave para hover y bloques destacados (hueso oscuro). */
+  --color-quartz: #e8dfd0;
+  /* Terracota: solo detalles (rombo, iconos, líneas). Nunca en texto pequeño. */
+  --color-clay: #b8643f;
+  /* Terracota oscuro: links, etiquetas y textos de acento. */
+  --color-clay-strong: #9a4f2f;
+  /* Niebla: fondos secundarios y etiquetas. */
+  --color-mist: #a9b4c2;
+  --color-border: #ddd3c3;
+  --color-border-strong: #c9bead;
+  /* Texto sobre bloques azul marino (historia, empresas, pie). */
+  --color-on-dark: #f1eadf;
+  --color-on-dark-muted: #a9b4c2;
+  --color-border-dark: #33425a;
   --radius-sm: 4px;
   --radius-md: 6px;
   --button-radius: 9999px;
 
   /*
    * Puente con HeroUI v3: sus variables viven en @layer theme, así que este bloque sin capa
-   * las sobrescribe. Su "accent" es nuestro color de marca (amatista).
+   * las sobrescribe. Su "accent" es nuestro color de marca (azul marino).
    */
   --background: var(--color-bg);
   --foreground: var(--color-text);
@@ -41,12 +49,12 @@
   --default-foreground: var(--color-text);
   --accent: var(--color-brand);
   --accent-hover: var(--color-brand-hover);
-  --accent-foreground: var(--color-surface);
+  --accent-foreground: var(--color-bg);
   --muted: var(--color-text-muted);
   --border: var(--color-border);
   --separator: var(--color-border);
   --focus: var(--color-brand);
-  --link: var(--color-brand);
+  --link: var(--color-clay-strong);
   --backdrop: color-mix(in srgb, var(--color-text) 40%, transparent);
   --radius: var(--radius-md);
   --field-radius: var(--radius-md);
@@ -63,10 +71,10 @@
 }
 
 /*
- * Utilidades Tailwind: bg-bg, bg-bg-alt, bg-surface, bg-quartz, text-clay, text-text,
- * text-text-secondary, text-text-muted, bg-brand, hover:bg-brand-hover, bg-brand-tint,
- * text-on-dark, text-on-dark-muted, border-border, border-border-strong, border-border-dark.
- * `accent` queda reservado para HeroUI (= marca).
+ * Utilidades Tailwind: bg-bg, bg-bg-alt, bg-surface, bg-quartz, text-clay, text-clay-strong,
+ * bg-mist, text-text, text-text-secondary, text-text-muted, bg-brand, hover:bg-brand-hover,
+ * bg-brand-tint, text-on-dark, text-on-dark-muted, border-border, border-border-strong,
+ * border-border-dark. `accent` queda reservado para HeroUI (= marca).
  */
 @theme inline {
   --color-red-*: initial;
@@ -102,6 +110,8 @@
   --color-brand-tint: var(--color-brand-tint);
   --color-quartz: var(--color-quartz);
   --color-clay: var(--color-clay);
+  --color-clay-strong: var(--color-clay-strong);
+  --color-mist: var(--color-mist);
   --color-border: var(--color-border);
   --color-border-strong: var(--color-border-strong);
   --color-on-dark: var(--color-on-dark);
@@ -116,9 +126,10 @@
   --radius-3xl: var(--radius-md);
   --radius-4xl: var(--radius-md);
 
-  --font-display: 'Bricolage Grotesque Variable', 'Geist Variable', system-ui, sans-serif;
-  --font-sans: 'Geist Variable', system-ui, sans-serif;
-  --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
+  /* Fraunces (títulos) y DM Sans (todo lo demás). Sin mono en la tienda: `font-mono` = DM Sans. */
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-mono: var(--font-sans);
   --font-serif: var(--font-display);
 }
 
@@ -129,13 +140,12 @@
 
   body {
     @apply bg-bg font-sans text-text antialiased;
-    font-size: 16px;
-    line-height: 1.65;
-    letter-spacing: -0.005em;
+    font-size: 17px;
+    line-height: 1.6;
   }
 
   ::selection {
-    background: var(--color-quartz);
+    background: var(--color-mist);
     color: var(--color-text);
   }
 
@@ -144,145 +154,174 @@
     outline-offset: 2px;
   }
 
-  @media (min-width: 48rem) {
-    body {
-      font-size: 17px;
-    }
+  /* Fraunces de marca: suave (SOFT 30), sin rasgos "wonky" y óptica de titular. */
+  .font-display {
+    font-variation-settings:
+      'SOFT' 30,
+      'WONK' 0,
+      'opsz' 144;
   }
 }
 
 @layer components {
-  /* Botones de HeroUI en píldora; el panel lo sobrescribe con su radio. */
+  /* Botones de HeroUI en píldora y DM Sans 500; el panel lo sobrescribe con su radio. */
   .button {
     border-radius: var(--button-radius);
+    font-weight: 500;
   }
 
-  /* Tipografía: móvil primero, escritorio desde md (768px). */
+  /*
+   * Tipografía: móvil primero, escritorio desde md (768px).
+   * Títulos en Fraunces 600; `type-display` (hero) comparte medidas con H1.
+   */
   .type-display,
   .type-h1,
   .type-h2,
   .type-h3 {
     font-family: var(--font-display);
-    font-weight: 500;
+    font-weight: 600;
+    font-variation-settings:
+      'SOFT' 30,
+      'WONK' 0,
+      'opsz' 144;
     color: inherit;
     text-wrap: balance;
   }
 
+  /* `*palabras*` en títulos: terracota oscuro, sin itálica. */
   .type-display em,
   .type-h1 em,
   .type-h2 em,
   .type-h3 em {
     font-style: normal;
-    color: var(--color-brand);
+    color: var(--color-clay-strong);
   }
 
-  .type-display {
-    font-size: 52px;
-    line-height: 0.95;
-    letter-spacing: -0.045em;
-    font-variation-settings: 'opsz' 96;
-  }
-
+  .type-display,
   .type-h1 {
     font-size: 40px;
-    line-height: 1;
-    letter-spacing: -0.04em;
-    font-variation-settings: 'opsz' 96;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
   }
 
   .type-h2 {
-    font-size: 34px;
-    line-height: 1.02;
-    letter-spacing: -0.035em;
-    font-variation-settings: 'opsz' 72;
+    font-size: 30px;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
   }
 
   .type-h3 {
-    font-size: 21px;
+    font-size: 24px;
     line-height: 1.2;
-    letter-spacing: -0.02em;
-    font-variation-settings: 'opsz' 24;
+    letter-spacing: -0.005em;
   }
 
   .type-body {
     font-family: var(--font-sans);
     font-weight: 400;
-    font-size: 16px;
-    line-height: 1.65;
-    color: var(--color-text-secondary);
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--color-text);
   }
 
-  /* Etiqueta de galería en mono: números de sección, piedras, fechas. Nunca en mayúsculas. */
+  /* Etiqueta de marca: DM Sans 500 en mayúsculas espaciadas, terracota oscuro. */
   .type-label {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 1.5;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--color-clay-strong);
+  }
+
+  /* Texto pequeño informativo (avisos, legales, metadatos): sin mayúsculas ni acento. */
+  .type-meta {
+    font-family: var(--font-sans);
     font-weight: 400;
-    font-size: 12.5px;
-    line-height: 1.4;
-    letter-spacing: 0;
+    font-size: 13px;
+    line-height: 1.5;
     color: var(--color-text-muted);
   }
 
   .type-menu {
     font-family: var(--font-sans);
-    font-weight: 450;
-    font-size: 14.5px;
+    font-weight: 500;
+    font-size: 15px;
     line-height: 1.4;
-    letter-spacing: -0.005em;
   }
 
   .type-price {
-    font-family: var(--font-mono);
-    font-weight: 400;
-    font-size: 14.5px;
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 15px;
     line-height: 1.4;
+    font-variant-numeric: tabular-nums;
     color: var(--color-text);
   }
 
   @media (min-width: 48rem) {
-    .type-display {
-      font-size: 84px;
-    }
-
+    .type-display,
     .type-h1 {
       font-size: 64px;
     }
 
     .type-h2 {
-      font-size: 50px;
+      font-size: 40px;
     }
 
-    .type-h3 {
-      font-size: 23px;
-    }
-
-    .type-body {
-      font-size: 17px;
+    .type-label {
+      font-size: 13px;
     }
   }
 
-  @media (min-width: 80rem) {
-    .type-display {
-      font-size: 108px;
-    }
+  /* Rombo terracota (el punto de la "i" del logo): viñetas y separadores. */
+  .rombo {
+    display: inline-block;
+    flex-shrink: 0;
+    width: 7px;
+    height: 7px;
+    background-color: var(--color-clay);
+    transform: rotate(45deg);
   }
 
-  /* Índice de sección: "01 — Intenciones" en mono con línea fina. */
+  /* Separador de sección: línea fina con el rombo al centro. */
+  .rombo-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    color: var(--color-border-strong);
+  }
+
+  .rombo-divider::before,
+  .rombo-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background-color: currentColor;
+  }
+
+  /* Índice de sección: rombo + "01 — Intenciones" como etiqueta de marca. */
   .section-index {
     display: inline-flex;
     align-items: center;
-    gap: 12px;
-    font-family: var(--font-mono);
-    font-size: 12.5px;
-    line-height: 1.4;
-    color: var(--color-text-muted);
+    gap: 14px;
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 1.5;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--color-clay-strong);
   }
 
-  .section-index::after {
+  .section-index::before {
     content: '';
-    width: 32px;
-    height: 1px;
-    background-color: currentColor;
-    opacity: 0.6;
+    width: 7px;
+    height: 7px;
+    flex-shrink: 0;
+    background-color: var(--color-clay);
+    transform: rotate(45deg);
   }
 
   .photo-placeholder {
@@ -293,23 +332,24 @@
     border-radius: var(--radius-md);
     background-color: var(--color-bg-alt);
     color: var(--color-text-muted);
-    font-family: var(--font-mono);
-    font-size: 12px;
+    font-family: var(--font-sans);
+    font-size: 13px;
   }
 
-  /* Bloque carbón: historia y pie. Los acentos pasan a cuarzo para mantener contraste. */
+  /* Bloque azul marino: historia y pie. El énfasis pasa a terracota (solo en títulos grandes). */
   .surface-dark {
     background-color: var(--color-text);
     color: var(--color-on-dark);
   }
 
   .surface-dark em {
-    color: var(--color-quartz);
+    color: var(--color-clay);
   }
 
   .surface-dark .type-body,
-  .surface-dark .section-index,
-  .surface-dark .type-label {
+  .surface-dark .type-meta,
+  .surface-dark .type-label,
+  .surface-dark .section-index {
     color: var(--color-on-dark-muted);
   }
 

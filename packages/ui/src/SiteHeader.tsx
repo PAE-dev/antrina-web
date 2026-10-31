@@ -121,14 +121,14 @@ function useIsScrolled(threshold: number): boolean {
 }
 
 const navItemClass =
-  'type-menu inline-flex h-9 items-center gap-1 rounded-full px-3 text-text transition-colors hover:bg-bg-alt';
+  'type-menu inline-flex h-9 items-center gap-1 rounded-full px-3 text-text transition-colors hover:bg-bg-alt whitespace-nowrap';
 
 function NavEntry({ item, viewAllLabel }: { item: NavCategory; viewAllLabel: string }) {
   if (item.items.length === 0) {
     if (item.isHighlighted) {
       return (
-        <a href={item.href} className={`${navItemClass} gap-2 text-brand hover:bg-brand-tint`}>
-          <span aria-hidden="true" className="size-1.5 rounded-full bg-clay" />
+        <a href={item.href} className={`${navItemClass} gap-2 text-clay-strong hover:bg-bg-alt`}>
+          <span aria-hidden="true" className="rombo" />
           {item.label}
         </a>
       );
@@ -172,7 +172,7 @@ function NavEntry({ item, viewAllLabel }: { item: NavCategory; viewAllLabel: str
           </ul>
           <a
             href={item.href}
-            className="mt-2 flex items-center justify-between gap-4 border-t border-border px-3 pb-1 pt-3 text-[13.5px] font-medium text-brand"
+            className="mt-2 flex items-center justify-between gap-4 border-t border-border px-3 pb-1 pt-3 text-[13.5px] font-medium text-clay-strong"
           >
             {viewAllLabel}
             <ArrowRightIcon />
@@ -271,7 +271,7 @@ function MobileMenu({
                           <li className="col-span-2">
                             <a
                               href={group.href}
-                              className="inline-flex items-center gap-2 text-[14px] font-medium text-brand"
+                              className="inline-flex items-center gap-2 text-[14px] font-medium text-clay-strong"
                             >
                               {labels.viewAll}
                               <ArrowRightIcon />
@@ -289,7 +289,7 @@ function MobileMenu({
                     <a
                       href={item.href}
                       className={`text-[17px] font-medium tracking-[-0.015em] ${
-                        item.isHighlighted ? 'text-brand' : 'text-text'
+                        item.isHighlighted ? 'text-clay-strong' : 'text-text'
                       }`}
                     >
                       {item.label}

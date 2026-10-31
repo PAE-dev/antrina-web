@@ -31,7 +31,7 @@ export function Testimonials({ label, index, title, items }: TestimonialsProps) 
                     <span className="text-[15px] font-medium text-text">{item.author}</span>
                     <span className="type-label">{item.place}</span>
                   </span>
-                  <span className="type-label text-right text-clay">{item.product}</span>
+                  <span className="type-label text-right">{item.product}</span>
                 </figcaption>
               </figure>
             </li>

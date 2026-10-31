@@ -1,11 +1,11 @@
 @import 'tailwindcss';
 @import '@heroui/styles';
-/* Marca compartida con la tienda (amatista); el panel ajusta abajo superficies, radios y tipografía. */
+/* Marca compartida con la tienda (azul marino); el panel ajusta abajo superficies, radios y tipografía. */
 @import '@antrina/ui/styles/tokens.css';
 
 /*
  * Capa propia del panel: herramienta de trabajo densa y neutra.
- * Geist en todo (sin serif ni versalitas), grises cálidos, amatista solo para acción y estado activo.
+ * Geist en todo (sin serif ni versalitas), grises cálidos, marino solo para acción y estado activo.
  */
 :root {
   --color-bg: #f7f7f6;

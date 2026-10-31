@@ -5,8 +5,8 @@ import { ArrowRightIcon } from './icons';
 interface ButtonLinkProps {
   href: string;
   /**
-   * `primary` (amatista) solo una vez por vista; `secondary` con contorno; `inverse` sobre
-   * bloques carbón.
+   * `primary` (azul marino) solo una vez por vista; `secondary` con contorno marino; `inverse`
+   * sobre bloques azul marino.
    */
   variant?: 'primary' | 'secondary' | 'inverse';
   withArrow?: boolean;
@@ -18,8 +18,8 @@ interface ButtonLinkProps {
 
 const VARIANT_CLASS = {
   primary: buttonVariants({ variant: 'primary', size: 'lg' }),
-  secondary: `${buttonVariants({ variant: 'outline', size: 'lg' })} border-border-strong text-text`,
-  inverse: `${buttonVariants({ variant: 'outline', size: 'lg' })} border-border-dark text-on-dark hover:bg-on-dark hover:text-text`,
+  secondary: `${buttonVariants({ variant: 'outline', size: 'lg' })} border-[1.5px] border-text bg-transparent text-text hover:bg-text hover:text-on-dark`,
+  inverse: `${buttonVariants({ variant: 'outline', size: 'lg' })} border-[1.5px] border-on-dark text-on-dark hover:bg-on-dark hover:text-text`,
 };
 
 /** Enlace de texto subrayado con flecha: acción terciaria ("Ver todos", "Crea tu árbol"). */
@@ -27,7 +27,7 @@ export function ArrowLink({ href, children }: { href: string; children: ReactNod
   return (
     <a
       href={href}
-      className="group inline-flex items-center gap-2 text-[15px] font-medium tracking-[-0.01em] underline decoration-border-strong underline-offset-[6px] transition-colors hover:decoration-current"
+      className="group inline-flex items-center gap-2 text-[15px] font-medium text-clay-strong underline decoration-clay/50 underline-offset-[6px] transition-colors hover:decoration-current"
     >
       {children}
       <ArrowRightIcon className="transition-transform duration-300 group-hover:translate-x-0.5" />
@@ -47,7 +47,7 @@ export function ButtonLink({
     <a
       href={href}
       {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-      className={`${VARIANT_CLASS[variant]} group/btn h-12 px-6 text-[15px] tracking-[-0.01em] md:h-12 ${className}`.trim()}
+      className={`${VARIANT_CLASS[variant]} group/btn h-12 px-7 text-[15px] font-medium md:h-12 ${className}`.trim()}
     >
       {children}
       {withArrow && (
