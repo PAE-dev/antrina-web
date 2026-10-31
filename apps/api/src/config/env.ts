@@ -14,7 +14,7 @@ export interface AppEnv {
   databaseUrl: string;
   corsOrigins: string[];
   isProduction: boolean;
-  /** Origen exacto del panel (`https://admin.antrina.com`); único con cookies y CORS con credenciales. */
+  /** Origen exacto del panel (`https://admin.antrina.app`); único con cookies y CORS con credenciales. */
   adminOrigin: string;
   /** 32 bytes para AES-256-GCM (semillas TOTP en reposo). */
   adminEncryptionKey: Buffer;

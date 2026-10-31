@@ -1,0 +1,20 @@
+-- Supabase expone el esquema public con su API de datos: sin RLS, los roles anon y authenticated
+-- pueden leer y escribir todas las tablas. La API entra con el dueño de las tablas, al que RLS no
+-- le aplica, así que no necesita políticas.
+ALTER TABLE "AdminSession" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "AdminUser" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "AuditLog" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Category" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "CategoryTranslation" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Customer" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Order" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "OrderLine" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Product" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "ProductImage" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "ProductImageTranslation" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "ProductTranslation" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Promotion" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "SiteImage" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "SiteImageTranslation" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "StockMovement" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "_prisma_migrations" ENABLE ROW LEVEL SECURITY;

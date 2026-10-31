@@ -16,7 +16,7 @@ Lee esto antes de tocar código: define **dónde va cada cambio** y qué está p
 | `packages/config`      | tsconfig, ESLint (fronteras de capas), Prettier             | —                                                   |
 | `apps/api`             | NestJS 12 (ESM). Presentación + adapters de infraestructura | Todo lo anterior salvo `ui`; Prisma solo aquí       |
 | `apps/web`             | Astro 7 + islas React. Storefront i18n                      | `ui`, `contracts`. **Nunca** `domain`/`application` |
-| `apps/admin`           | Panel (Vite + React + HeroUI v3), `admin.antrina.com`       | `ui`, `contracts`. **Nunca** `domain`/`application` |
+| `apps/admin`           | Panel (Vite + React + HeroUI v3), `admin.antrina.app`       | `ui`, `contracts`. **Nunca** `domain`/`application` |
 
 ESLint (`pnpm lint`) hace cumplir estas fronteras con `no-restricted-imports`.
 
@@ -123,6 +123,8 @@ según el `code`: `auth.locked` → 423, `auth.forbidden` → 403, `auth.*` → 
   (Culqi, Meta, AWS S3…) desde controllers o casos de uso.
 - Las fotos se guardan como `storageKey`; la URL pública la construye `ImageUrlResolver` en la API.
   Nunca guardes URLs absolutas en la base.
+- Toda tabla nueva activa RLS en su migración (`ALTER TABLE ... ENABLE ROW LEVEL SECURITY`): Supabase
+  expone `public` con su API de datos. La API entra como dueña de las tablas y no necesita políticas.
 
 ## Frontend (apps/web, apps/admin + packages/ui)
 

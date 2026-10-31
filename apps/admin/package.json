@@ -2,7 +2,7 @@
   "name": "@antrina/admin",
   "version": "0.0.0",
   "private": true,
-  "description": "Panel de administración de Antrina (Vite + React + HeroUI v3). Se publica en admin.antrina.com.",
+  "description": "Panel de administración de Antrina (Vite + React + HeroUI v3). Se publica en admin.antrina.app.",
   "type": "module",
   "scripts": {
     "dev": "vite",

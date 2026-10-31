@@ -37,7 +37,7 @@ Si la API no está levantada, la landing muestra productos de ejemplo (fallback)
 
 ## Panel de administración
 
-El panel es una app aparte (`apps/admin`) que en producción vive en `admin.antrina.com`, no
+El panel es una app aparte (`apps/admin`) que en producción vive en `admin.antrina.app`, no
 indexable y sin enlaces desde la tienda. No hay registro público: los administradores se crean por
 consola.
 
@@ -69,7 +69,7 @@ cada cambio (`AuditLog`). Detalle en [AGENTS.md](AGENTS.md#seguridad-del-panel).
 El mismo código usa MinIO en local y R2 en producción; solo cambian las variables `S3_*`
 (ver `.env.example`). En R2: crea el bucket, un token de API con permiso de lectura/escritura sobre
 él, conecta un dominio público (p. ej. `media.antrina.com`) y configura CORS permitiendo `PUT` desde
-`https://admin.antrina.com` con las cabeceras `Content-Type` y `Cache-Control`.
+`https://admin.antrina.app` con las cabeceras `Content-Type` y `Cache-Control`.
 
 ## Estructura
 
