@@ -91,7 +91,8 @@ Reservados para próximas fases: `cart` y `promotion` (entidad ya existe en domi
 - `ProductPiece` es una pieza física (o un par) con QR: `code` aleatorio, `serial` correlativo por
   producto. La URL impresa es `pieceQrPath(code)` (`/q/<code>`) y **no puede cambiar**: ya está en
   etiquetas. Los códigos no se borran, se anulan (`voidedAt`). No mueven el stock. El panel los genera
-  por cantidad y los exporta como ZIP (PNG, SVG y CSV) o etiquetas para imprimir, siempre desde
+  por cantidad en `/codigos-qr` (o en la pestaña QR del producto; ambos usan `PiecesPanel`) y los
+  exporta como ZIP (PNG, SVG y CSV) o etiquetas para imprimir, siempre desde
   `apps/admin/src/lib/piece-qr.ts`; solo salen los libres, nunca los usados o anulados.
 
 Los errores de dominio (`DomainError(message, code)`) se traducen a HTTP en `DomainExceptionFilter`
@@ -276,7 +277,7 @@ excepciones viven solo en `apps/admin/src/styles.css`:
   la lista (`/productos/:id`, `nuevo` para alta) con pestañas y pie fijo; confirmaciones con
   `ConfirmDialog`; feedback con `toast`. Iconos en `components/icons.tsx`; cabeceras, selects, tarjetas
   de cifras y paginación en `components/PageKit.tsx`. Secciones: Resumen, Ventas, Productos, Inventario,
-  Categorías, Clientes, WhatsApp (sin conectar: nunca mostrar mensajes inventados), Portada, Usuarios
+  Categorías, Códigos QR, Clientes, WhatsApp (sin conectar: nunca mostrar mensajes inventados), Portada, Usuarios
   (solo `OWNER`) y Mi cuenta.
 
 ## Comandos

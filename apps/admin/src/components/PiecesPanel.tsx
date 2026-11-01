@@ -16,12 +16,11 @@ import { canExportQr, downloadQrZip, isLocalQr, isPrintable } from '../lib/piece
 
 const MAX_BATCH = 200;
 
-function openLabels(productId: string, range?: { from: number; to: number }) {
-  const query = range ? `?desde=${range.from}&hasta=${range.to}` : '';
-  window.open(`/etiquetas/${productId}${query}`, '_blank', 'noopener');
+function openLabels(productId: string) {
+  window.open(`/etiquetas/${productId}`, '_blank', 'noopener');
 }
 
-/** Un código QR por pieza física (o por par): se generan aquí y se descargan o imprimen. */
+/** Un código QR por pieza física (o por par): se generan y se descargan con un solo botón. */
 export function PiecesPanel({
   productId,
   sku,
@@ -50,14 +49,14 @@ export function PiecesPanel({
   const free = rows.filter(isPrintable);
   const used = rows.filter((piece) => piece.claimedAt).length;
   const active = rows.filter((piece) => !piece.voidedAt).length;
-  const lastRange =
-    lastBatch && lastBatch[0]
-      ? { from: lastBatch[0].serial, to: lastBatch.at(-1)?.serial ?? lastBatch[0].serial }
-      : null;
   const suggested = String(Math.min(Math.max(stock - active, 1), MAX_BATCH));
   const value = quantity ?? suggested;
   const amount = Number(value);
   const isValid = Number.isInteger(amount) && amount >= 1 && amount <= MAX_BATCH;
+
+  const download = useMutation({
+    mutationFn: (batch: readonly ProductPieceDto[]) => downloadQrZip(batch, { sku, name }),
+  });
 
   const generate = useMutation({
     mutationFn: () => {
@@ -73,11 +72,8 @@ export function PiecesPanel({
       setLastBatch(data);
       setQuantity(null);
       toast.success(data.length === 1 ? 'Código generado' : `${data.length} códigos generados`);
+      download.mutate(data);
     },
-  });
-
-  const download = useMutation({
-    mutationFn: (batch: readonly ProductPieceDto[]) => downloadQrZip(batch, { sku, name }),
   });
 
   const voidPiece = useMutation({
@@ -107,53 +103,40 @@ export function PiecesPanel({
       )}
       {pieces.data && !pieces.data.opensTorito && (
         <Notice>
-          Este producto no está en una categoría de toritos, así que su QR solo confirma que la
-          pieza es auténtica. Para que abra el nacimiento y el establo, usa una categoría cuya
-          dirección empiece por «torito».
+          Este producto no es un torito: su QR solo confirma que la pieza es auténtica. Para que
+          abra el nacimiento y el establo, debe estar en una categoría cuya dirección empiece por
+          «torito».
         </Notice>
       )}
 
       <section className="flex flex-col gap-3">
-        <div className="flex flex-col gap-0.5">
-          <h3 className="panel-heading">Generar códigos</h3>
-          <p className="text-[13px] text-text-muted">
-            Cada código es único y no se repite. Pega cada uno en una sola pieza: volver a descargar
-            trae los mismos códigos, no crea otros.
-          </p>
-        </div>
         <div className="flex flex-wrap items-end gap-2">
           <TextField type="number" value={value} onChange={setQuantity} className="w-28">
             <Label>Cantidad</Label>
             <Input min={1} max={MAX_BATCH} step={1} className="panel-num" />
           </TextField>
           <Button
-            variant="secondary"
-            isPending={generate.isPending}
-            isDisabled={!isValid || isArchived}
+            variant="primary"
+            isPending={generate.isPending || download.isPending}
+            isDisabled={!isValid || isArchived || !canExportQr}
             onPress={() => generate.mutate()}
           >
-            Generar
+            Generar y descargar
           </Button>
-          {lastBatch && lastRange && (
-            <>
-              <Button
-                variant="secondary"
-                isPending={download.isPending}
-                isDisabled={!canExportQr}
-                onPress={() => download.mutate(lastBatch)}
-              >
-                Descargar estos {lastBatch.length}
-              </Button>
-              <Button
-                variant="tertiary"
-                isDisabled={!canExportQr}
-                onPress={() => openLabels(productId, lastRange)}
-              >
-                Imprimir estos
-              </Button>
-            </>
+          {lastBatch && (
+            <Button
+              variant="tertiary"
+              isDisabled={download.isPending}
+              onPress={() => download.mutate(lastBatch)}
+            >
+              Descargar esos {lastBatch.length} otra vez
+            </Button>
           )}
         </div>
+        <p className="panel-meta">
+          Máximo {MAX_BATCH} por vez. Pega cada código en una sola pieza: descargar otra vez trae
+          los mismos, no crea otros.
+        </p>
         <p className="panel-meta panel-num">
           {stock} en stock · {free.length} {free.length === 1 ? 'libre' : 'libres'} · {used}{' '}
           {used === 1 ? 'usado' : 'usados'}

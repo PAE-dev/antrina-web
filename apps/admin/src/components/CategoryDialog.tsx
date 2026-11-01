@@ -129,7 +129,11 @@ function CategoryForm({
     <>
       <Modal.Header>
         <Modal.Heading className="text-[15px] font-semibold tracking-[-0.01em]">
-          {category ? `Editar ${category.name}` : 'Nueva categoría'}
+          {category
+            ? `Editar ${category.name}`
+            : state.parentId
+              ? 'Nueva subcategoría'
+              : 'Nueva categoría'}
         </Modal.Heading>
       </Modal.Header>
       <Modal.Body>
@@ -217,7 +221,7 @@ function CategoryForm({
           Cancelar
         </Button>
         <Button size="sm" variant="primary" isPending={save.isPending} onPress={() => submit()}>
-          {category ? 'Guardar' : 'Crear categoría'}
+          {category ? 'Guardar' : parentId === NO_PARENT ? 'Crear categoría' : 'Crear subcategoría'}
         </Button>
       </Modal.Footer>
     </>

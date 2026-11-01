@@ -709,13 +709,10 @@ function ProductEditor({
                   <Choice
                     label="Subcategoría"
                     value={state.subcategoryId}
-                    isDisabled={subcategories.length === 0}
+                    isDisabled={!rootCategory}
                     onChange={(value) => set('subcategoryId', value)}
                     options={[
-                      {
-                        id: NO_SUBCATEGORY,
-                        label: subcategories.length === 0 ? 'No tiene' : 'Sin subcategoría',
-                      },
+                      { id: NO_SUBCATEGORY, label: 'Sin subcategoría' },
                       ...subcategories.map((category) => ({
                         id: category.id,
                         label: category.name,
@@ -731,7 +728,7 @@ function ProductEditor({
                     onPress={() => setCategoryDialog({ parentId: rootCategory.id })}
                   >
                     <IconPlus size={14} />
-                    Añadir subcategoría a {rootCategory.name}
+                    Nueva subcategoría en {rootCategory.name}
                   </Button>
                 )}
               </Section>

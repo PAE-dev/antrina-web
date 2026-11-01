@@ -185,6 +185,15 @@ export const IconAlert = (props: IconProps) => (
   </Icon>
 );
 
+export const IconQr = (props: IconProps) => (
+  <Icon {...props}>
+    <rect x="4" y="4" width="6" height="6" rx="1" />
+    <rect x="14" y="4" width="6" height="6" rx="1" />
+    <rect x="4" y="14" width="6" height="6" rx="1" />
+    <path d="M14 14h2v2h-2zM20 14v2M14 20h2M18 18h2v2" />
+  </Icon>
+);
+
 export const IconShield = (props: IconProps) => (
   <Icon {...props}>
     <path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6l-7-3Z" />

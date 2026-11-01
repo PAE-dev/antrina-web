@@ -14,6 +14,7 @@ import {
   IconKey,
   IconLayers,
   IconLogout,
+  IconQr,
   IconReceipt,
   IconShield,
   IconTag,
@@ -40,6 +41,7 @@ const NAVIGATION: NavigationGroup[] = [
       { to: '/productos', label: 'Productos', icon: <IconBox /> },
       { to: '/inventario', label: 'Inventario', icon: <IconLayers /> },
       { to: '/categorias', label: 'Categorías', icon: <IconTag /> },
+      { to: '/codigos-qr', label: 'Códigos QR', icon: <IconQr /> },
     ],
   },
   {
