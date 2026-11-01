@@ -28,6 +28,12 @@ interface IdTokenClaims {
   name?: string;
 }
 
+/** Lo que se usa de la respuesta: la comprobación de tipos de Vercel ve vacío el `Response` global. */
+interface TokenResponse {
+  ok: boolean;
+  json(): Promise<unknown>;
+}
+
 function failed(): DomainError {
   return new DomainError('No se pudo validar el acceso con Google', 'auth.google_failed');
 }
@@ -70,7 +76,7 @@ export class GoogleOidcProvider implements GoogleIdentityProvider {
     nonce: string;
   }): Promise<GoogleIdentity> {
     const config = this.requireConfig();
-    const response = await fetch(TOKEN_URL, {
+    const response = (await fetch(TOKEN_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -84,7 +90,7 @@ export class GoogleOidcProvider implements GoogleIdentityProvider {
       signal: AbortSignal.timeout(TIMEOUT_MS),
     }).catch(() => {
       throw failed();
-    });
+    })) as unknown as TokenResponse;
     if (!response.ok) throw failed();
     const body = (await response.json()) as { id_token?: string };
     return this.identityFrom(body.id_token, config.clientId, input.nonce);
