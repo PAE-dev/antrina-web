@@ -2,23 +2,24 @@ import { Button, Input, Label, Spinner, TextField } from '@heroui/react';
 import {
   ADMIN_CATALOG_ROUTES,
   type AdminProductDto,
-  pieceQrPath,
+  type ProductPieceDto,
   type ProductPieceListResponse,
 } from '@antrina/contracts';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useParams, useSearchParams } from 'react-router';
 import { ErrorNotice } from '../components/ErrorNotice';
 import { Choice } from '../components/PageKit';
 import { QrCode } from '../components/QrCode';
-import { api, STORE_URL } from '../lib/api';
+import { api } from '../lib/api';
+import { canExportQr, downloadQrZip, isLocalQr, isPrintable, pieceQrUrl } from '../lib/piece-qr';
 
 const COPY_OPTIONS = [
   { id: '1', label: '1 por código' },
   { id: '2', label: '2 por código (par)' },
 ];
 
-/** Hoja de etiquetas para imprimir, sin el marco del panel. */
+/** Hoja de etiquetas para imprimir o descargar, sin el marco del panel. */
 export function PieceLabelsPage() {
   const { productId = '' } = useParams();
   const [searchParams] = useSearchParams();
@@ -34,6 +35,10 @@ export function PieceLabelsPage() {
     queryKey: ['admin', 'pieces', productId],
     queryFn: () =>
       api<ProductPieceListResponse>('GET', ADMIN_CATALOG_ROUTES.productPieces(productId)),
+  });
+  const download = useMutation({
+    mutationFn: (input: { selected: ProductPieceDto[]; sku: string; name: string }) =>
+      downloadQrZip(input.selected, input),
   });
 
   const error = product.error ?? pieces.error;
@@ -53,15 +58,20 @@ export function PieceLabelsPage() {
   }
 
   const name = product.data.content.es.name;
-  const labels = pieces.data.data
+  const { sku } = product.data;
+  const { opensTorito } = pieces.data;
+  const selected = pieces.data.data
     .filter(
       (piece) =>
-        !piece.voidedAt &&
+        isPrintable(piece) &&
         (!from || piece.serial >= Number(from)) &&
         (!to || piece.serial <= Number(to)),
     )
-    .sort((a, b) => a.serial - b.serial)
-    .flatMap((piece) => Array.from({ length: Number(copies) }, () => piece));
+    .sort((a, b) => a.serial - b.serial);
+  // Un torito es una sola pieza: dos etiquetas iguales harían que el segundo no pueda despertar.
+  const labels = selected.flatMap((piece) =>
+    Array.from({ length: opensTorito ? 1 : Number(copies) }, () => piece),
+  );
 
   return (
     <main className="min-h-screen bg-surface">
@@ -81,27 +91,49 @@ export function PieceLabelsPage() {
             <Label>Hasta Nº</Label>
             <Input min={1} className="panel-num" />
           </TextField>
-          <Choice
-            label="Etiquetas"
-            value={copies}
-            options={COPY_OPTIONS}
-            onChange={setCopies}
-            className="w-52"
-          />
-          <Button variant="primary" isDisabled={labels.length === 0} onPress={() => window.print()}>
+          {!opensTorito && (
+            <Choice
+              label="Etiquetas"
+              value={copies}
+              options={COPY_OPTIONS}
+              onChange={setCopies}
+              className="w-52"
+            />
+          )}
+          <Button
+            variant="primary"
+            isDisabled={labels.length === 0 || !canExportQr}
+            onPress={() => window.print()}
+          >
             Imprimir {labels.length}
           </Button>
+          <Button
+            variant="secondary"
+            isPending={download.isPending}
+            isDisabled={selected.length === 0 || !canExportQr}
+            onPress={() => download.mutate({ selected, sku, name })}
+          >
+            Descargar {selected.length}
+          </Button>
         </div>
+        <ErrorNotice error={download.error} title="No se pudo descargar" />
+        {isLocalQr && (
+          <p className="text-[13px] text-warning">
+            Estás en local: estos QR apuntan a este computador. No los pegues en piezas.
+          </p>
+        )}
       </div>
 
       {labels.length === 0 ? (
-        <p className="p-6 text-[13.5px] text-text-muted">No hay códigos activos en este rango.</p>
+        <p className="p-6 text-[13.5px] text-text-muted">
+          No hay códigos libres en este rango. Los usados y los anulados no se vuelven a imprimir.
+        </p>
       ) : (
         <div className="label-sheet p-6 print:p-0">
           {labels.map((piece, index) => (
             <article key={`${piece.id}-${index}`} className="piece-label">
               <QrCode
-                value={`${STORE_URL}${pieceQrPath(piece.code)}`}
+                value={pieceQrUrl(piece.code)}
                 label={`QR de ${name}, número ${piece.serial}`}
                 className="piece-label-qr"
               />

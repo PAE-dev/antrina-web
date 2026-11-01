@@ -36,11 +36,14 @@ async function bootstrap(): Promise<void> {
   if (env.isProduction) app.set('trust proxy', 1);
   app.disable('x-powered-by');
   app.use(cookieParser());
-  app.use('/admin', (_request: Request, response: Response, next: NextFunction) => {
-    response.setHeader('Cache-Control', 'no-store');
-    response.setHeader('X-Robots-Tag', 'noindex, nofollow');
-    next();
-  });
+  app.use(
+    ['/admin', '/auth', '/establo-api'],
+    (_request: Request, response: Response, next: NextFunction) => {
+      response.setHeader('Cache-Control', 'no-store');
+      response.setHeader('X-Robots-Tag', 'noindex, nofollow');
+      next();
+    },
+  );
   app.enableCors(corsFor(env));
   app.useGlobalFilters(new DomainExceptionFilter());
   app.enableShutdownHooks();

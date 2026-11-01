@@ -6,3 +6,5 @@ export * from './admin-sales.js';
 export * from './admin-users.js';
 export * from './site.js';
 export * from './admin-site.js';
+export * from './customer-auth.js';
+export * from './toritos.js';

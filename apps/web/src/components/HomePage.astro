@@ -30,6 +30,8 @@ const [{ products }, siteImages] = await Promise.all([
   getSiteImages(locale),
 ]);
 const hero = siteImages.hero;
+// Sin productos destacados no hay sección 02: las siguientes corren su número.
+const lastIndex = products.length > 0 ? 2 : 1;
 ---
 
 <StoreLayout
@@ -43,7 +45,6 @@ const hero = siteImages.hero;
   jsonLd={[organization(), website(locale)]}
 >
   <HeroSection
-    eyebrow={t.hero.eyebrow}
     title={t.hero.title}
     text={t.hero.text}
     primary={{ label: t.hero.primaryCta, href: routes.intention(locale) }}
@@ -64,21 +65,23 @@ const hero = siteImages.hero;
       href: routes.intention(locale, slug[locale]),
     }))}
   />
-  <ProductGrid
-    index={2}
-    label={t.bestsellers.label}
-    title={t.bestsellers.title}
-    products={products}
-    locale={locale}
-    badgeLabels={t.badges}
-    imagePlaceholderLabel={t.productPhoto}
-    intentionOf={(product) => productTag(locale, product)}
-    productHref={(product) => productPath(locale, product.slug, product.categorySlug)}
-    imageLoader={cardImage}
-    viewAll={{ label: t.bestsellers.viewAll, href: routes.catalog(locale) }}
-  />
+  {products.length > 0 && (
+    <ProductGrid
+      index={2}
+      label={t.bestsellers.label}
+      title={t.bestsellers.title}
+      products={products}
+      locale={locale}
+      badgeLabels={t.badges}
+      imagePlaceholderLabel={t.productPhoto}
+      intentionOf={(product) => productTag(locale, product)}
+      productHref={(product) => productPath(locale, product.slug, product.categorySlug)}
+      imageLoader={cardImage}
+      viewAll={{ label: t.bestsellers.viewAll, href: routes.catalog(locale) }}
+    />
+  )}
   <StorySection
-    index={3}
+    index={lastIndex + 1}
     label={t.story.label}
     title={t.story.title}
     paragraphs={t.story.paragraphs}
@@ -87,7 +90,7 @@ const hero = siteImages.hero;
     cta={{ label: t.story.cta, href: routes.story(locale) }}
   />
   <ZodiacGrid
-    index={4}
+    index={lastIndex + 2}
     label={t.zodiac.label}
     title={t.zodiac.title}
     intro={t.zodiac.intro}
@@ -99,19 +102,19 @@ const hero = siteImages.hero;
     }))}
   />
   <ValuePillars
-    index={5}
+    index={lastIndex + 3}
     label={t.pillars.label}
     title={t.pillars.title}
     pillars={t.pillars.items}
   />
   <Testimonials
-    index={6}
+    index={lastIndex + 4}
     label={t.testimonials.label}
     title={t.testimonials.title}
     items={t.testimonials.items}
   />
   <CorporateBanner
-    index={7}
+    index={lastIndex + 5}
     label={t.corporate.label}
     title={t.corporate.title}
     text={t.corporate.text}
@@ -120,7 +123,7 @@ const hero = siteImages.hero;
     cta={{ label: t.corporate.cta, href: routes.corporate(locale) }}
   />
   <NewsletterSignup
-    index={8}
+    index={lastIndex + 6}
     label={t.newsletter.label}
     title={t.newsletter.title}
     text={t.newsletter.text}

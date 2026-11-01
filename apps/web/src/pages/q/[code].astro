@@ -1,0 +1,85 @@
+---
+import { type PieceViewDto } from '@antrina/contracts';
+import { ToritoBirth } from '../../components/torito/ToritoBirth';
+import MessageView from '../../components/views/MessageView.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getPiece } from '../../lib/piece';
+import { alternatesFor, routes } from '../../lib/routes';
+
+export const prerender = false;
+
+const code = Astro.params.code ?? '';
+const result = await getPiece(code, Astro.request.headers.get('cookie'));
+
+// La respuesta depende de la cookie: nunca debe guardarla la CDN.
+Astro.response.headers.set('Cache-Control', 'no-store');
+
+if (result.status === 'ok' && result.piece.isMine) {
+  return Astro.redirect(`${routes.stable()}?nuevo=${result.piece.toritoId}`);
+}
+if (result.status === 'not_found') Astro.response.status = 404;
+if (result.status === 'unavailable') {
+  Astro.response.status = 503;
+  Astro.response.headers.set('Retry-After', '60');
+}
+
+const piece: PieceViewDto | null = result.status === 'ok' ? result.piece : null;
+const canWake = piece?.isTorito === true && piece.status === 'available';
+const cta =
+  piece?.status === 'claimed'
+    ? { label: 'Ir a mi establo', href: routes.stable() }
+    : { label: 'Ver la tienda', href: routes.home('es') };
+const alternates = alternatesFor((locale) => (locale === 'es' ? `/q/${code}` : null));
+
+const notice = (() => {
+  if (result.status === 'not_found') {
+    return {
+      title: 'Este QR no es *válido*',
+      text: 'No corresponde a ninguna pieza de Antrina. Si lo escaneaste de una etiqueta nuestra, escríbenos y lo revisamos.',
+    };
+  }
+  if (result.status === 'unavailable') {
+    return {
+      title: 'Vuelve en un *momento*',
+      text: 'No pudimos abrir tu torito ahora mismo. Inténtalo de nuevo en unos minutos.',
+    };
+  }
+  if (piece?.status === 'voided') {
+    return {
+      title: 'Este QR ya no es *válido*',
+      text: 'Lo anulamos en el taller. Si acabas de recibir esta pieza, escríbenos y te ayudamos.',
+    };
+  }
+  if (piece?.status === 'claimed') {
+    return {
+      title: 'Este QR ya fue *usado*',
+      text: 'Su torito ya despertó y vive en un establo. Si es tuyo, entra con tu cuenta para verlo. Si acabas de recibirlo y no fuiste tú, escríbenos.',
+    };
+  }
+  return {
+    title: 'Pieza *auténtica*',
+    text: `${piece?.productName ?? ''}, pieza N.º ${piece?.serial ?? ''}, hecha a mano en nuestro taller de Lima.`,
+  };
+})();
+---
+
+{canWake && piece ? (
+  <BaseLayout
+    locale="es"
+    title="Tu torito está por nacer"
+    description="Despierta a tu Torito de Pucará y llévalo a tu establo."
+    alternates={alternates}
+    noindex
+  >
+    <ToritoBirth client:load assetsPath="/torito" establoHref={routes.stable()} piece={piece} />
+  </BaseLayout>
+) : (
+  <MessageView
+    locale="es"
+    alternates={alternates}
+    label="Tu pieza Antrina"
+    title={notice.title}
+    text={notice.text}
+    cta={cta}
+  />
+)}

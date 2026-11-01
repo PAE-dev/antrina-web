@@ -14,6 +14,9 @@ export interface CustomerDto {
   phone: string | null;
   email: string | null;
   note: string | null;
+  /** Se registró en la tienda; entonces `createdAt` es su fecha de registro. */
+  hasWebAccount: boolean;
+  lastLoginAt: string | null;
   orderCount: number;
   totalSpent: MoneyDto;
   lastOrderAt: string | null;
@@ -23,6 +26,7 @@ export interface CustomerDto {
 export interface CustomerListQuery {
   q?: string;
   withPhone?: boolean;
+  webAccount?: boolean;
   page?: number;
   pageSize?: number;
 }

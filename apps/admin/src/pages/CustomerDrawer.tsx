@@ -182,6 +182,27 @@ function CustomerEditor({
           </TextField>
         </div>
 
+        {customer?.hasWebAccount && (
+          <section className="flex flex-col gap-3 border-t border-border pt-5">
+            <h3 className="panel-heading">Cuenta en la tienda</h3>
+            <dl className="grid gap-3 sm:grid-cols-2">
+              <div className="flex flex-col gap-0.5">
+                <dt className="panel-meta">Fecha de registro</dt>
+                <dd className="text-[13.5px] text-text">{formatShortDate(customer.createdAt)}</dd>
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <dt className="panel-meta">Último acceso</dt>
+                <dd className="text-[13.5px] text-text">
+                  {customer.lastLoginAt ? formatShortDate(customer.lastLoginAt) : 'Sin datos'}
+                </dd>
+              </div>
+            </dl>
+            <p className="panel-meta">
+              Entra con Google. Su correo se actualiza desde Google cada vez que inicia sesión.
+            </p>
+          </section>
+        )}
+
         {customer && (
           <section className="flex flex-col gap-2 border-t border-border pt-5">
             <h3 className="panel-heading">Historial de compras</h3>

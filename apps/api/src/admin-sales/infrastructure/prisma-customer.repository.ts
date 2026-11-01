@@ -32,6 +32,8 @@ function toCustomerWithStats(record: CustomerRecord): CustomerWithStats {
     phone: record.phone,
     email: record.email,
     note: record.note,
+    hasWebAccount: record.googleSubject !== null,
+    lastLoginAt: record.lastLoginAt,
     createdAt: record.createdAt,
     orderCount: record.orders.length,
     totalSpentCents: record.orders.reduce((sum, order) => sum + order.totalCents, 0),
@@ -58,6 +60,7 @@ export class PrismaCustomerRepository implements CustomerRepository {
   async list(criteria: CustomerCriteria): Promise<CustomerPage> {
     const where: Prisma.CustomerWhereInput = {
       ...(criteria.withPhone ? { phone: { not: null } } : {}),
+      ...(criteria.webAccount ? { googleSubject: { not: null } } : {}),
       ...(criteria.query
         ? {
             OR: [
@@ -72,7 +75,7 @@ export class PrismaCustomerRepository implements CustomerRepository {
       this.prisma.customer.findMany({
         where,
         include: customerInclude,
-        orderBy: { updatedAt: 'desc' },
+        orderBy: criteria.webAccount ? { createdAt: 'desc' } : { updatedAt: 'desc' },
         take: criteria.limit,
         skip: criteria.offset,
       }),

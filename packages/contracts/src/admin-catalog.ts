@@ -264,11 +264,15 @@ export interface ProductPieceDto {
   serial: number;
   code: string;
   voidedAt: string | null;
+  /** Cuando alguien reclamó su torito con este código. */
+  claimedAt: string | null;
   createdAt: string;
 }
 
 export interface ProductPieceListResponse {
   data: ProductPieceDto[];
+  /** Si el QR abre la experiencia del torito; si no, solo confirma que la pieza es auténtica. */
+  opensTorito: boolean;
 }
 
 export interface GenerateProductPiecesRequest {

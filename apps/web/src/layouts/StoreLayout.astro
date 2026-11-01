@@ -43,6 +43,7 @@ const categories = (await getCategories(locale)) ?? [];
     homeHref={routes.home(locale)}
     searchAction={routes.search(locale)}
     accountHref={routes.account(locale)}
+    stableHref={routes.stable()}
     cartHref={routes.cart(locale)}
     cartCount={0}
     navigation={buildMainNavigation(locale, t, categories)}

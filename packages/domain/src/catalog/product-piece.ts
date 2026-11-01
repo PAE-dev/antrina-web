@@ -9,6 +9,8 @@ export interface ProductPiece {
   code: string;
   /** Un código anulado (etiqueta perdida o dañada) deja de ser válido. */
   voidedAt: Date | null;
+  /** Cuando alguien reclamó su torito con este código: ya no se debe volver a imprimir. */
+  claimedAt: Date | null;
   createdAt: Date;
 }
 

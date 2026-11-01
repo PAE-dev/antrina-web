@@ -22,7 +22,6 @@ export interface Dictionary {
     story: string;
   };
   hero: {
-    eyebrow: string;
     title: string;
     text: string;
     primaryCta: string;
@@ -73,6 +72,10 @@ const es: Dictionary = {
     search: 'Buscar',
     searchPlaceholder: 'Busca por piedra, intención o signo…',
     account: 'Mi cuenta',
+    stable: 'Mi establo',
+    signIn: 'Iniciar sesión',
+    signUpPrompt: '¿Aún no tienes cuenta?',
+    signUp: 'Crear cuenta',
     cart: 'Carrito',
     openMenu: 'Abrir menú',
     menuTitle: 'Menú',
@@ -91,7 +94,6 @@ const es: Dictionary = {
     story: 'Nuestra historia',
   },
   hero: {
-    eyebrow: 'Taller familiar en Lima, Perú',
     title: 'Arraigado en *tu intención*',
     text: 'Árboles de cuarzo armados piedra por piedra en nuestro taller familiar de Lima. Cada uno es único.',
     primaryCta: 'Elige tu intención',
@@ -217,6 +219,10 @@ const en: Dictionary = {
     search: 'Search',
     searchPlaceholder: 'Search by stone, intention or sign…',
     account: 'My account',
+    stable: 'My stable',
+    signIn: 'Sign in',
+    signUpPrompt: 'Don’t have an account yet?',
+    signUp: 'Create account',
     cart: 'Cart',
     openMenu: 'Open menu',
     menuTitle: 'Menu',
@@ -235,7 +241,6 @@ const en: Dictionary = {
     story: 'Our story',
   },
   hero: {
-    eyebrow: 'Family workshop in Lima, Peru',
     title: 'Rooted in *intention*',
     text: 'Quartz trees built stone by stone in our family workshop in Lima. Each one is unique.',
     primaryCta: 'Choose your intention',

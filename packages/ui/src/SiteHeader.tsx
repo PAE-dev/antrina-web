@@ -1,6 +1,16 @@
+import { CUSTOMER_SIGNED_IN_COOKIE } from '@antrina/contracts';
 import { Accordion, Badge, Button, Drawer, Modal, Popover, SearchField } from '@heroui/react';
 import { useEffect, useState } from 'react';
-import { ArrowRightIcon, BagIcon, ChevronDownIcon, MenuIcon, SearchIcon, UserIcon } from './icons';
+import { ButtonLink } from './ButtonLink';
+import {
+  ArrowRightIcon,
+  BagIcon,
+  ChevronDownIcon,
+  MenuIcon,
+  SearchIcon,
+  StableIcon,
+  UserIcon,
+} from './icons';
 import { Logo } from './Logo';
 import { type HeaderLabels, type LocaleOption, type NavCategory } from './types';
 
@@ -8,6 +18,8 @@ interface SiteHeaderProps {
   homeHref: string;
   searchAction: string;
   accountHref: string;
+  /** Establo de toritos: solo se muestra con la sesión iniciada. */
+  stableHref: string;
   cartHref: string;
   cartCount: number;
   navigation: NavCategory[];
@@ -22,6 +34,7 @@ export function SiteHeader({
   homeHref,
   searchAction,
   accountHref,
+  stableHref,
   cartHref,
   cartCount,
   navigation,
@@ -30,6 +43,7 @@ export function SiteHeader({
 }: SiteHeaderProps) {
   const [isSearchOpen, setSearchOpen] = useState(false);
   const isScrolled = useIsScrolled(8);
+  const isSignedIn = useIsSignedIn();
 
   return (
     <header
@@ -44,6 +58,9 @@ export function SiteHeader({
             locales={locales}
             labels={labels}
             homeHref={homeHref}
+            accountHref={accountHref}
+            stableHref={stableHref}
+            isSignedIn={isSignedIn}
           />
           <Logo href={homeHref} label={labels.home} />
         </div>
@@ -73,6 +90,16 @@ export function SiteHeader({
           >
             <SearchIcon />
           </Button>
+          {isSignedIn && (
+            <a
+              href={stableHref}
+              aria-label={labels.stable}
+              title={labels.stable}
+              className="hidden size-10 items-center justify-center rounded-full text-text transition-colors hover:bg-bg-alt sm:inline-flex"
+            >
+              <StableIcon />
+            </a>
+          )}
           <a
             href={accountHref}
             aria-label={labels.account}
@@ -118,6 +145,17 @@ function useIsScrolled(threshold: number): boolean {
   }, [threshold]);
 
   return isScrolled;
+}
+
+/** Las páginas llegan cacheadas sin saber quién las ve: se decide ya en el navegador. */
+function useIsSignedIn(): boolean {
+  const [isSignedIn, setSignedIn] = useState(false);
+
+  useEffect(() => {
+    setSignedIn(document.cookie.split('; ').includes(`${CUSTOMER_SIGNED_IN_COOKIE}=1`));
+  }, []);
+
+  return isSignedIn;
 }
 
 const navItemClass =
@@ -218,11 +256,17 @@ function MobileMenu({
   locales,
   labels,
   homeHref,
+  accountHref,
+  stableHref,
+  isSignedIn,
 }: {
   navigation: NavCategory[];
   locales: LocaleOption[];
   labels: HeaderLabels;
   homeHref: string;
+  accountHref: string;
+  stableHref: string;
+  isSignedIn: boolean;
 }) {
   const groups = navigation.filter((item) => item.items.length > 0);
   const links = navigation.filter((item) => item.items.length === 0);
@@ -297,9 +341,39 @@ function MobileMenu({
                   </li>
                 ))}
               </ul>
+            </Drawer.Body>
+            <Drawer.Footer className="flex-col items-stretch gap-4 border-t border-border pt-5">
+              {isSignedIn ? (
+                <>
+                  <ButtonLink href={stableHref} variant="primary" className="w-full">
+                    <StableIcon />
+                    {labels.stable}
+                  </ButtonLink>
+                  <ButtonLink href={accountHref} className="w-full">
+                    <UserIcon />
+                    {labels.account}
+                  </ButtonLink>
+                </>
+              ) : (
+                <>
+                  <ButtonLink href={accountHref} variant="primary" className="w-full">
+                    <UserIcon />
+                    {labels.signIn}
+                  </ButtonLink>
+                  <p className="type-meta text-center">
+                    {labels.signUpPrompt}{' '}
+                    <a
+                      href={accountHref}
+                      className="font-medium text-clay-strong underline underline-offset-4"
+                    >
+                      {labels.signUp}
+                    </a>
+                  </p>
+                </>
+              )}
               <nav
                 aria-label={labels.language}
-                className="mt-auto flex gap-2 font-mono text-[13px]"
+                className="flex justify-center gap-2 font-mono text-[13px]"
               >
                 {locales.map((locale) => (
                   <a
@@ -315,7 +389,7 @@ function MobileMenu({
                   </a>
                 ))}
               </nav>
-            </Drawer.Body>
+            </Drawer.Footer>
           </Drawer.Dialog>
         </Drawer.Content>
       </Drawer.Backdrop>

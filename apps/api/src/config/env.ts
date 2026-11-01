@@ -18,7 +18,16 @@ export interface AppEnv {
   adminOrigin: string;
   /** 32 bytes para AES-256-GCM (semillas TOTP en reposo). */
   adminEncryptionKey: Buffer;
+  /** Origen público de la tienda (`https://antrina.app`): vuelta de Google y mutaciones de la cuenta. */
+  storeOrigin: string;
+  /** Sin credenciales la API arranca igual y la tienda avisa de que el acceso no está disponible. */
+  google: GoogleEnv | null;
   s3: S3Env;
+}
+
+export interface GoogleEnv {
+  clientId: string;
+  clientSecret: string;
 }
 
 export const APP_ENV = Symbol('APP_ENV');
@@ -52,6 +61,12 @@ function parseEncryptionKey(raw: string): Buffer {
   return key;
 }
 
+function loadGoogleEnv(source: NodeJS.ProcessEnv): GoogleEnv | null {
+  const clientId = source.GOOGLE_CLIENT_ID?.trim();
+  const clientSecret = source.GOOGLE_CLIENT_SECRET?.trim();
+  return clientId && clientSecret ? { clientId, clientSecret } : null;
+}
+
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
   const isProduction = source.NODE_ENV === 'production';
   const s3Endpoint = withDevDefault(source, 'S3_ENDPOINT', 'http://localhost:9000', isProduction);
@@ -67,6 +82,8 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
     isProduction,
     adminOrigin: withDevDefault(source, 'ADMIN_ORIGIN', 'http://localhost:5174', isProduction),
     adminEncryptionKey: parseEncryptionKey(required(source, 'ADMIN_ENCRYPTION_KEY')),
+    storeOrigin: (source.STORE_ORIGIN?.trim() || 'http://localhost:4321').replace(/\/+$/, ''),
+    google: loadGoogleEnv(source),
     s3: {
       endpoint: s3Endpoint,
       region: withDevDefault(source, 'S3_REGION', 'us-east-1', isProduction),

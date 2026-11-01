@@ -1,0 +1,135 @@
+---
+import { CUSTOMER_AUTH_ROUTES, type LocaleCode, type PublicImageDto } from '@antrina/contracts';
+import { ArrowLink, ButtonLink, Emphasis, GoogleIcon, SectionIndex } from '@antrina/ui';
+import { getPageCopy } from '../../i18n/pages';
+import StoreLayout from '../../layouts/StoreLayout.astro';
+import { type CurrentCustomerResult, parseAuthError } from '../../lib/account';
+import { SIZES, toImageSource } from '../../lib/images';
+import { alternatesFor, routes } from '../../lib/routes';
+
+interface Props {
+  locale: LocaleCode;
+  session: CurrentCustomerResult;
+  /** Foto editorial del panel lateral; sin ella se muestra un bloque marino con la frase. */
+  photo?: PublicImageDto;
+}
+
+const { locale, session, photo } = Astro.props;
+const copy = getPageCopy(locale).account;
+const authError = parseAuthError(Astro.url.searchParams.get('error'));
+const next = encodeURIComponent(routes.account(locale));
+const image = toImageSource(photo, SIZES.split, '');
+---
+
+<StoreLayout
+  locale={locale}
+  title={copy.label}
+  description={copy.metaDescription}
+  alternates={alternatesFor((code) => routes.account(code))}
+  noindex
+>
+  <section class="grid border-t border-border lg:min-h-[calc(100svh-7rem)] lg:grid-cols-2">
+    <div class="flex items-center justify-center px-4 py-16 md:px-8 lg:py-20">
+      <div class="flex w-full max-w-[440px] flex-col gap-8">
+        <SectionIndex label={session.status === 'guest' ? copy.eyebrow : copy.label} />
+        {session.status === 'ok' && (
+          <>
+            <h1 class="type-h1 break-words">
+              {copy.greeting} {session.customer.name.split(' ')[0]}
+            </h1>
+            <dl class="flex flex-col border-y border-border">
+              <div class="flex flex-col gap-1 py-4">
+                <dt class="type-meta text-text-muted">{copy.nameLabel}</dt>
+                <dd class="type-body break-words">{session.customer.name}</dd>
+              </div>
+              <div class="flex flex-col gap-1 border-t border-border py-4">
+                <dt class="type-meta text-text-muted">{copy.emailLabel}</dt>
+                <dd class="type-body break-words">{session.customer.email}</dd>
+              </div>
+            </dl>
+            <p class="type-body">{copy.ordersSoon}</p>
+            <ButtonLink href={routes.stable()} variant="primary" withArrow className="w-full">
+              {copy.stableCta}
+            </ButtonLink>
+            <div class="flex flex-wrap items-center gap-x-6 gap-y-4">
+              <ArrowLink href={routes.catalog(locale)}>{copy.catalogCta}</ArrowLink>
+              <form method="post" action={`${CUSTOMER_AUTH_ROUTES.logout}?next=${next}`}>
+                <button
+                  type="submit"
+                  class="cursor-pointer text-[15px] font-medium text-clay-strong underline decoration-clay/50 underline-offset-[6px] transition-colors hover:decoration-current"
+                >
+                  {copy.signOut}
+                </button>
+              </form>
+            </div>
+          </>
+        )}
+        {session.status === 'guest' && (
+          <>
+            <div class="flex flex-col gap-4">
+              <h1 class="type-h1">
+                <Emphasis text={copy.signInTitle} />
+              </h1>
+              <p class="type-body">{copy.signInText}</p>
+            </div>
+            {authError && (
+              <p role="alert" class="type-meta rounded-sm bg-bg-alt px-4 py-3">
+                {copy.errors[authError]}
+              </p>
+            )}
+            <div class="flex flex-col gap-4">
+              <ButtonLink
+                href={`${CUSTOMER_AUTH_ROUTES.googleStart}?next=${next}`}
+                variant="primary"
+                className="w-full"
+              >
+                <span class="inline-flex size-6 items-center justify-center rounded-full bg-surface">
+                  <GoogleIcon />
+                </span>
+                {copy.google}
+              </ButtonLink>
+              <p class="type-meta text-text-muted">{copy.privacy}</p>
+            </div>
+            <p class="type-meta border-t border-border pt-6">
+              {copy.browsePrompt}{' '}
+              <a
+                href={routes.catalog(locale)}
+                class="font-medium text-clay-strong underline underline-offset-4"
+              >
+                {copy.catalogCta}
+              </a>
+            </p>
+          </>
+        )}
+        {session.status === 'unavailable' && (
+          <>
+            <h1 class="type-h1">{copy.label}</h1>
+            <p class="type-body" role="alert">
+              {copy.unavailable}
+            </p>
+          </>
+        )}
+      </div>
+    </div>
+
+    <div class="relative hidden overflow-hidden lg:block">
+      {image ? (
+        <img
+          src={image.src}
+          srcset={image.srcSet}
+          sizes={image.sizes}
+          alt={image.alt}
+          width={image.width}
+          height={image.height}
+          class="absolute inset-0 size-full bg-bg-alt object-cover"
+        />
+      ) : (
+        <div class="surface-dark flex size-full items-end p-12 xl:p-16">
+          <p class="type-h2 max-w-[16ch]">
+            <Emphasis text={copy.panelQuote} />
+          </p>
+        </div>
+      )}
+    </div>
+  </section>
+</StoreLayout>

@@ -6,12 +6,13 @@ import {
   type ProductPieceListResponse,
 } from '@antrina/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { api } from '../lib/api';
 import { formatShortDate } from '../lib/format';
 import { ConfirmDialog } from './ConfirmDialog';
 import { ErrorNotice } from './ErrorNotice';
 import { IconAlert } from './icons';
+import { canExportQr, downloadQrZip, isLocalQr, isPrintable } from '../lib/piece-qr';
 
 const MAX_BATCH = 200;
 
@@ -20,20 +21,24 @@ function openLabels(productId: string, range?: { from: number; to: number }) {
   window.open(`/etiquetas/${productId}${query}`, '_blank', 'noopener');
 }
 
-/** Un código QR por pieza física (o por par): se generan aquí y se imprimen como etiquetas. */
+/** Un código QR por pieza física (o por par): se generan aquí y se descargan o imprimen. */
 export function PiecesPanel({
   productId,
+  sku,
+  name,
   stock,
   isArchived,
 }: {
   productId: string;
+  sku: string;
+  name: string;
   stock: number;
   isArchived: boolean;
 }) {
   const queryClient = useQueryClient();
   const queryKey = ['admin', 'pieces', productId];
   const [quantity, setQuantity] = useState<string | null>(null);
-  const [lastBatch, setLastBatch] = useState<{ from: number; to: number } | null>(null);
+  const [lastBatch, setLastBatch] = useState<ProductPieceDto[] | null>(null);
   const [toVoid, setToVoid] = useState<ProductPieceDto | null>(null);
 
   const pieces = useQuery({
@@ -42,7 +47,13 @@ export function PiecesPanel({
       api<ProductPieceListResponse>('GET', ADMIN_CATALOG_ROUTES.productPieces(productId)),
   });
   const rows = pieces.data?.data ?? [];
+  const free = rows.filter(isPrintable);
+  const used = rows.filter((piece) => piece.claimedAt).length;
   const active = rows.filter((piece) => !piece.voidedAt).length;
+  const lastRange =
+    lastBatch && lastBatch[0]
+      ? { from: lastBatch[0].serial, to: lastBatch.at(-1)?.serial ?? lastBatch[0].serial }
+      : null;
   const suggested = String(Math.min(Math.max(stock - active, 1), MAX_BATCH));
   const value = quantity ?? suggested;
   const amount = Number(value);
@@ -59,12 +70,14 @@ export function PiecesPanel({
     },
     onSuccess: ({ data }) => {
       void queryClient.invalidateQueries({ queryKey });
-      const [first] = data;
-      const last = data.at(-1);
-      if (first && last) setLastBatch({ from: first.serial, to: last.serial });
+      setLastBatch(data);
       setQuantity(null);
       toast.success(data.length === 1 ? 'Código generado' : `${data.length} códigos generados`);
     },
+  });
+
+  const download = useMutation({
+    mutationFn: (batch: readonly ProductPieceDto[]) => downloadQrZip(batch, { sku, name }),
   });
 
   const voidPiece = useMutation({
@@ -79,22 +92,36 @@ export function PiecesPanel({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex gap-2.5 rounded-md bg-warning-tint px-3 py-2.5 text-[13px] text-warning">
-        <IconAlert size={16} className="mt-0.5 shrink-0" />
-        <p>
-          La página que abre el QR todavía no está en la tienda. Puedes generar códigos y hacer una
-          prueba de impresión, pero no pegues etiquetas en piezas que vayas a vender.
-        </p>
-      </div>
+      {!canExportQr && (
+        <Notice>
+          Falta configurar la dirección de la tienda (`VITE_STORE_URL`). Sin ella el QR no abriría
+          nada, así que la descarga y la impresión están bloqueadas.
+        </Notice>
+      )}
+      {isLocalQr && (
+        <Notice>
+          Estás en local: estos QR apuntan a este computador y solo existen en su base de datos.
+          Sirven para probar, no para pegarlos en piezas. Genera los definitivos en el panel de
+          producción.
+        </Notice>
+      )}
+      {pieces.data && !pieces.data.opensTorito && (
+        <Notice>
+          Este producto no está en una categoría de toritos, así que su QR solo confirma que la
+          pieza es auténtica. Para que abra el nacimiento y el establo, usa una categoría cuya
+          dirección empiece por «torito».
+        </Notice>
+      )}
 
       <section className="flex flex-col gap-3">
         <div className="flex flex-col gap-0.5">
           <h3 className="panel-heading">Generar códigos</h3>
           <p className="text-[13px] text-text-muted">
-            Un código por cada pieza que vendes: si se vende en par, un código para el par.
+            Cada código es único y no se repite. Pega cada uno en una sola pieza: volver a descargar
+            trae los mismos códigos, no crea otros.
           </p>
         </div>
-        <div className="flex items-end gap-2">
+        <div className="flex flex-wrap items-end gap-2">
           <TextField type="number" value={value} onChange={setQuantity} className="w-28">
             <Label>Cantidad</Label>
             <Input min={1} max={MAX_BATCH} step={1} className="panel-num" />
@@ -107,28 +134,60 @@ export function PiecesPanel({
           >
             Generar
           </Button>
-          {lastBatch && (
-            <Button variant="tertiary" onPress={() => openLabels(productId, lastBatch)}>
-              Imprimir estos
-            </Button>
+          {lastBatch && lastRange && (
+            <>
+              <Button
+                variant="secondary"
+                isPending={download.isPending}
+                isDisabled={!canExportQr}
+                onPress={() => download.mutate(lastBatch)}
+              >
+                Descargar estos {lastBatch.length}
+              </Button>
+              <Button
+                variant="tertiary"
+                isDisabled={!canExportQr}
+                onPress={() => openLabels(productId, lastRange)}
+              >
+                Imprimir estos
+              </Button>
+            </>
           )}
         </div>
         <p className="panel-meta panel-num">
-          {stock} en stock · {active} {active === 1 ? 'código activo' : 'códigos activos'}
+          {stock} en stock · {free.length} {free.length === 1 ? 'libre' : 'libres'} · {used}{' '}
+          {used === 1 ? 'usado' : 'usados'}
           {isArchived && ' · Producto archivado: no se pueden generar más'}
         </p>
         <ErrorNotice error={generate.error} title="No se pudieron generar" />
       </section>
 
       <section className="flex flex-col gap-3 border-t border-border pt-5">
-        <div className="flex min-h-8 items-center justify-between gap-3">
+        <div className="flex min-h-8 flex-wrap items-center justify-between gap-3">
           <h3 className="panel-heading">Códigos</h3>
-          {active > 0 && (
-            <Button size="sm" variant="tertiary" onPress={() => openLabels(productId)}>
-              Imprimir etiquetas
-            </Button>
+          {free.length > 0 && (
+            <div className="flex gap-1">
+              <Button
+                size="sm"
+                variant="tertiary"
+                isPending={download.isPending}
+                isDisabled={!canExportQr}
+                onPress={() => download.mutate(free)}
+              >
+                Descargar libres
+              </Button>
+              <Button
+                size="sm"
+                variant="tertiary"
+                isDisabled={!canExportQr}
+                onPress={() => openLabels(productId)}
+              >
+                Imprimir etiquetas
+              </Button>
+            </div>
           )}
         </div>
+        <ErrorNotice error={download.error} title="No se pudo descargar" />
         <ErrorNotice error={pieces.error} title="No se pudieron cargar los códigos" />
         <ErrorNotice error={voidPiece.error} title="No se pudo anular" />
         {pieces.isPending ? (
@@ -148,10 +207,12 @@ export function PiecesPanel({
                   {piece.code}
                 </span>
                 <span className="panel-meta hidden whitespace-nowrap sm:inline">
-                  {formatShortDate(piece.createdAt)}
+                  {formatShortDate(piece.claimedAt ?? piece.createdAt)}
                 </span>
                 {piece.voidedAt ? (
                   <span className="text-[12.5px] text-text-muted">Anulado</span>
+                ) : piece.claimedAt ? (
+                  <span className="text-[12.5px] font-medium text-success">Usado</span>
                 ) : (
                   <Button size="sm" variant="ghost" onPress={() => setToVoid(piece)}>
                     Anular
@@ -175,6 +236,15 @@ export function PiecesPanel({
         Úsalo si la etiqueta se perdió o se dañó. El código dejará de ser válido y no se puede
         reactivar.
       </ConfirmDialog>
+    </div>
+  );
+}
+
+function Notice({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex gap-2.5 rounded-md bg-warning-tint px-3 py-2.5 text-[13px] text-warning">
+      <IconAlert size={16} className="mt-0.5 shrink-0" />
+      <p>{children}</p>
     </div>
   );
 }

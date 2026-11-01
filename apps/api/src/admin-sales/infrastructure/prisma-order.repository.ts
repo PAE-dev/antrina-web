@@ -41,6 +41,8 @@ function toDomainOrder(record: OrderRecord): Order {
           phone: record.customer.phone,
           email: record.customer.email,
           note: record.customer.note,
+          hasWebAccount: record.customer.googleSubject !== null,
+          lastLoginAt: record.customer.lastLoginAt,
           createdAt: record.customer.createdAt,
         }
       : null,

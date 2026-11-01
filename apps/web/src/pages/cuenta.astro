@@ -1,16 +1,16 @@
 ---
-import MessageView from '../components/views/MessageView.astro';
-import { getPageCopy } from '../i18n/pages';
-import { alternatesFor, routes } from '../lib/routes';
+import AccountView from '../components/views/AccountView.astro';
+import { loadAccountPage } from '../lib/account';
 
-const copy = getPageCopy('es').comingSoon;
+export const prerender = false;
+
+const { session, photo } = await loadAccountPage('es', Astro.request.headers.get('cookie'));
+// La respuesta depende de la cookie: nunca debe guardarla la CDN.
+Astro.response.headers.set('Cache-Control', 'no-store');
+if (session.status === 'unavailable') {
+  Astro.response.status = 503;
+  Astro.response.headers.set('Retry-After', '60');
+}
 ---
 
-<MessageView
-  locale="es"
-  alternates={alternatesFor((code) => routes.account(code))}
-  label={copy.account.title}
-  title={copy.account.title}
-  text={copy.account.text}
-  cta={{ label: copy.cta, href: routes.catalog('es') }}
-/>
+<AccountView locale="es" session={session} photo={photo} />

@@ -7,6 +7,9 @@ export interface Customer {
   phone: string | null;
   email: string | null;
   note: string | null;
+  /** Se registró en la tienda; entonces `createdAt` es su fecha de registro. */
+  hasWebAccount: boolean;
+  lastLoginAt: Date | null;
   createdAt: Date;
 }
 

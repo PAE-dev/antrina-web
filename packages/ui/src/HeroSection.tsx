@@ -4,7 +4,6 @@ import { Photo } from './Photo';
 import { type CallToAction, type ImageSource } from './types';
 
 interface HeroSectionProps {
-  eyebrow: string;
   title: string;
   text: string;
   primary: CallToAction;
@@ -17,7 +16,6 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({
-  eyebrow,
   title,
   text,
   primary,
@@ -30,10 +28,6 @@ export function HeroSection({
     <section className="pb-20 pt-8 md:pb-32 md:pt-14">
       <div className="container-page grid gap-10 lg:grid-cols-12 lg:gap-8">
         <div className="flex flex-col justify-between gap-10 lg:col-span-7 lg:py-6">
-          <p className="type-label inline-flex items-center gap-3">
-            <span aria-hidden="true" className="rombo" />
-            {eyebrow}
-          </p>
           <h1 className="type-display max-w-[11ch]">
             <Emphasis text={title} />
           </h1>

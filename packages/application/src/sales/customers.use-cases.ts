@@ -20,6 +20,7 @@ export class ListCustomersUseCase {
     const result = await this.customers.list({
       ...(q ? { query: q } : {}),
       ...(query.withPhone ? { withPhone: true } : {}),
+      ...(query.webAccount ? { webAccount: true } : {}),
       limit,
       offset,
     });

@@ -55,6 +55,24 @@ Contextos actuales:
 - `admin-users`: usuarios del panel (`/admin/users`, permiso `admins.manage`) y contraseña propia
   (`PUT /admin/account/password`). Debe quedar siempre un propietario activo; nadie se desactiva a sí
   mismo. Desactivar o asignar contraseña cierra las sesiones de esa persona.
+- `customer-auth`: cuentas de cliente de la tienda, solo con Google (puerto `GoogleIdentityProvider`,
+  OpenID Connect con PKCE). Rutas `/auth/*`; la tienda las reenvía desde su dominio
+  (`apps/web/src/pages/auth/[...path].ts`) para que la cookie sea de primera parte. Una cuenta es una
+  fila de `Customer` con `googleSubject`: nunca se enlaza por correo con un cliente del panel, porque
+  ese correo no está verificado. Sesión de 30 días en `antrina_session` (httpOnly, SameSite=Lax; en
+  BD solo el hash). `antrina_signed_in` es legible desde JS porque las páginas van cacheadas. Sin
+  `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`, `/cuenta` avisa de que el acceso no está disponible.
+- `toritos`: la experiencia del QR de los Toritos de Pucará. Una pieza es torito si el slug de su
+  categoría (o de la madre) empieza por `torito`. Rutas `/establo-api/*`; la tienda las reenvía desde
+  su dominio (`pages/establo-api/[...path].ts`). `/q/<código>` lo abre: nace, elige color, nombre e
+  intención, y el **primero que inicia sesión se queda con la pieza** (`Torito.pieceId` es único;
+  reintentar es idempotente para su dueño, otro recibe 409). Sin sesión no se guarda nada: el borrador
+  espera en `localStorage` y se reclama al volver de Google. El regalo (`ProductPiece.gift*`) lo
+  escribe cualquiera con el código hasta que la pieza tiene dueño, y luego solo lo ve el dueño, y no
+  sale en los DTOs del panel. La personalidad se deduce del `serial`, no se guarda. Las visitas se
+  cuentan por día en hora de Lima. `/establo` muestra los toritos en corrales de 3 por establo, más
+  galería. El arte es WebGL 2D sobre `public/torito/` (`components/torito/`), sin 3D. `/q/demo` y
+  `/establo?ejemplo=N` son vistas de ejemplo que no guardan nada.
 - `checkout` (puerto `PaymentGateway`, adapter que rechaza todo) y `notification` (puerto
   `OrderNotifier`, stub de WhatsApp que solo loguea).
 
@@ -72,7 +90,9 @@ Reservados para próximas fases: `cart` y `promotion` (entidad ya existe en domi
 - Las líneas de venta copian `sku` y `name`: el historial no cambia si el producto se edita.
 - `ProductPiece` es una pieza física (o un par) con QR: `code` aleatorio, `serial` correlativo por
   producto. La URL impresa es `pieceQrPath(code)` (`/q/<code>`) y **no puede cambiar**: ya está en
-  etiquetas. Los códigos no se borran, se anulan (`voidedAt`). No mueven el stock.
+  etiquetas. Los códigos no se borran, se anulan (`voidedAt`). No mueven el stock. El panel los genera
+  por cantidad y los exporta como ZIP (PNG, SVG y CSV) o etiquetas para imprimir, siempre desde
+  `apps/admin/src/lib/piece-qr.ts`; solo salen los libres, nunca los usados o anulados.
 
 Los errores de dominio (`DomainError(message, code)`) se traducen a HTTP en `DomainExceptionFilter`
 según el `code`: `auth.locked` → 423, `auth.forbidden` → 403, `auth.*` → 401, `*not_found` → 404,
@@ -277,6 +297,8 @@ pnpm build | pnpm typecheck | pnpm lint | pnpm test | pnpm format
 Variables: copiar `.env.example` a `apps/api/.env`, `apps/web/.env` y `apps/admin/.env`.
 En la web: `PUBLIC_SITE_URL` (dominio canónico), `PUBLIC_WHATSAPP_NUMBER` (sin "+", activa los botones
 de pedido), `PUBLIC_CONTACT_EMAIL` y `PUBLIC_GOOGLE_SITE_VERIFICATION` (Search Console).
+En la API, `STORE_ORIGIN` (origen de la tienda) y `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` (URI de
+redirección en Google Cloud: `<STORE_ORIGIN>/auth/google/callback`).
 `ADMIN_ENCRYPTION_KEY` es obligatoria (`openssl rand -base64 32`). Variables nuevas: añadirlas
 también a `globalPassThroughEnv` en `turbo.json`.
 

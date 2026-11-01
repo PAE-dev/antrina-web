@@ -20,6 +20,10 @@ export * from './sales/dashboard.use-case.js';
 export * from './sales/orders.use-cases.js';
 export * from './sales/sales.mappers.js';
 
+export * from './customer-auth/customer-auth.use-cases.js';
+
+export * from './toritos/toritos.use-cases.js';
+
 export * from './admin/admin-auth.deps.js';
 export * from './admin/admin-users.use-cases.js';
 export * from './admin/create-admin-user.use-case.js';

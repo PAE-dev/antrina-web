@@ -1,4 +1,4 @@
-import { type LocaleCode } from '@antrina/contracts';
+import { type CustomerAuthError, type LocaleCode } from '@antrina/contracts';
 
 /**
  * Copys de las páginas internas (catálogo, colecciones, ficha, piedras, búsqueda, 404).
@@ -117,9 +117,28 @@ export interface PageCopy {
   notFound: { label: string; title: string; text: string; cta: string };
   comingSoon: {
     cart: { title: string; text: string };
-    account: { title: string; text: string };
     newsletter: { title: string; text: string };
     cta: string;
+  };
+  account: {
+    label: string;
+    eyebrow: string;
+    signInTitle: string;
+    signInText: string;
+    google: string;
+    privacy: string;
+    browsePrompt: string;
+    panelQuote: string;
+    errors: Record<CustomerAuthError, string>;
+    unavailable: string;
+    greeting: string;
+    nameLabel: string;
+    emailLabel: string;
+    ordersSoon: string;
+    stableCta: string;
+    catalogCta: string;
+    signOut: string;
+    metaDescription: string;
   };
 }
 
@@ -277,14 +296,37 @@ const es: PageCopy = {
     text: 'Puede que el enlace haya cambiado o que el árbol ya no esté disponible.',
     cta: 'Ver todos los árboles',
   },
+  account: {
+    label: 'Mi cuenta',
+    eyebrow: 'Arraigado en tu intención',
+    signInTitle: 'Te damos la *bienvenida*',
+    signInText:
+      'Entra con tu cuenta de Google. Si es tu primera vez, creamos tu cuenta al instante, sin formularios ni contraseñas.',
+    google: 'Continuar con Google',
+    privacy:
+      'Solo usamos tu nombre y tu correo para gestionar tu cuenta. Nunca publicaremos nada en tu nombre.',
+    browsePrompt: '¿Prefieres pedir sin cuenta?',
+    panelQuote: 'Piedra por piedra, *hecho a mano*.',
+    errors: {
+      cancelled: 'Cancelaste el acceso con Google. Puedes intentarlo cuando quieras.',
+      unavailable: 'El acceso con Google aún no está activo. Vuelve a intentarlo pronto.',
+      failed: 'No pudimos iniciar tu sesión con Google. Inténtalo de nuevo.',
+    },
+    unavailable:
+      'Tu cuenta no está disponible en este momento. Vuelve a intentarlo en unos minutos.',
+    greeting: 'Hola,',
+    nameLabel: 'Nombre',
+    emailLabel: 'Correo',
+    ordersSoon: 'Pronto podrás ver aquí tus pedidos.',
+    stableCta: 'Ver mi establo',
+    catalogCta: 'Ver los árboles',
+    signOut: 'Cerrar sesión',
+    metaDescription: 'Inicia sesión en tu cuenta de Antrina con Google.',
+  },
   comingSoon: {
     cart: {
       title: 'Carrito',
       text: 'Muy pronto podrás comprar aquí directamente. Mientras tanto, pide tu árbol por WhatsApp desde su ficha.',
-    },
-    account: {
-      title: 'Mi cuenta',
-      text: 'Las cuentas de cliente llegarán pronto. Por ahora no necesitas registrarte para pedir tu árbol.',
     },
     newsletter: {
       title: 'Carta mensual',
@@ -446,14 +488,36 @@ const en: PageCopy = {
     text: 'The link may have changed, or the tree may no longer be available.',
     cta: 'See all trees',
   },
+  account: {
+    label: 'My account',
+    eyebrow: 'Rooted in intention',
+    signInTitle: 'Welcome to *Antrina*',
+    signInText:
+      'Sign in with your Google account. First time here? We’ll set up your account instantly, with no forms or passwords.',
+    google: 'Continue with Google',
+    privacy:
+      'We only use your name and email to manage your account. We’ll never post anything on your behalf.',
+    browsePrompt: 'Rather order without an account?',
+    panelQuote: 'Stone by stone, *made by hand*.',
+    errors: {
+      cancelled: 'You cancelled the Google sign-in. You can try again whenever you like.',
+      unavailable: 'Google sign-in isn’t active yet. Please try again soon.',
+      failed: 'We couldn’t sign you in with Google. Please try again.',
+    },
+    unavailable: 'Your account isn’t available right now. Please try again in a few minutes.',
+    greeting: 'Hello,',
+    nameLabel: 'Name',
+    emailLabel: 'Email',
+    ordersSoon: 'You’ll soon be able to see your orders here.',
+    stableCta: 'See my stable',
+    catalogCta: 'See the trees',
+    signOut: 'Sign out',
+    metaDescription: 'Sign in to your Antrina account with Google.',
+  },
   comingSoon: {
     cart: {
       title: 'Cart',
       text: 'Soon you’ll be able to buy here directly. In the meantime, order your tree on WhatsApp from its page.',
-    },
-    account: {
-      title: 'My account',
-      text: 'Customer accounts are coming soon. For now you don’t need to sign up to order your tree.',
     },
     newsletter: {
       title: 'Monthly letter',

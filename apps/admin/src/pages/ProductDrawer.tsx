@@ -987,6 +987,8 @@ function ProductEditor({
             {product && (
               <PiecesPanel
                 productId={product.id}
+                sku={product.sku}
+                name={product.content.es.name}
                 stock={product.stock}
                 isArchived={product.status === 'ARCHIVED'}
               />

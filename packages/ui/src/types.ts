@@ -22,6 +22,10 @@ export interface HeaderLabels {
   search: string;
   searchPlaceholder: string;
   account: string;
+  stable: string;
+  signIn: string;
+  signUpPrompt: string;
+  signUp: string;
   cart: string;
   openMenu: string;
   menuTitle: string;

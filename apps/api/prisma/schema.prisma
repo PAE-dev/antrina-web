@@ -143,17 +143,42 @@ model Product {
 
 /// Pieza física con QR propio. `code` es aleatorio y va impreso en la etiqueta (`/q/<code>`).
 model ProductPiece {
-  id        String    @id @default(cuid())
-  productId String
-  product   Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+  id            String    @id @default(cuid())
+  productId     String
+  product       Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
   /// Número correlativo dentro del producto, para identificar la etiqueta.
-  serial    Int
-  code      String    @unique
+  serial        Int
+  code          String    @unique
   /// Etiqueta perdida o dañada: el código deja de ser válido.
-  voidedAt  DateTime?
-  createdAt DateTime  @default(now())
+  voidedAt      DateTime?
+  /// Mensaje de quien regala; se puede cambiar hasta que la pieza tenga dueño.
+  giftFrom      String?
+  giftTo        String?
+  giftMessage   String?
+  giftUpdatedAt DateTime?
+  torito        Torito?
+  createdAt     DateTime  @default(now())
 
   @@unique([productId, serial])
+}
+
+/// Torito digital de una pieza: el primero que la reclama con su cuenta es su dueño.
+model Torito {
+  id          String       @id @default(cuid())
+  pieceId     String       @unique
+  piece       ProductPiece @relation(fields: [pieceId], references: [id], onDelete: Restrict)
+  customerId  String
+  customer    Customer     @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  name        String
+  colorCode   String
+  intention   String?
+  /// Último día visitado, `AAAA-MM-DD` en hora de Lima.
+  lastVisitOn String?
+  visitStreak Int          @default(0)
+  claimedAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([customerId])
 }
 
 /// Historial de existencias: cada cambio de `Product.stock` deja una fila.
@@ -178,16 +203,34 @@ model StockMovement {
 
 /// Cliente de la tienda. El teléfono (E.164) es la clave para unirlo con WhatsApp.
 model Customer {
-  id        String   @id @default(cuid())
-  name      String
-  phone     String?  @unique
-  email     String?
-  note      String?
-  orders    Order[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String            @id @default(cuid())
+  name          String
+  phone         String?           @unique
+  email         String?
+  note          String?
+  /// Identificador de su cuenta de Google (`sub`); null si solo existe en el panel.
+  googleSubject String?           @unique
+  lastLoginAt   DateTime?
+  orders        Order[]
+  sessions      CustomerSession[]
+  toritos       Torito[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
 
   @@index([name])
+}
+
+model CustomerSession {
+  id         String   @id @default(cuid())
+  tokenHash  String   @unique
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([customerId])
+  @@index([expiresAt])
 }
 
 /// Venta, registrada a mano desde el panel o, en el futuro, desde el checkout de la tienda.

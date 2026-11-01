@@ -57,6 +57,8 @@ export function toCustomerDto(customer: CustomerWithStats): CustomerDto {
     phone: customer.phone,
     email: customer.email,
     note: customer.note,
+    hasWebAccount: customer.hasWebAccount,
+    lastLoginAt: customer.lastLoginAt?.toISOString() ?? null,
     orderCount: customer.orderCount,
     totalSpent: money(customer.totalSpentCents, DEFAULT_CURRENCY),
     lastOrderAt: customer.lastOrderAt?.toISOString() ?? null,
