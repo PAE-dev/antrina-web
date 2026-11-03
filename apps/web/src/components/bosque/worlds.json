@@ -22,7 +22,7 @@
       "status": "soon",
       "target": null,
       "inside": null,
-      "lockedText": "Este mundo todavía se está tejiendo.",
+      "lockedText": "Se está tejiendo",
       "openText": "",
       "shop": null,
       "theme": {
@@ -55,7 +55,7 @@
       "status": "soon",
       "target": null,
       "inside": null,
-      "lockedText": "Sus estrellas todavía no se alinean.",
+      "lockedText": "Sus estrellas aún no se alinean",
       "openText": "",
       "shop": null,
       "theme": {
@@ -88,11 +88,12 @@
       "status": "soon",
       "target": null,
       "inside": null,
-      "lockedText": "Este jardín abrirá con tus árboles de cuarzo. Todavía está creciendo.",
+      "lockedText": "Abrirá con tus árboles de cuarzo",
       "openText": "",
       "shop": {
-        "label": "Ver los árboles",
-        "categoryPrefix": "arbol"
+        "label": "Ver árboles",
+        "categoryPrefix": "arbol",
+        "intro": "Arbolitos de cuarzo hechos a mano en nuestro taller de Lima."
       },
       "theme": {
         "bg": "#0e1f16",
@@ -124,11 +125,12 @@
       "status": "unlockable",
       "target": "/mundos/torito",
       "inside": "/torito/establo-dentro.webp",
-      "lockedText": "Se abre con el QR de tu Torito de Pucará. Adentro te espera su establo.",
-      "openText": "Tus toritos te esperan en su establo.",
+      "lockedText": "Se abre con el QR de tu torito",
+      "openText": "Tus toritos te esperan",
       "shop": {
-        "label": "Conseguir mi torito",
-        "categoryPrefix": "torito"
+        "label": "Comprar",
+        "categoryPrefix": "torito",
+        "intro": "Toritos de Pucará hechos a mano para tu establo."
       },
       "theme": {
         "bg": "#24140c",
@@ -169,7 +171,7 @@
       "status": "soon",
       "target": null,
       "inside": null,
-      "lockedText": "El camino a la cumbre todavía se está abriendo.",
+      "lockedText": "El camino aún se está abriendo",
       "openText": "",
       "shop": null,
       "theme": {
@@ -202,7 +204,7 @@
       "status": "soon",
       "target": null,
       "inside": null,
-      "lockedText": "Este portal despertará más adelante.",
+      "lockedText": "Despertará más adelante",
       "openText": "",
       "shop": null,
       "theme": {

@@ -19,8 +19,8 @@ export interface World {
   inside: string | null;
   lockedText: string;
   openText: string;
-  /** A qué parte de la tienda lleva esta puerta. */
-  shop: { label: string; categoryPrefix: string } | null;
+  /** La tienda de este mundo: solo vende lo de su categoría. */
+  shop: { label: string; categoryPrefix: string; intro: string } | null;
   /** La interfaz es la misma en todos los mundos: esto es lo que cambia. */
   theme: { bg: string; accent: string };
   mainTab: string;
@@ -53,19 +53,26 @@ export interface ForestLayout {
 
 /** Sitio para la cabecera de la app. */
 const HEADER_ROOM = 104;
+/** En vertical, lo que ocupan abajo la tarjeta y el menú: la puerta se lleva todo lo demás. */
+const PORTRAIT_BOTTOM_MIN = 186;
+const PORTRAIT_BOTTOM_SHARE = 0.25;
 
 export function computeLayout(width: number, height: number): ForestLayout {
   const isPortrait = height > width;
-  const groundY = Math.round(height * (isPortrait ? 0.62 : 0.68));
+  const groundY = Math.round(
+    isPortrait
+      ? height - Math.max(PORTRAIT_BOTTOM_MIN, height * PORTRAIT_BOTTOM_SHARE)
+      : height * 0.68,
+  );
   const widest = Math.max(...WORLDS.map((world) => (world.width / world.height) * world.scale));
   const doorHeight = Math.round(
     Math.min(
       groundY - HEADER_ROOM,
-      height * (isPortrait ? 0.48 : 0.5),
-      (width * (isPortrait ? 0.82 : 0.5)) / widest,
+      height * (isPortrait ? 0.56 : 0.5),
+      (width * (isPortrait ? 0.86 : 0.5)) / widest,
     ),
   );
-  const spacing = Math.round(isPortrait ? width * 0.86 : Math.max(doorHeight * 0.92, width * 0.3));
+  const spacing = Math.round(isPortrait ? width * 0.88 : Math.max(doorHeight * 0.92, width * 0.3));
   return { width, height, isPortrait, groundY, doorHeight, spacing };
 }
 

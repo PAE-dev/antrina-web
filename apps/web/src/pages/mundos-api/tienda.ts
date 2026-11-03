@@ -8,15 +8,24 @@ export const prerender = false;
 
 const LOCALE = 'es';
 
-/** La tienda dentro de la app: el catálogo público con lo que el navegador no puede calcular. */
-export const GET: APIRoute = async () => {
+/** La tienda de un mundo: solo lo que pertenece a su categoría y a sus subcategorías. */
+export const GET: APIRoute = async ({ url }) => {
+  const prefix = url.searchParams.get('categoria') ?? '';
   const [products, categories] = await Promise.all([
     listProducts({ locale: LOCALE }),
     getCategories(LOCALE),
   ]);
+  const all = categories ?? [];
+  const roots = prefix
+    ? all.filter((category) => !category.parentId && category.slug.startsWith(prefix))
+    : [];
+  const children = all.filter((category) => roots.some((root) => root.id === category.parentId));
+  const slugs = new Set([...roots, ...children].map((category) => category.slug));
+  const worldProducts = products.filter((product) => slugs.has(product.categorySlug));
+
   return new Response(
     JSON.stringify({
-      products: products.map((product) => {
+      products: worldProducts.map((product) => {
         const path = productPath(LOCALE, product.slug, product.categorySlug);
         return {
           ...product,
@@ -25,15 +34,9 @@ export const GET: APIRoute = async () => {
           url: absoluteUrl(path),
         };
       }),
-      categories: (categories ?? [])
-        .filter((category) => !category.parentId)
+      subcategories: children
+        .filter((child) => worldProducts.some((product) => product.categorySlug === child.slug))
         .map(({ slug, name }) => ({ slug, name })),
-      children: (categories ?? [])
-        .filter((category) => category.parentId)
-        .map(({ slug, parentId }) => ({
-          slug,
-          parentSlug: categories?.find((category) => category.id === parentId)?.slug ?? null,
-        })),
       whatsappNumber: WHATSAPP_NUMBER || null,
       contactPath: routes.contact(LOCALE),
     }),

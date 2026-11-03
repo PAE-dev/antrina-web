@@ -22,7 +22,9 @@ export interface HeaderLabels {
   search: string;
   searchPlaceholder: string;
   account: string;
-  stable: string;
+  /** Los mundos de la app: el bosque de las puertas. */
+  worlds: string;
+  worldsText: string;
   signIn: string;
   signUpPrompt: string;
   signUp: string;

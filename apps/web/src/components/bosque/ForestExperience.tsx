@@ -56,7 +56,7 @@ interface Props {
   onEnterWorld: (id: string) => void;
   onScan: () => void;
   onProfile: () => void;
-  onShop: (categoryPrefix: string) => void;
+  onShop: (worldId: string) => void;
 }
 
 const prefersStillness = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -486,23 +486,20 @@ export function ForestExperience({
           ))}
         </div>
         <div className="bosque-card">
-          <h2 className="bosque-name font-display">{world.name}</h2>
-          <p className="bosque-text">
-            {state === 'unlocking'
-              ? '¡Tu puerta se abrió! Tócala para entrar.'
-              : isOpen
-                ? world.openText
-                : world.lockedText}
-          </p>
-          {notice && (
-            <p role="alert" className="type-meta rounded-sm bg-surface px-4 py-3 text-text">
-              {notice}
+          <div className="bosque-info">
+            <h2 className="bosque-name font-display">{world.name}</h2>
+            <p className="bosque-text">
+              {state === 'unlocking'
+                ? '¡Se abrió! Tócala para entrar'
+                : isOpen
+                  ? world.openText
+                  : world.lockedText}
             </p>
-          )}
+          </div>
           <div className="bosque-actions">
             {isOpen && (
               <Button
-                className="h-12 bg-on-dark px-8 text-[15px] font-medium text-text"
+                className="bosque-primary"
                 isDisabled={Boolean(openingId)}
                 onPress={() => enter(selected)}
               >
@@ -510,28 +507,26 @@ export function ForestExperience({
               </Button>
             )}
             {state === 'locked' && world.target && (
-              <Button
-                className="h-12 bg-on-dark px-7 text-[15px] font-medium text-text"
-                onPress={hasPending ? onProfile : onScan}
-              >
-                {hasPending ? 'Guardar mi torito' : 'Escanear mi QR'}
+              <Button className="bosque-primary" onPress={hasPending ? onProfile : onScan}>
+                {hasPending ? 'Guardar' : 'Escanear QR'}
               </Button>
             )}
             {!isOpen && world.shop && (
-              <button
-                type="button"
-                className="bosque-link"
-                onClick={() => world.shop && onShop(world.shop.categoryPrefix)}
-              >
+              <button type="button" className="bosque-link" onClick={() => onShop(world.id)}>
                 {world.shop.label}
               </button>
             )}
             {state === 'locked' && world.target && (
               <button type="button" className="bosque-link" onClick={() => onEnterWorld(world.id)}>
-                Mirar adentro
+                Mirar
               </button>
             )}
           </div>
+          {notice && (
+            <p role="alert" className="bosque-notice">
+              {notice}
+            </p>
+          )}
         </div>
       </section>
     </div>

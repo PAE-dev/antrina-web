@@ -35,9 +35,68 @@
   letter-spacing: 0;
 }
 
-/* Dentro de la app, los enlaces no van subrayados como en un artículo si son botones. */
 .app-root img {
   max-width: 100%;
+}
+
+/*
+ * Vidrio místico, el único material de la app: lo moderno está en el desenfoque y lo místico en el
+ * filo iridiscente, de oro a violeta, que atrapa la luz como un cuarzo.
+ */
+.app-stats,
+.liquid-bar,
+.world-card,
+.app-segment,
+.app-sheet,
+.world-tile:not(.is-empty),
+.shop-card,
+.app-root .bosque-card {
+  position: relative;
+  background:
+    linear-gradient(
+      155deg,
+      rgb(255 255 255 / 0.15),
+      rgb(255 255 255 / 0.03) 46%,
+      rgb(150 110 230 / 0.09)
+    ),
+    rgb(10 14 38 / 0.42);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.2),
+    0 12px 32px rgb(2 4 18 / 0.34),
+    0 0 26px rgb(170 130 255 / 0.09);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+}
+
+.app-stats::before,
+.liquid-bar::before,
+.world-card::before,
+.app-segment::before,
+.app-sheet::before,
+.world-tile:not(.is-empty)::before,
+.shop-card::before,
+.app-root .bosque-card::before {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgb(255 233 184 / 0.85),
+    rgb(198 160 255 / 0.32) 38%,
+    rgb(130 210 255 / 0.12) 64%,
+    rgb(255 196 120 / 0.6)
+  );
+  content: '';
+  pointer-events: none;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
 }
 
 /* Cabecera: las cifras arriba y, debajo, dónde estás. */
@@ -48,67 +107,78 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: max(10px, env(safe-area-inset-top)) 12px 18px;
-  background: linear-gradient(rgb(5 10 30 / 0.72), transparent);
+  gap: 8px;
+  padding: max(10px, env(safe-area-inset-top)) 12px 16px;
   pointer-events: none;
 }
 
-.app-hud-stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
-  width: min(100%, 460px);
+.app-stats {
+  display: flex;
+  width: min(100%, 400px);
+  margin: 0;
+  padding: 9px 4px;
+  border-radius: 22px;
 }
 
 .app-stat {
   display: flex;
   min-width: 0;
-  flex-direction: column;
+  flex: 1 1 0;
   align-items: center;
-  padding: 7px 6px;
-  border-radius: 16px;
-  background: rgb(6 11 34 / 0.58);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2);
-  -webkit-backdrop-filter: blur(14px) saturate(160%);
-  backdrop-filter: blur(14px) saturate(160%);
+  justify-content: center;
+  gap: 8px;
+  padding: 0 6px;
 }
 
-.app-stat-value {
-  font-size: 17px;
+.app-stat + .app-stat {
+  border-left: 1px solid rgb(255 255 255 / 0.14);
+}
+
+.app-stat svg {
+  width: 21px;
+  height: 21px;
+  flex: none;
+  color: var(--world-accent);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--world-accent) 55%, transparent));
+}
+
+.app-stat-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column-reverse;
+}
+
+.app-stat dd {
+  margin: 0;
+  font-size: 15.5px;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.15;
   font-variant-numeric: tabular-nums;
   color: #fff;
   white-space: nowrap;
 }
 
-.app-stat-label {
-  max-width: 100%;
+.app-stat dt {
   overflow: hidden;
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1.3;
-  color: var(--world-accent);
+  font-size: 11.5px;
+  line-height: 1.25;
+  color: rgb(241 234 223 / 0.72);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 /* Interruptor del interior de un mundo */
 .app-segment {
-  position: relative;
   display: inline-flex;
-  padding: 3px;
+  padding: 4px;
   border-radius: 999px;
-  background: rgb(6 11 34 / 0.58);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2);
-  -webkit-backdrop-filter: blur(14px) saturate(160%);
-  backdrop-filter: blur(14px) saturate(160%);
   pointer-events: auto;
 }
 
 .app-segment button {
-  min-width: 92px;
+  position: relative;
+  z-index: 2;
+  min-width: 96px;
   min-height: 34px;
   padding: 0 16px;
   border: 0;
@@ -116,7 +186,7 @@
   background: none;
   font-size: 14px;
   font-weight: 500;
-  color: rgb(255 255 255 / 0.8);
+  color: rgb(255 255 255 / 0.82);
   cursor: pointer;
   transition:
     background-color 200ms ease,
@@ -124,7 +194,7 @@
 }
 
 .app-segment button.is-active {
-  background: var(--color-on-dark);
+  background: rgb(255 255 255 / 0.92);
   color: var(--color-text);
 }
 
@@ -133,19 +203,33 @@
   outline-offset: 2px;
 }
 
+/* Dónde estás: una inscripción, no otra caja. */
 .app-hud-title {
   display: inline-flex;
   max-width: 100%;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   margin: 0;
-  padding: 3px 12px;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: var(--app-light);
+  text-shadow: 0 1px 8px rgb(3 6 24 / 0.95);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.app-hud-doors {
+  margin: 0;
+  padding: 4px 12px;
   border-radius: 999px;
-  background: rgb(6 11 34 / 0.58);
-  font-size: 14px;
+  background: rgb(10 14 38 / 0.42);
+  box-shadow: inset 0 0 0 1px rgb(255 233 184 / 0.28);
+  font-size: 12.5px;
   font-weight: 500;
   color: var(--app-light);
-  white-space: nowrap;
+  -webkit-backdrop-filter: blur(14px) saturate(170%);
+  backdrop-filter: blur(14px) saturate(170%);
 }
 
 /* Menú de vidrio líquido */
@@ -155,19 +239,19 @@
   bottom: var(--app-safe-bottom);
   z-index: 55;
   display: flex;
-  width: min(calc(100% - 20px), 460px);
+  width: min(calc(100% - 20px), calc(var(--tabs) * 66px + 12px));
   padding: 6px;
   translate: -50% 0;
   border-radius: 30px;
-  /* Oscuro bajo el vidrio: debe leerse igual sobre una noche que sobre una foto clara. */
-  background: rgb(10 16 40 / 0.62);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.5),
-    inset 0 -1px 0 rgb(255 255 255 / 0.12),
-    inset 0 0 18px rgb(255 255 255 / 0.08),
-    0 16px 36px rgb(0 0 0 / 0.42);
-  -webkit-backdrop-filter: blur(22px) saturate(190%);
-  backdrop-filter: blur(22px) saturate(190%);
+  /* Más oscuro que el resto del vidrio: debe leerse igual sobre una noche que sobre una foto clara. */
+  background:
+    linear-gradient(
+      155deg,
+      rgb(255 255 255 / 0.14),
+      rgb(255 255 255 / 0.03) 46%,
+      rgb(150 110 230 / 0.1)
+    ),
+    rgb(10 14 38 / 0.62);
 }
 
 .liquid-drop {
@@ -176,7 +260,7 @@
   bottom: 6px;
   left: 6px;
   border-radius: 24px;
-  background: rgb(255 255 255 / 0.26);
+  background: rgb(255 255 255 / 0.22);
   box-shadow:
     inset 0 1px 1px rgb(255 255 255 / 0.65),
     inset 0 -6px 12px rgb(255 255 255 / 0.08),
@@ -189,7 +273,7 @@
   position: relative;
   display: flex;
   min-width: 0;
-  min-height: 52px;
+  min-height: 50px;
   flex: 1 1 0;
   flex-direction: column;
   align-items: center;
@@ -218,14 +302,18 @@
   color: #fff;
 }
 
+.liquid-tab.is-active .liquid-icon {
+  filter: drop-shadow(0 0 8px rgb(255 233 184 / 0.55));
+}
+
 .liquid-tab.is-accent .liquid-icon {
   color: var(--world-accent);
 }
 
 .liquid-icon {
   display: block;
-  width: 23px;
-  height: 23px;
+  width: 26px;
+  height: 26px;
 }
 
 .liquid-icon svg {
@@ -241,16 +329,6 @@
   border-radius: 50%;
   object-fit: cover;
   box-shadow: 0 0 0 1.5px rgb(255 255 255 / 0.8);
-}
-
-.liquid-label {
-  max-width: 100%;
-  overflow: hidden;
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* Pantalla de carga */
@@ -420,10 +498,8 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 16px;
-  border-radius: 18px;
-  background: var(--app-glass);
-  box-shadow: inset 0 1px 0 var(--app-glass-edge);
+  padding: 18px;
+  border-radius: 22px;
 }
 
 .world-card h2,
@@ -488,14 +564,14 @@
 }
 
 .world-link {
-  border: 0;
-  background: none;
-  padding: 0;
+  min-height: 46px;
+  padding: 0 18px;
+  border: 1px solid rgb(255 255 255 / 0.28);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.06);
   font-size: 15px;
   font-weight: 500;
   color: var(--app-light);
-  text-decoration: underline;
-  text-underline-offset: 5px;
   cursor: pointer;
 }
 
@@ -505,7 +581,7 @@
   gap: 14px;
   width: min(100%, 860px);
   margin: 0 auto;
-  padding: calc(max(10px, env(safe-area-inset-top)) + 116px) 14px
+  padding: calc(max(10px, env(safe-area-inset-top)) + 112px) 14px
     calc(var(--app-safe-bottom) + 92px);
 }
 
@@ -527,9 +603,7 @@
   gap: 4px;
   padding: 10px 8px;
   border: 0;
-  border-radius: 18px;
-  background: var(--app-glass);
-  box-shadow: inset 0 1px 0 var(--app-glass-edge);
+  border-radius: 20px;
   color: inherit;
   cursor: pointer;
   transition: scale 160ms ease;
@@ -575,7 +649,7 @@
     justify-content: center;
     gap: 28px;
     margin: 0 auto;
-    padding: 118px 24px 110px;
+    padding: 116px 24px 110px;
   }
 
   .world-scene {
@@ -674,9 +748,7 @@
   overflow: hidden;
   padding: 0;
   border: 0;
-  border-radius: 18px;
-  background: var(--app-glass);
-  box-shadow: inset 0 1px 0 var(--app-glass-edge);
+  border-radius: 20px;
   color: inherit;
   text-align: left;
   cursor: pointer;
@@ -1021,13 +1093,18 @@
   overflow-y: auto;
   padding: 18px 18px calc(var(--app-safe-bottom) + 86px);
   border-radius: 28px 28px 0 0;
-  background: rgb(14 22 54 / 0.86);
-  box-shadow:
-    inset 0 1px 0 var(--app-glass-edge),
-    0 -18px 44px rgb(0 0 0 / 0.45);
-  -webkit-backdrop-filter: blur(26px) saturate(170%);
-  backdrop-filter: blur(26px) saturate(170%);
   animation: app-sheet-up 380ms cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+
+.app-root .app-sheet {
+  background:
+    linear-gradient(
+      155deg,
+      rgb(255 255 255 / 0.12),
+      rgb(255 255 255 / 0.02) 46%,
+      rgb(150 110 230 / 0.1)
+    ),
+    rgb(11 16 44 / 0.86);
 }
 
 .app-sheet-head {
@@ -1090,36 +1167,6 @@
   background: var(--color-surface);
   font-size: 14px;
   color: var(--color-text);
-}
-
-.app-sheet-stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin: 0;
-}
-
-.app-sheet-stats div {
-  padding: 10px 6px;
-  border-radius: 14px;
-  background: var(--app-glass);
-  text-align: center;
-}
-
-.app-sheet-stats dt {
-  overflow: hidden;
-  font-size: 12.5px;
-  color: var(--world-accent);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.app-sheet-stats dd {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--app-light);
 }
 
 .app-sheet-row {

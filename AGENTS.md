@@ -80,17 +80,23 @@ Contextos actuales:
 - App de los mundos (`/mundos`, solo tienda, `components/app/` y `components/bosque/`): web app instalable
   (`public/app.webmanifest`, `BaseLayout isApp`, sin service worker) y una sola isla, `AntrinaApp`, que
   navega con `pushState` sin recargar. Rutas en `app-routes.ts`: `/mundos` (bosque),
-  `/mundos/<mundo>` (interior), `/mundos/<mundo>/coleccion`, `/mundos/tienda` y `/mundos/perfil`; `/establo` redirige a `/mundos/torito`. La
+  `/mundos/<mundo>` (interior), `/mundos/<mundo>/coleccion`, `/mundos/<mundo>/tienda` y `/mundos/perfil`; `/establo` redirige a `/mundos/torito`. La
   cabecera de cifras, el menú líquido (`LiquidTabBar`), la hoja de escanear, tienda, perfil y la carga
   (`AppLoader`, progreso real de imágenes) son comunes: cada mundo solo aporta su pantalla en
   `WORLD_SCREENS` y su entrada en `worlds.json` (sprite, tema, pestañas, consejos, recursos). Solo se
-  muestran cifras reales. Cada puerta: `status: "unlockable"` se abre con el producto del cliente (hoy
+  muestran cifras reales; afuera solo las puertas abiertas: lo que se colecciona se cuenta dentro de
+  cada mundo. Cada puerta: `status: "unlockable"` se abre con el producto del cliente (hoy
   solo `torito`) y `"soon"` aún no existe. Tras reclamar un QR se llega a `/mundos?desbloquear=torito`:
   se rompe el candado y se entra. Si vuelve de Google con un torito pendiente, lo reclama `AntrinaApp`.
-  Menú: Bosque, interior del mundo, Escanear, Tienda y Perfil; el interior y la colección se cambian
-  arriba. La tienda (`/mundos/tienda`, datos de `/mundos-api/tienda`) lista el catálogo público y pide por
-  WhatsApp con los datos del perfil en el mensaje: sin `PUBLIC_WHATSAPP_NUMBER` lleva a Contacto. No hay
-  carrito ni pago. Fraunces va con `opsz` 30 (el 144 de la tienda es ilegible en tamaños pequeños).
+  El menú (solo íconos) cambia según dónde estás: afuera solo Bosque, Escanear y Perfil; dentro de un mundo se suman su
+  interior y su Tienda. La tienda es de cada mundo y solo con sesión (`worlds.json` → `shop.categoryPrefix`,
+  datos de `/mundos-api/tienda?categoria=`): pide por WhatsApp con los datos del perfil en el mensaje; sin
+  `PUBLIC_WHATSAPP_NUMBER` lleva a Contacto. No hay carrito ni pago. Un mundo sin interior puede tener ya su
+  tienda. El material de todo es el vidrio de `app.css`. Fraunces va con `opsz` 30 (el 144 de la tienda es
+  ilegible en tamaños pequeños).
+  La tienda lleva a los mundos desde un botón fijo en la cabecera (ícono en el celular), una tarjeta en
+  el menú lateral, la sección `WorldsTeaser` de la portada, el pie y un aviso en las fichas de
+  toritos (enlazan a `/q/demo`).
   El bosque no usa motor de juegos: capas del DOM con parallax en un solo `requestAnimationFrame` y un
   canvas para luces; al abrirse, dos hojas recortadas del mismo sprite giran sobre el hueco medido en
   `arch`. `/mundos?ejemplo=N` no guarda nada. Su paleta de escena vive solo en `forest.css` y `app.css`;

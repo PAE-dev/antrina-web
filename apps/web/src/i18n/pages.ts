@@ -60,6 +60,8 @@ export interface PageCopy {
     orderNote: string;
     contact: string;
     whatsappMessage: (name: string, url: string) => string;
+    worldsNote: string;
+    worldsCta: string;
     inStock: string;
     outOfStock: string;
     details: string;
@@ -231,6 +233,9 @@ const es: PageCopy = {
     orderNote: 'Te respondemos en horario de taller para coordinar el pago y el envío.',
     contact: 'Escríbenos para pedirlo',
     whatsappMessage: (name, url) => `Hola, me interesa el ${name}: ${url}`,
+    worldsNote:
+      'Trae un QR: al escanearlo despierta en El Valle de los Toritos y te espera en tu establo.',
+    worldsCta: 'Ver cómo despierta',
     inStock: 'Disponible',
     outOfStock: 'Agotado · podemos hacerte uno similar',
     details: 'Detalles',
@@ -423,6 +428,9 @@ const en: PageCopy = {
     orderNote: 'We reply during workshop hours to arrange payment and shipping.',
     contact: 'Write to us to order',
     whatsappMessage: (name, url) => `Hi, I’m interested in the ${name}: ${url}`,
+    worldsNote:
+      'It comes with a QR code: scan it and it wakes up in the Valley of the Toritos, waiting for you in its stable.',
+    worldsCta: 'See it wake up',
     inStock: 'Available',
     outOfStock: 'Sold out · we can make you a similar one',
     details: 'Details',

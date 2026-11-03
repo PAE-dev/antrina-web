@@ -1,6 +1,11 @@
-import { type CustomerMeDto, type ProductSummaryDto } from '@antrina/contracts';
-import { formatMoney } from '@antrina/ui';
+import {
+  CUSTOMER_AUTH_ROUTES,
+  type CustomerMeDto,
+  type ProductSummaryDto,
+} from '@antrina/contracts';
+import { ButtonLink, formatMoney, GoogleIcon } from '@antrina/ui';
 import { useEffect, useMemo, useState } from 'react';
+import { type World } from '../bosque/forest-world';
 import { Sheet } from './AppSheets';
 
 const LOCALE = 'es-PE';
@@ -13,8 +18,7 @@ export interface ShopProduct extends ProductSummaryDto {
 
 interface ShopData {
   products: ShopProduct[];
-  categories: { slug: string; name: string }[];
-  children: { slug: string; parentSlug: string | null }[];
+  subcategories: { slug: string; name: string }[];
   whatsappNumber: string | null;
   contactPath: string;
 }
@@ -66,15 +70,16 @@ function ProductPhoto({ product }: { product: ShopProduct }) {
   );
 }
 
-/** La tienda dentro de la app: elegir y pedir sin salir del mundo. */
+/** Cada mundo vende lo suyo, y solo a quien ya entró con su cuenta. */
 export function ShopScreen({
+  world,
   customer,
-  categoryPrefix,
+  returnPath,
   onCompleteProfile,
 }: {
+  world: World;
   customer: CustomerMeDto | null;
-  /** Llega desde una puerta: abre la parte de la tienda que le corresponde. */
-  categoryPrefix: string | null;
+  returnPath: string;
   onCompleteProfile: () => void;
 }) {
   const [data, setData] = useState<ShopData | null>(null);
@@ -82,22 +87,22 @@ export function ShopScreen({
   const [attempt, setAttempt] = useState(0);
   const [chosenSlug, setChosenSlug] = useState<string | null>(null);
   const [openProduct, setOpenProduct] = useState<ShopProduct | null>(null);
+  const prefix = world.shop?.categoryPrefix ?? '';
+  const isSignedIn = customer !== null;
 
   useEffect(() => {
+    if (!isSignedIn) return;
     let isActive = true;
     setHasFailed(false);
-    fetch('/mundos-api/tienda')
+    setData(null);
+    setChosenSlug(null);
+    fetch(`/mundos-api/tienda?categoria=${encodeURIComponent(prefix)}`)
       .then((response) => {
         if (!response.ok) throw new Error('catalog');
         return response.json() as Promise<ShopData>;
       })
       .then((body) => {
-        if (!isActive) return;
-        setData(body);
-        const match = categoryPrefix
-          ? body.categories.find((category) => category.slug.startsWith(categoryPrefix))
-          : null;
-        setChosenSlug(match?.slug ?? null);
+        if (isActive) setData(body);
       })
       .catch(() => {
         if (isActive) setHasFailed(true);
@@ -105,26 +110,40 @@ export function ShopScreen({
     return () => {
       isActive = false;
     };
-  }, [attempt, categoryPrefix]);
-
-  const chips = useMemo(() => {
-    if (!data) return [];
-    const parentOf = (slug: string) =>
-      data.children.find((child) => child.slug === slug)?.parentSlug ?? slug;
-    const used = new Set(data.products.map((product) => parentOf(product.categorySlug)));
-    return data.categories.filter((category) => used.has(category.slug));
-  }, [data]);
+  }, [attempt, isSignedIn, prefix]);
 
   const visible = useMemo(() => {
     if (!data) return [];
-    if (!chosenSlug) return data.products;
-    const childSlugs = data.children
-      .filter((child) => child.parentSlug === chosenSlug)
-      .map((child) => child.slug);
-    return data.products.filter(
-      (product) => product.categorySlug === chosenSlug || childSlugs.includes(product.categorySlug),
-    );
+    return chosenSlug
+      ? data.products.filter((product) => product.categorySlug === chosenSlug)
+      : data.products;
   }, [chosenSlug, data]);
+  const chips = data?.subcategories ?? [];
+
+  if (!customer) {
+    return (
+      <div className="app-page app-page-narrow">
+        <header className="app-page-head">
+          <span className="world-card-label">{world.name}</span>
+          <h2 className="font-display">Una tienda solo para quienes entran</h2>
+          <p>{world.shop?.intro}</p>
+        </header>
+        <div className="world-card">
+          <p>Inicia sesión para ver las piezas de este mundo y hacer tu pedido.</p>
+          <ButtonLink
+            href={`${CUSTOMER_AUTH_ROUTES.googleStart}?next=${encodeURIComponent(returnPath)}`}
+            variant="inverse"
+            className="w-full bg-on-dark text-text hover:opacity-90"
+          >
+            <span className="inline-flex size-6 items-center justify-center rounded-full bg-surface">
+              <GoogleIcon />
+            </span>
+            Continuar con Google
+          </ButtonLink>
+        </div>
+      </div>
+    );
+  }
 
   const orderHref =
     openProduct && data
@@ -136,12 +155,13 @@ export function ShopScreen({
   return (
     <div className="app-page">
       <header className="app-page-head">
+        <span className="world-card-label">{world.name}</span>
         <h2 className="font-display">Tienda</h2>
-        <p>Piezas hechas a mano en nuestro taller de Lima.</p>
+        <p>{world.shop?.intro}</p>
       </header>
 
       {chips.length > 1 && (
-        <div className="shop-chips" role="group" aria-label="Filtrar por categoría">
+        <div className="shop-chips" role="group" aria-label="Filtrar">
           <button
             type="button"
             className={chosenSlug === null ? 'is-active' : undefined}
@@ -187,14 +207,7 @@ export function ShopScreen({
       ) : visible.length === 0 ? (
         <div className="world-card">
           <h3 className="font-display">Muy pronto</h3>
-          <p>Estamos preparando estas piezas en el taller. Vuelve en unos días.</p>
-          {chosenSlug && (
-            <div className="world-card-actions">
-              <button type="button" className="world-link" onClick={() => setChosenSlug(null)}>
-                Ver toda la tienda
-              </button>
-            </div>
-          )}
+          <p>Estamos preparando las piezas de este mundo en el taller. Vuelve en unos días.</p>
         </div>
       ) : (
         <ul className="shop-grid">

@@ -1,7 +1,7 @@
 import { type CustomerMeDto, TORITO_ROUTES, type ToritoListResponse } from '@antrina/contracts';
 import { type ComponentType, useCallback, useEffect, useMemo, useState } from 'react';
 import { ForestExperience } from '../bosque/ForestExperience';
-import { type World, WORLDS, worldById } from '../bosque/forest-world';
+import { WORLDS, worldById } from '../bosque/forest-world';
 import { todayKey, yesterdayKey } from '../torito/torito-messages';
 import { SavePrompt, ToritoWorld, type WorldScreenProps } from '../torito/EstabloExperience';
 import { claimPendingTorito, ToritoApiError, toritoRequest } from '../torito/toritos-api';
@@ -27,6 +27,7 @@ import {
 } from './LiquidTabBar';
 import { ProfileScreen } from './ProfileScreen';
 import { ShopScreen } from './ShopScreen';
+import { type AppStat, StatCapsule } from './StatCapsule';
 
 const TORITO_WORLD = 'torito';
 const LOADER_FADE_MS = 420;
@@ -70,7 +71,6 @@ export function AntrinaApp({
   const [route, setRoute] = useState<AppRoute>(initialRoute);
   const [customer, setCustomer] = useState(initialCustomer);
   const [isScanning, setIsScanning] = useState(false);
-  const [shopPrefix, setShopPrefix] = useState<string | null>(null);
   const [toritos, setToritos] = useState<OwnedTorito[] | null>(
     exampleCount ? exampleCollection(exampleCount) : customer ? null : [],
   );
@@ -83,8 +83,11 @@ export function AntrinaApp({
     initialRoute.view === 'world' ? initialRoute.id : null,
   );
 
+  const [contextWorldId, setContextWorldId] = useState(lastDoorId);
   const isExample = exampleCount !== null;
   const world = route.view === 'world' ? (worldById(route.id) ?? null) : null;
+  // El perfil se abre sin salir del mundo: el menú sigue siendo el de ese mundo.
+  const contextWorld = contextWorldId ? (worldById(contextWorldId) ?? null) : null;
   const persists = Boolean(customer) && !isExample;
 
   // Datos del cliente: si vuelve de iniciar sesión con un torito por guardar, se guarda aquí.
@@ -128,7 +131,11 @@ export function AntrinaApp({
   useEffect(() => {
     const restore = () => {
       const next = parseAppPath(window.location.pathname);
-      if (next) setRoute(next);
+      if (next) {
+        setRoute(next);
+        if (next.view === 'forest') setContextWorldId(null);
+        if (next.view === 'world') setContextWorldId(next.id);
+      }
       setIsScanning(false);
     };
     window.addEventListener('popstate', restore);
@@ -138,19 +145,15 @@ export function AntrinaApp({
   const go = useCallback((next: AppRoute) => {
     setIsScanning(false);
     setRoute(next);
-    if (next.view === 'world') setLastDoorId(next.id);
+    if (next.view === 'forest') setContextWorldId(null);
+    if (next.view === 'world') {
+      setLastDoorId(next.id);
+      setContextWorldId(next.id);
+    }
     window.history.pushState(null, '', appPath(next));
   }, []);
 
   const closeScan = useCallback(() => setIsScanning(false), []);
-  const openShop = useCallback(
-    (prefix: string | null) => {
-      setShopPrefix(prefix);
-      go({ view: 'shop' });
-    },
-    [go],
-  );
-
   const assetKey = world ? `world:${world.id}` : 'forest';
   const assets = useMemo(() => (world ? world.assets : FOREST_ASSETS), [world]);
   const { progress, isReady } = useAssetGate(assetKey, assets);
@@ -166,35 +169,40 @@ export function AntrinaApp({
 
   const isOwner = isExample ? true : toritos === null ? null : toritos.length > 0;
   const openWorlds = isOwner ? 1 : 0;
-  const unlockableWorlds = WORLDS.filter((item) => item.status === 'unlockable').length;
 
-  const stats = useMemo(() => {
+  const stats = useMemo((): AppStat[] => {
     const list = toritos ?? [];
-    const pages = Math.max(1, Math.ceil(list.length / 3));
+    const count = toritos === null ? '–' : String(list.length);
     const streak = currentStreak(list);
-    if (world) {
+    const streakStat: AppStat = {
+      label: 'Racha',
+      value: `${streak} ${streak === 1 ? 'día' : 'días'}`,
+      icon: 'streak',
+    };
+    if (contextWorld?.id === TORITO_WORLD) {
       return [
-        { label: world.collectionTab, value: toritos === null ? '–' : String(list.length) },
-        { label: 'Establos', value: toritos === null ? '–' : String(pages) },
-        { label: 'Racha', value: `${streak} ${streak === 1 ? 'día' : 'días'}` },
+        { label: 'Toritos', value: count, icon: 'torito' },
+        {
+          label: 'Establos',
+          value: String(Math.max(1, Math.ceil(list.length / 3))),
+          icon: 'stable',
+        },
+        streakStat,
       ];
     }
-    return [
-      { label: 'Puertas', value: `${openWorlds}/${unlockableWorlds}` },
-      { label: 'Toritos', value: toritos === null ? '–' : String(list.length) },
-      { label: 'Racha', value: `${streak} ${streak === 1 ? 'día' : 'días'}` },
-    ];
-  }, [openWorlds, toritos, unlockableWorlds, world]);
+    // Afuera solo cuenta el bosque: lo que se colecciona se cuenta dentro de cada puerta.
+    return [{ label: 'Puertas abiertas', value: `${openWorlds}/${WORLDS.length}`, icon: 'door' }];
+  }, [contextWorld, openWorlds, toritos]);
 
-  // Fuera de un mundo, el menú lleva al último que abrió o al que se puede abrir.
-  const menuWorld: World =
-    world ?? worldById(lastDoorId ?? TORITO_WORLD) ?? worldById(TORITO_WORLD)!;
+  /** Afuera solo hay bosque: el interior y la tienda existen dentro de cada mundo. */
   const tabs = useMemo(
     () => [
       { id: 'forest', label: 'Bosque', icon: <ForestIcon /> },
-      { id: 'main', label: menuWorld.mainTab, icon: <DoorIcon /> },
+      ...(contextWorld?.target
+        ? [{ id: 'main', label: contextWorld.mainTab, icon: <DoorIcon /> }]
+        : []),
       { id: 'scan', label: 'Escanear', icon: <ScanIcon />, isAccent: true },
-      { id: 'shop', label: 'Tienda', icon: <ShopIcon /> },
+      ...(contextWorld?.shop ? [{ id: 'shop', label: 'Tienda', icon: <ShopIcon /> }] : []),
       {
         id: 'profile',
         label: 'Perfil',
@@ -205,21 +213,36 @@ export function AntrinaApp({
         ),
       },
     ],
-    [customer?.avatarUrl, menuWorld],
+    [contextWorld, customer?.avatarUrl],
   );
-  const activeTab = isScanning ? 'scan' : route.view === 'world' ? 'main' : route.view;
+  const activeTab = isScanning
+    ? 'scan'
+    : route.view === 'world'
+      ? route.tab === 'shop'
+        ? 'shop'
+        : 'main'
+      : route.view;
 
   const selectTab = (id: string) => {
     if (id === 'scan') setIsScanning(true);
-    else if (id === 'shop') openShop(null);
     else if (id === 'profile') go({ view: 'profile' });
     else if (id === 'forest') go({ view: 'forest' });
-    else go({ view: 'world', id: menuWorld.id, tab: 'main' });
+    else if (contextWorld) {
+      go({ view: 'world', id: contextWorld.id, tab: id === 'shop' ? 'shop' : 'main' });
+    }
   };
+
+  const showsStats = Boolean(customer) || isExample;
+  const worldTab = route.view === 'world' ? route.tab : null;
 
   const Screen = world ? WORLD_SCREENS[world.id] : null;
   const needsSaving =
-    world?.id === TORITO_WORLD && !customer && !isExample && pending !== null && !skipsSaving;
+    world?.id === TORITO_WORLD &&
+    worldTab !== 'shop' &&
+    !customer &&
+    !isExample &&
+    pending !== null &&
+    !skipsSaving;
 
   // Guardar el torito es un paso aparte: hasta entonces la app no estorba.
   if (needsSaving && isReady) {
@@ -256,15 +279,16 @@ export function AntrinaApp({
           onEnterWorld={(id) => go({ view: 'world', id, tab: 'main' })}
           onScan={() => setIsScanning(true)}
           onProfile={() => go({ view: 'profile' })}
-          onShop={openShop}
+          onShop={(id) => go({ view: 'world', id, tab: 'shop' })}
         />
       )}
 
-      {isReady && route.view === 'shop' && (
+      {isReady && world && worldTab === 'shop' && (
         <main className="app-world">
           <ShopScreen
+            world={world}
             customer={customer}
-            categoryPrefix={shopPrefix}
+            returnPath={appPath(route)}
             onCompleteProfile={() => go({ view: 'profile' })}
           />
         </main>
@@ -275,18 +299,18 @@ export function AntrinaApp({
           <ProfileScreen
             customer={customer}
             returnPath={appPath(route)}
-            stats={stats}
+            stats={customer ? stats : []}
             onCustomerChange={setCustomer}
             onOpenWorld={() => go({ view: 'world', id: TORITO_WORLD, tab: 'collection' })}
           />
         </main>
       )}
 
-      {isReady && world && Screen && (
+      {isReady && world && Screen && worldTab !== 'shop' && (
         <main className="app-world" key={world.id}>
           <Screen
             assetsPath="/torito"
-            tab={route.view === 'world' ? route.tab : 'main'}
+            tab={worldTab === 'collection' ? 'collection' : 'main'}
             customerName={customer?.name ?? null}
             toritos={toritos}
             pending={pending}
@@ -295,7 +319,7 @@ export function AntrinaApp({
             notice={notice}
             onScan={() => setIsScanning(true)}
             onProfile={() => go({ view: 'profile' })}
-            onShop={() => openShop(world.shop?.categoryPrefix ?? null)}
+            onShop={() => go({ view: 'world', id: world.id, tab: 'shop' })}
             onToritoChange={(id, change) =>
               setToritos((current) =>
                 current
@@ -309,47 +333,45 @@ export function AntrinaApp({
 
       {isReady && (
         <>
-          {(route.view === 'forest' || route.view === 'world') && (
+          {route.view === 'forest' && (
             <header className="app-hud">
-              <div className="app-hud-stats">
-                {stats.map((stat) => (
-                  <div key={stat.label} className="app-stat">
-                    <span className="app-stat-value">{stat.value}</span>
-                    <span className="app-stat-label">{stat.label}</span>
-                  </div>
-                ))}
-              </div>
-              {route.view === 'world' && world ? (
-                <>
-                  <h1 className="sr-only">{world.name}</h1>
-                  <div className="app-segment" role="group" aria-label={world.name}>
-                    {(
-                      [
-                        ['main', world.mainTab],
-                        ['collection', world.collectionTab],
-                      ] as const
-                    ).map(([tab, label]) => (
-                      <button
-                        key={tab}
-                        type="button"
-                        className={route.tab === tab ? 'is-active' : undefined}
-                        aria-pressed={route.tab === tab}
-                        onClick={() => go({ view: 'world', id: world.id, tab })}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <h1 className="app-hud-title">
-                  <span className="rombo" aria-hidden="true" />
-                  El bosque de las puertas
-                </h1>
+              <h1 className="app-hud-title">
+                <span className="rombo" aria-hidden="true" />
+                El bosque de las puertas
+                <span className="rombo" aria-hidden="true" />
+              </h1>
+              {showsStats && (
+                <p className="app-hud-doors">
+                  {openWorlds} de {WORLDS.length} puertas abiertas
+                </p>
               )}
             </header>
           )}
-          {route.view === 'shop' && <h1 className="sr-only">Tienda</h1>}
+          {world && worldTab !== 'shop' && (
+            <header className="app-hud">
+              {showsStats && <StatCapsule stats={stats} />}
+              <h1 className="sr-only">{world.name}</h1>
+              <div className="app-segment" role="group" aria-label={world.name}>
+                {(
+                  [
+                    ['main', world.mainTab],
+                    ['collection', world.collectionTab],
+                  ] as const
+                ).map(([tab, label]) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    className={worldTab === tab ? 'is-active' : undefined}
+                    aria-pressed={worldTab === tab}
+                    onClick={() => go({ view: 'world', id: world.id, tab })}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </header>
+          )}
+          {world && worldTab === 'shop' && <h1 className="sr-only">Tienda de {world.name}</h1>}
           {route.view === 'profile' && <h1 className="sr-only">Mi perfil</h1>}
           <LiquidTabBar tabs={tabs} activeId={activeTab} onSelect={selectTab} />
         </>

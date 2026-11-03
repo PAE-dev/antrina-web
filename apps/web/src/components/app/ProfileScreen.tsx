@@ -8,6 +8,7 @@ import { ButtonLink, GoogleIcon } from '@antrina/ui';
 import { type ChangeEvent, type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { toritoRequest } from '../torito/toritos-api';
 import { InstallRow } from './AppSheets';
+import { type AppStat, StatCapsule } from './StatCapsule';
 
 const AVATAR_SIZE = 384;
 const AVATAR_MAX_BYTES = 64 * 1024;
@@ -122,7 +123,7 @@ export function ProfileScreen({
 }: {
   customer: CustomerMeDto | null;
   returnPath: string;
-  stats: readonly { label: string; value: string }[];
+  stats: readonly AppStat[];
   onCustomerChange: (customer: CustomerMeDto) => void;
   onOpenWorld: () => void;
 }) {
@@ -149,7 +150,7 @@ export function ProfileScreen({
         <section className="world-card">
           <InstallRow />
           <a className="app-sheet-link" href="/">
-            Ir a la tienda completa
+            Ir a la web de Antrina
           </a>
         </section>
       </div>
@@ -173,7 +174,7 @@ function SignedInProfile({
   onOpenWorld,
 }: {
   customer: CustomerMeDto;
-  stats: readonly { label: string; value: string }[];
+  stats: readonly AppStat[];
   onCustomerChange: (customer: CustomerMeDto) => void;
   onOpenWorld: () => void;
 }) {
@@ -317,14 +318,7 @@ function SignedInProfile({
         )}
       </section>
 
-      <dl className="app-sheet-stats">
-        {stats.map((stat) => (
-          <div key={stat.label}>
-            <dt>{stat.label}</dt>
-            <dd>{stat.value}</dd>
-          </div>
-        ))}
-      </dl>
+      {stats.length > 0 && <StatCapsule stats={stats} />}
 
       {missing.length > 0 && (
         <section className="world-card">
@@ -423,7 +417,7 @@ function SignedInProfile({
           Mis toritos
         </button>
         <a className="profile-link" href="/">
-          Tienda completa
+          Ir a la web de Antrina
         </a>
         <InstallRow asRow />
         <form

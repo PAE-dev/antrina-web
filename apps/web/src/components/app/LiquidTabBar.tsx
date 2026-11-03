@@ -11,8 +11,8 @@ export interface LiquidTab {
 const STRETCH_MS = 520;
 
 /**
- * Menú de vidrio líquido: la gota que marca la pestaña activa se estira hacia la otra y rebota
- * al llegar, en vez de deslizarse rígida.
+ * Menú de vidrio líquido, solo con íconos (el nombre va en `aria-label`): la gota que marca la
+ * pestaña activa se estira hacia la otra y rebota al llegar, en vez de deslizarse rígida.
  */
 export function LiquidTabBar({
   tabs,
@@ -51,7 +51,11 @@ export function LiquidTabBar({
   }, [activeIndex]);
 
   return (
-    <nav className="liquid-bar" aria-label="Menú de la app">
+    <nav
+      className="liquid-bar"
+      aria-label="Menú de la app"
+      style={{ '--tabs': tabs.length } as React.CSSProperties}
+    >
       <span
         ref={dropRef}
         className="liquid-drop"
@@ -69,12 +73,13 @@ export function LiquidTabBar({
             tab.isAccent ? 'is-accent' : ''
           }`}
           aria-current={tab.id === activeId ? 'page' : undefined}
+          aria-label={tab.label}
+          title={tab.label}
           onClick={() => onSelect(tab.id)}
         >
           <span className="liquid-icon" aria-hidden="true">
             {tab.icon}
           </span>
-          <span className="liquid-label">{tab.label}</span>
         </button>
       ))}
     </nav>

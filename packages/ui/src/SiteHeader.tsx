@@ -8,7 +8,7 @@ import {
   ChevronDownIcon,
   MenuIcon,
   SearchIcon,
-  StableIcon,
+  PortalIcon,
   UserIcon,
 } from './icons';
 import { Logo } from './Logo';
@@ -18,8 +18,8 @@ interface SiteHeaderProps {
   homeHref: string;
   searchAction: string;
   accountHref: string;
-  /** Establo de toritos: solo se muestra con la sesión iniciada. */
-  stableHref: string;
+  /** El bosque de los mundos: siempre a mano, para que se descubra desde la tienda. */
+  worldsHref: string;
   cartHref: string;
   cartCount: number;
   navigation: NavCategory[];
@@ -27,14 +27,14 @@ interface SiteHeaderProps {
   labels: HeaderLabels;
 }
 
-/** A partir de este índice los enlaces simples solo caben en escritorio ancho. */
+/** A partir de este índice los enlaces simples solo caben en escritorio muy ancho. */
 const WIDE_ONLY_FROM = 5;
 
 export function SiteHeader({
   homeHref,
   searchAction,
   accountHref,
-  stableHref,
+  worldsHref,
   cartHref,
   cartCount,
   navigation,
@@ -59,7 +59,7 @@ export function SiteHeader({
             labels={labels}
             homeHref={homeHref}
             accountHref={accountHref}
-            stableHref={stableHref}
+            worldsHref={worldsHref}
             isSignedIn={isSignedIn}
           />
           <Logo href={homeHref} label={labels.home} />
@@ -71,7 +71,9 @@ export function SiteHeader({
               <li
                 key={item.href}
                 className={
-                  index >= WIDE_ONLY_FROM && item.items.length === 0 ? 'hidden xl:block' : ''
+                  index >= WIDE_ONLY_FROM && item.items.length === 0
+                    ? 'hidden min-[1800px]:block'
+                    : ''
                 }
               >
                 <NavEntry item={item} viewAllLabel={labels.viewAll} />
@@ -90,16 +92,15 @@ export function SiteHeader({
           >
             <SearchIcon />
           </Button>
-          {isSignedIn && (
-            <a
-              href={stableHref}
-              aria-label={labels.stable}
-              title={labels.stable}
-              className="hidden size-10 items-center justify-center rounded-full text-text transition-colors hover:bg-bg-alt sm:inline-flex"
-            >
-              <StableIcon />
-            </a>
-          )}
+          {/* Los mundos van aquí y no en el menú: siempre visibles, sin quitarle sitio a las categorías. */}
+          <a
+            href={worldsHref}
+            title={labels.worldsText}
+            className="inline-flex size-10 items-center justify-center gap-2 rounded-full text-clay-strong transition-colors hover:bg-bg-alt 2xl:mr-1 2xl:w-auto 2xl:border 2xl:border-border-strong 2xl:px-4"
+          >
+            <PortalIcon />
+            <span className="type-menu sr-only text-text 2xl:not-sr-only">{labels.worlds}</span>
+          </a>
           <a
             href={accountHref}
             aria-label={labels.account}
@@ -257,7 +258,7 @@ function MobileMenu({
   labels,
   homeHref,
   accountHref,
-  stableHref,
+  worldsHref,
   isSignedIn,
 }: {
   navigation: NavCategory[];
@@ -265,7 +266,7 @@ function MobileMenu({
   labels: HeaderLabels;
   homeHref: string;
   accountHref: string;
-  stableHref: string;
+  worldsHref: string;
   isSignedIn: boolean;
 }) {
   const groups = navigation.filter((item) => item.items.length > 0);
@@ -290,6 +291,19 @@ function MobileMenu({
               <Logo href={homeHref} label={labels.home} />
             </Drawer.Header>
             <Drawer.Body className="flex flex-col gap-8">
+              <a
+                href={worldsHref}
+                className="surface-dark flex items-center gap-4 rounded-md px-4 py-4 transition-opacity hover:opacity-90"
+              >
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-full border border-border-dark text-on-dark">
+                  <PortalIcon />
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="text-[17px] font-medium text-on-dark">{labels.worlds}</span>
+                  <span className="type-meta text-on-dark-muted">{labels.worldsText}</span>
+                </span>
+                <ArrowRightIcon className="shrink-0 text-on-dark" />
+              </a>
               <Accordion className="border-y border-border">
                 {groups.map((group) => (
                   <Accordion.Item key={group.href} id={group.href}>
@@ -344,16 +358,10 @@ function MobileMenu({
             </Drawer.Body>
             <Drawer.Footer className="flex-col items-stretch gap-4 border-t border-border pt-5">
               {isSignedIn ? (
-                <>
-                  <ButtonLink href={stableHref} variant="primary" className="w-full">
-                    <StableIcon />
-                    {labels.stable}
-                  </ButtonLink>
-                  <ButtonLink href={accountHref} className="w-full">
-                    <UserIcon />
-                    {labels.account}
-                  </ButtonLink>
-                </>
+                <ButtonLink href={accountHref} variant="primary" className="w-full">
+                  <UserIcon />
+                  {labels.account}
+                </ButtonLink>
               ) : (
                 <>
                   <ButtonLink href={accountHref} variant="primary" className="w-full">

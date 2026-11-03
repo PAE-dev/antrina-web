@@ -17,6 +17,7 @@ export interface Dictionary {
     sign: string;
     size: string;
     createTree: string;
+    worlds: string;
     meanings: string;
     corporate: string;
     story: string;
@@ -33,6 +34,14 @@ export interface Dictionary {
   bestsellers: { label: string; title: string; viewAll: string };
   productPhoto: string;
   badges: Record<ProductBadgeCode, string>;
+  worlds: {
+    label: string;
+    title: string;
+    text: string;
+    imageAlt: string;
+    cta: string;
+    demo: string;
+  };
   story: { label: string; title: string; paragraphs: string[]; imageLabel: string; cta: string };
   zodiac: { label: string; title: string; intro: string };
   pillars: { label: string; title: string; items: Pillar[] };
@@ -72,7 +81,8 @@ const es: Dictionary = {
     search: 'Buscar',
     searchPlaceholder: 'Busca por piedra, intención o signo…',
     account: 'Mi cuenta',
-    stable: 'Mi establo',
+    worlds: 'Mundos',
+    worldsText: 'Escanea tu pieza y entra a su mundo',
     signIn: 'Iniciar sesión',
     signUpPrompt: '¿Aún no tienes cuenta?',
     signUp: 'Crear cuenta',
@@ -89,6 +99,7 @@ const es: Dictionary = {
     sign: 'Por signo',
     size: 'Tamaños',
     createTree: 'Crea tu árbol',
+    worlds: 'Mundos',
     meanings: 'Significados',
     corporate: 'Regalos corporativos',
     story: 'Nuestra historia',
@@ -113,6 +124,14 @@ const es: Dictionary = {
   },
   productPhoto: 'Foto de producto',
   badges: { NEW: 'Nuevo', CUSTOMIZABLE: 'Personalizable', LIMITED_EDITION: 'Edición limitada' },
+  worlds: {
+    label: 'Mundos',
+    title: 'Cada pieza abre *su mundo*',
+    text: 'Detrás de cada pieza hay una puerta. Escanea su QR y entra: tu Torito de Pucará despierta, eliges su nombre y te espera en su establo, con algo nuevo que contarte cada día.',
+    imageAlt: 'Puertas mágicas en un bosque de noche: entrar al bosque de los mundos',
+    cta: 'Entrar al bosque',
+    demo: 'Ver cómo despierta un torito',
+  },
   story: {
     label: 'Taller',
     title: 'Hecho a mano *en Lima*',
@@ -219,7 +238,8 @@ const en: Dictionary = {
     search: 'Search',
     searchPlaceholder: 'Search by stone, intention or sign…',
     account: 'My account',
-    stable: 'My stable',
+    worlds: 'Worlds',
+    worldsText: 'Scan your piece and step into its world',
     signIn: 'Sign in',
     signUpPrompt: 'Don’t have an account yet?',
     signUp: 'Create account',
@@ -236,6 +256,7 @@ const en: Dictionary = {
     sign: 'By sign',
     size: 'Sizes',
     createTree: 'Create your tree',
+    worlds: 'Worlds',
     meanings: 'Meanings',
     corporate: 'Corporate gifts',
     story: 'Our story',
@@ -261,6 +282,14 @@ const en: Dictionary = {
   },
   productPhoto: 'Product photo',
   badges: { NEW: 'New', CUSTOMIZABLE: 'Customizable', LIMITED_EDITION: 'Limited edition' },
+  worlds: {
+    label: 'Worlds',
+    title: 'Every piece opens *its world*',
+    text: 'Behind every piece there is a door. Scan its QR code and step in: your Torito de Pucará wakes up, you choose its name, and it waits for you in its stable with something new to share every day.',
+    imageAlt: 'Magic doors in a forest at night: enter the forest of worlds',
+    cta: 'Enter the forest',
+    demo: 'See a torito wake up',
+  },
   story: {
     label: 'Workshop',
     title: 'Handmade *in Lima*',

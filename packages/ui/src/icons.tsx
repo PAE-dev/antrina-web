@@ -44,6 +44,15 @@ export const SearchIcon = (props: IconProps) => (
   </svg>
 );
 
+/** Una puerta con su chispa: la entrada a los mundos. */
+export const PortalIcon = (props: IconProps) => (
+  <svg {...base} {...props}>
+    <path d="M5 21V11a7 7 0 0 1 14 0v10" />
+    <path d="M3 21h18" />
+    <path d="M12 9v4M10 11h4" />
+  </svg>
+);
+
 export const StableIcon = (props: IconProps) => (
   <svg {...base} {...props}>
     <path d="M3 21V10l9-6 9 6v11" />
