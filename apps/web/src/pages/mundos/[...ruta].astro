@@ -1,0 +1,45 @@
+---
+import { AntrinaApp } from '../../components/app/AntrinaApp';
+import { parseAppPath } from '../../components/app/app-routes';
+import { getPageCopy } from '../../i18n/pages';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCurrentCustomer, parseAuthError } from '../../lib/account';
+
+export const prerender = false;
+
+const MAX_EXAMPLE_TORITOS = 30;
+
+const route = parseAppPath(Astro.url.pathname);
+if (!route) return Astro.redirect('/mundos', 302);
+
+const session = await getCurrentCustomer(Astro.request.headers.get('cookie'));
+// La respuesta depende de la cookie: nunca debe guardarla la CDN.
+Astro.response.headers.set('Cache-Control', 'no-store');
+
+const params = Astro.url.searchParams;
+const authError = parseAuthError(params.get('error'));
+const example = params.get('ejemplo');
+---
+
+<BaseLayout
+  locale="es"
+  title="El bosque de las puertas"
+  description="Un bosque de puertas mágicas: escanea tu pieza Antrina y abre su mundo."
+  alternates={{ es: '/mundos' }}
+  noindex
+  isApp
+>
+  <AntrinaApp
+    client:load
+    initialRoute={route}
+    customer={session.status === 'ok' ? session.customer : null}
+    exampleCount={
+      example === null
+        ? null
+        : Math.max(1, Math.min(Math.floor(Number(example)) || 3, MAX_EXAMPLE_TORITOS))
+    }
+    unlockId={params.get('desbloquear')}
+    newToritoId={params.get('nuevo')}
+    authError={authError ? getPageCopy('es').account.errors[authError] : null}
+  />
+</BaseLayout>

@@ -1,9 +1,12 @@
 import {
+  Body,
   Controller,
+  Delete,
   Get,
   HttpStatus,
   Inject,
   Post,
+  Put,
   Query,
   Req,
   Res,
@@ -13,7 +16,10 @@ import {
   CompleteGoogleSignInUseCase,
   CustomerLogoutUseCase,
   GetCurrentCustomerUseCase,
+  RemoveCustomerAvatarUseCase,
+  SetCustomerAvatarUseCase,
   StartGoogleSignInUseCase,
+  UpdateCustomerProfileUseCase,
 } from '@antrina/application';
 import {
   CUSTOMER_AUTH_ROUTES,
@@ -49,6 +55,10 @@ export class CustomerAuthController {
     private readonly completeSignIn: CompleteGoogleSignInUseCase,
     @Inject(GetCurrentCustomerUseCase) private readonly currentCustomer: GetCurrentCustomerUseCase,
     @Inject(CustomerLogoutUseCase) private readonly logoutCustomer: CustomerLogoutUseCase,
+    @Inject(UpdateCustomerProfileUseCase)
+    private readonly updateProfile: UpdateCustomerProfileUseCase,
+    @Inject(SetCustomerAvatarUseCase) private readonly setAvatar: SetCustomerAvatarUseCase,
+    @Inject(RemoveCustomerAvatarUseCase) private readonly removeAvatar: RemoveCustomerAvatarUseCase,
     @Inject(APP_ENV) private readonly env: AppEnv,
   ) {}
 
@@ -104,6 +114,30 @@ export class CustomerAuthController {
   @Get(CUSTOMER_AUTH_ROUTES.me)
   me(@Req() request: Request): Promise<CustomerMeDto> {
     return this.currentCustomer.execute({ sessionToken: readCustomerSessionToken(request) });
+  }
+
+  @Put(CUSTOMER_AUTH_ROUTES.profile)
+  @UseGuards(CustomerOriginGuard)
+  saveProfile(@Body() body: unknown, @Req() request: Request): Promise<CustomerMeDto> {
+    return this.updateProfile.execute({
+      sessionToken: readCustomerSessionToken(request),
+      body,
+    });
+  }
+
+  @Put(CUSTOMER_AUTH_ROUTES.avatar)
+  @UseGuards(CustomerOriginGuard)
+  saveAvatar(@Body() body: unknown, @Req() request: Request): Promise<CustomerMeDto> {
+    return this.setAvatar.execute({
+      sessionToken: readCustomerSessionToken(request),
+      body,
+    });
+  }
+
+  @Delete(CUSTOMER_AUTH_ROUTES.avatar)
+  @UseGuards(CustomerOriginGuard)
+  deleteAvatar(@Req() request: Request): Promise<CustomerMeDto> {
+    return this.removeAvatar.execute({ sessionToken: readCustomerSessionToken(request) });
   }
 
   @Post(CUSTOMER_AUTH_ROUTES.logout)

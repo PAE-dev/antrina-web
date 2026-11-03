@@ -50,6 +50,7 @@ function fakeStorage() {
       headers: { 'Content-Type': contentType },
       expiresAt: new Date('2026-10-04T12:05:00Z'),
     }),
+    putImage: async ({ prefix }) => `${prefix}/nuevo.webp`,
     stat: async (key) => objects.get(key) ?? null,
     delete: async (key) => {
       deleted.push(key);

@@ -62,6 +62,10 @@ Contextos actuales:
   ese correo no está verificado. Sesión de 30 días en `antrina_session` (httpOnly, SameSite=Lax; en
   BD solo el hash). `antrina_signed_in` es legible desde JS porque las páginas van cacheadas. Sin
   `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`, `/cuenta` avisa de que el acceso no está disponible.
+  El cliente edita su perfil (`PUT /auth/me/profile`, `PUT`/`DELETE /auth/me/avatar`). Su celular va en
+  `contactPhone`, sin verificar: nunca en `phone`, que es único e identifica clientes del panel. La foto
+  llega ya reducida a 384 px, la API comprueba sus bytes (no lo declarado) y la guarda con
+  `ImageStorage.putImage` en `customers/<id>/`, sin URL firmada para no depender del CORS del bucket.
 - `toritos`: la experiencia del QR de los Toritos de Pucará. Una pieza es torito si el slug de su
   categoría (o de la madre) empieza por `torito`. Rutas `/establo-api/*`; la tienda las reenvía desde
   su dominio (`pages/establo-api/[...path].ts`). `/q/<código>` lo abre: nace, elige color, nombre e
@@ -70,9 +74,27 @@ Contextos actuales:
   espera en `localStorage` y se reclama al volver de Google. El regalo (`ProductPiece.gift*`) lo
   escribe cualquiera con el código hasta que la pieza tiene dueño, y luego solo lo ve el dueño, y no
   sale en los DTOs del panel. La personalidad se deduce del `serial`, no se guarda. Las visitas se
-  cuentan por día en hora de Lima. `/establo` muestra los toritos en corrales de 3 por establo, más
-  galería. El arte es WebGL 2D sobre `public/torito/` (`components/torito/`), sin 3D. `/q/demo` y
-  `/establo?ejemplo=N` son vistas de ejemplo que no guardan nada.
+  cuentan por día en hora de Lima. `/mundos/torito` muestra los toritos en corrales de 3 por establo, más
+  colección. El arte es WebGL 2D sobre `public/torito/` (`components/torito/`), sin 3D. `/q/demo` y
+  `/mundos?ejemplo=N` son vistas de ejemplo que no guardan nada.
+- App de los mundos (`/mundos`, solo tienda, `components/app/` y `components/bosque/`): web app instalable
+  (`public/app.webmanifest`, `BaseLayout isApp`, sin service worker) y una sola isla, `AntrinaApp`, que
+  navega con `pushState` sin recargar. Rutas en `app-routes.ts`: `/mundos` (bosque),
+  `/mundos/<mundo>` (interior), `/mundos/<mundo>/coleccion`, `/mundos/tienda` y `/mundos/perfil`; `/establo` redirige a `/mundos/torito`. La
+  cabecera de cifras, el menú líquido (`LiquidTabBar`), la hoja de escanear, tienda, perfil y la carga
+  (`AppLoader`, progreso real de imágenes) son comunes: cada mundo solo aporta su pantalla en
+  `WORLD_SCREENS` y su entrada en `worlds.json` (sprite, tema, pestañas, consejos, recursos). Solo se
+  muestran cifras reales. Cada puerta: `status: "unlockable"` se abre con el producto del cliente (hoy
+  solo `torito`) y `"soon"` aún no existe. Tras reclamar un QR se llega a `/mundos?desbloquear=torito`:
+  se rompe el candado y se entra. Si vuelve de Google con un torito pendiente, lo reclama `AntrinaApp`.
+  Menú: Bosque, interior del mundo, Escanear, Tienda y Perfil; el interior y la colección se cambian
+  arriba. La tienda (`/mundos/tienda`, datos de `/mundos-api/tienda`) lista el catálogo público y pide por
+  WhatsApp con los datos del perfil en el mensaje: sin `PUBLIC_WHATSAPP_NUMBER` lleva a Contacto. No hay
+  carrito ni pago. Fraunces va con `opsz` 30 (el 144 de la tienda es ilegible en tamaños pequeños).
+  El bosque no usa motor de juegos: capas del DOM con parallax en un solo `requestAnimationFrame` y un
+  canvas para luces; al abrirse, dos hojas recortadas del mismo sprite giran sobre el hueco medido en
+  `arch`. `/mundos?ejemplo=N` no guarda nada. Su paleta de escena vive solo en `forest.css` y `app.css`;
+  textos usan la tipografía y los tokens de marca.
 - `checkout` (puerto `PaymentGateway`, adapter que rechaza todo) y `notification` (puerto
   `OrderNotifier`, stub de WhatsApp que solo loguea).
 

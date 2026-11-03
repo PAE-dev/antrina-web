@@ -1,46 +1,18 @@
-import {
-  CUSTOMER_AUTH_ROUTES,
-  TORITO_ROUTES,
-  type ToritoDto,
-  type ToritoListResponse,
-} from '@antrina/contracts';
+import { CUSTOMER_AUTH_ROUTES } from '@antrina/contracts';
 import { ButtonLink, Emphasis, GoogleIcon } from '@antrina/ui';
-import { useEffect, useRef, useState } from 'react';
-import { EstabloStable } from './EstabloStable';
-import { toritoRequest } from './toritos-api';
-import {
-  clearPendingClaim,
-  exampleCollection,
-  exampleTorito,
-  type OwnedTorito,
-  ownedFromDto,
-  ownedFromPending,
-  readPendingClaim,
-} from './toritos';
+import { useEffect, useRef } from 'react';
+import { EstabloStable, type ToritoChanges } from './EstabloStable';
+import { exampleTorito, type OwnedTorito } from './toritos';
 import { ToritoSprite } from './ToritoSprite';
 
 const WALK_MS = 7600;
-const ESTABLO_PATH = '/establo';
+/** Con un torito por guardar, al volver de Google se abre su puerta en el bosque. */
+const UNLOCK_PATH = '/mundos?desbloquear=torito';
 
-interface Props {
-  assetsPath: string;
-  customerName: string | null;
-  /** Mirar el establo sin haber iniciado sesión. */
-  isPreview: boolean;
-  /** Enseña una colección inventada de este tamaño, para probar el establo con muchos toritos. */
-  exampleCount: number | null;
-  /** Pieza del torito que acaba de nacer. */
-  newToritoId: string | null;
-  authError: string | null;
-  accountHref: string;
-}
-
-const googleHref = `${CUSTOMER_AUTH_ROUTES.googleStart}?next=${encodeURIComponent(ESTABLO_PATH)}`;
-
-function GoogleButton({ label }: { label: string }) {
+function GoogleButton({ label, next }: { label: string; next: string }) {
   return (
     <ButtonLink
-      href={googleHref}
+      href={`${CUSTOMER_AUTH_ROUTES.googleStart}?next=${encodeURIComponent(next)}`}
       variant="inverse"
       className="w-full bg-on-dark text-text hover:opacity-90"
     >
@@ -52,91 +24,129 @@ function GoogleButton({ label }: { label: string }) {
   );
 }
 
-export function EstabloExperience({
+/** Lo que recibe el interior de cualquier mundo: la app pone los datos, la cabecera y el menú. */
+export interface WorldScreenProps {
+  assetsPath: string;
+  tab: 'main' | 'collection';
+  customerName: string | null;
+  toritos: OwnedTorito[] | null;
+  pending: OwnedTorito | null;
+  persists: boolean;
+  focusId: string | null;
+  notice: string | null;
+  onScan: () => void;
+  onProfile: () => void;
+  onShop: () => void;
+  onToritoChange: (id: string, change: ToritoChanges) => void;
+}
+
+/** El mundo del torito: su establo y su colección. */
+export function ToritoWorld({
   assetsPath,
+  tab,
   customerName,
-  isPreview,
-  exampleCount,
-  newToritoId,
-  authError,
-  accountHref,
-}: Props) {
-  const [toritos, setToritos] = useState<OwnedTorito[] | null>(null);
-  const [pending, setPending] = useState<OwnedTorito | null>(null);
-  const [claimError, setClaimError] = useState<string | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [claimedId, setClaimedId] = useState<string | null>(null);
+  toritos,
+  pending,
+  persists,
+  focusId,
+  notice,
+  onScan,
+  onProfile,
+  onShop,
+  onToritoChange,
+}: WorldScreenProps) {
+  // Sin sesión y sin toritos, se enseña uno de ejemplo para que se entienda la idea.
+  const residents =
+    toritos && toritos.length === 0 && !customerName ? [pending ?? exampleTorito()] : toritos;
+  const isVisitor = !customerName && !persists && toritos?.length === 0;
+  const isEmpty = toritos !== null && toritos.length === 0;
 
-  useEffect(() => {
-    if (exampleCount) {
-      setToritos(exampleCollection(exampleCount));
-      return;
-    }
-    const claim = readPendingClaim();
-    if (!customerName) {
-      setPending(claim ? ownedFromPending(claim) : null);
-      setToritos([]);
-      return;
-    }
-    const load = async () => {
-      // Vuelve de iniciar sesión con un torito por guardar.
-      if (claim) {
-        try {
-          const torito = await toritoRequest<ToritoDto>(
-            'POST',
-            TORITO_ROUTES.pieceClaim(claim.code),
-            {
-              name: claim.name,
-              colorCode: claim.colorCode,
-              intention: claim.intention,
-            },
-          );
-          setClaimedId(torito.id);
-        } catch (failure) {
-          setClaimError(failure instanceof Error ? failure.message : 'No pudimos guardarlo.');
-        }
-        clearPendingClaim();
-      }
-      const { data } = await toritoRequest<ToritoListResponse>('GET', TORITO_ROUTES.toritos);
-      setToritos(data.map(ownedFromDto));
-    };
-    load().catch((failure: unknown) => {
-      setLoadError(failure instanceof Error ? failure.message : 'No pudimos abrir tu establo.');
-      setToritos([]);
-    });
-  }, [customerName, exampleCount]);
+  const invitation = (
+    <div className="world-card">
+      <span className="world-card-label">{isVisitor ? 'Así será tu establo' : 'Tu establo'}</span>
+      <h2 className="font-display">
+        {pending
+          ? `Guarda a ${pending.name}`
+          : isVisitor
+            ? 'Un torito ya te imagina aquí'
+            : 'Todavía no tienes toritos'}
+      </h2>
+      <p>
+        {pending
+          ? 'Inicia sesión y te esperará siempre en tu establo.'
+          : 'Escanea el QR de tu pieza para verlo nacer y traerlo a vivir aquí.'}
+      </p>
+      <div className="world-card-actions">
+        {!pending && (
+          <button type="button" className="world-primary" onClick={onScan}>
+            Escanear mi QR
+          </button>
+        )}
+        {!pending && (
+          <button type="button" className="world-link" onClick={onShop}>
+            Conseguir mi torito
+          </button>
+        )}
+        {pending && <GoogleButton label="Guardar con Google" next={UNLOCK_PATH} />}
+        {isVisitor && !pending && (
+          <button type="button" className="world-link" onClick={onProfile}>
+            Ya tengo cuenta
+          </button>
+        )}
+      </div>
+    </div>
+  );
 
-  if (!customerName && !isPreview && !exampleCount) {
-    // Espera a leer el navegador para no enseñar un torito de ejemplo y cambiarlo enseguida.
-    if (!toritos) return <main className="surface-dark min-h-svh" />;
-    return <SavePrompt assetsPath={assetsPath} pending={pending} authError={authError} />;
-  }
   return (
-    <Stable
+    <EstabloStable
       assetsPath={assetsPath}
-      customerName={customerName}
-      toritos={toritos}
-      pending={pending}
-      persists={Boolean(customerName) && !exampleCount}
-      focusId={claimedId ?? newToritoId}
-      notice={claimError ?? loadError}
-      accountHref={accountHref}
-    />
+      view={tab}
+      toritos={isVisitor && tab === 'collection' ? [] : residents}
+      persists={persists}
+      focusId={focusId}
+      onToritoChange={onToritoChange}
+      onScan={onScan}
+      emptyCollection={invitation}
+      showsToday={!isVisitor}
+    >
+      {notice && (
+        <p role="alert" className="type-meta rounded-md bg-surface px-4 py-3 text-text">
+          {notice}
+        </p>
+      )}
+      {(isEmpty || isVisitor) && invitation}
+      {!isEmpty && !isVisitor && toritos && (
+        <div className="world-card">
+          <span className="world-card-label">Sumar otro torito</span>
+          <p>Cada QR despierta a un torito nuevo. Si este establo se llena, se abre otro.</p>
+          <div className="world-card-actions">
+            <button type="button" className="world-primary" onClick={onShop}>
+              Comprar otro torito
+            </button>
+            <button type="button" className="world-link" onClick={onScan}>
+              Ya tengo su QR
+            </button>
+          </div>
+        </div>
+      )}
+    </EstabloStable>
   );
 }
 
 /** Invita a guardar al torito mientras se ve cómo entra al establo. */
-function SavePrompt({
+export function SavePrompt({
   assetsPath,
   pending,
   authError,
+  onSkip,
 }: {
   assetsPath: string;
-  /** Torito elegido antes de iniciar sesión; sin él, alguien que vuelve a ver su establo. */
-  pending: OwnedTorito | null;
+  /** Torito elegido antes de iniciar sesión. */
+  pending: OwnedTorito;
   authError: string | null;
+  onSkip: () => void;
 }) {
-  const torito = pending ?? exampleTorito();
+  const torito = pending;
   const walkerRef = useRef<HTMLDivElement>(null);
   const hopRef = useRef<HTMLDivElement>(null);
 
@@ -199,17 +209,14 @@ function SavePrompt({
       <section className="flex flex-1 flex-col gap-5 px-5 py-8 lg:w-[400px] lg:flex-none lg:px-0">
         <p className="type-label inline-flex items-center gap-3">
           <span aria-hidden="true" className="rombo" />
-          {pending ? `${torito.name} ya va en camino` : 'Tu establo'}
+          {torito.name} ya va en camino
         </p>
         <h1 className="type-h1">
-          <Emphasis
-            text={pending ? `No pierdas a *${torito.name}*` : 'Entra a ver a tus *toritos*'}
-          />
+          <Emphasis text={`No pierdas a *${torito.name}*`} />
         </h1>
         <p className="type-body">
-          {pending
-            ? 'Guárdalo en tu establo: ahí te esperará siempre, podrás visitarlo cuando quieras y reunir a todos tus toritos.'
-            : 'Inicia sesión para visitarlos desde cualquier celular o computadora: cada día tienen algo nuevo que contarte.'}
+          Guárdalo en tu establo: ahí te esperará siempre, podrás visitarlo cuando quieras y reunir
+          a todos tus toritos.
         </p>
         {authError && (
           <p role="alert" className="type-meta rounded-sm bg-brand-tint px-4 py-3 text-text">
@@ -217,100 +224,19 @@ function SavePrompt({
           </p>
         )}
         <div className="flex flex-col gap-3">
-          <GoogleButton label="Continuar con Google" />
+          <GoogleButton label="Continuar con Google" next={UNLOCK_PATH} />
           <p className="type-meta text-on-dark-muted">
             ¿Es tu primera vez? Creamos tu cuenta al instante, sin formularios ni contraseñas.
           </p>
         </div>
-        <a
-          href={`${ESTABLO_PATH}?vista=previa`}
-          className="w-fit border-t border-border-dark pt-5 text-[15px] font-medium text-on-dark underline underline-offset-[6px]"
+        <button
+          type="button"
+          onClick={onSkip}
+          className="w-fit cursor-pointer border-t border-border-dark pt-5 text-[15px] font-medium text-on-dark underline underline-offset-[6px]"
         >
           Primero quiero ver el establo
-        </a>
+        </button>
       </section>
     </main>
-  );
-}
-
-function Stable({
-  assetsPath,
-  customerName,
-  toritos,
-  pending,
-  persists,
-  focusId,
-  notice,
-  accountHref,
-}: {
-  assetsPath: string;
-  customerName: string | null;
-  toritos: OwnedTorito[] | null;
-  pending: OwnedTorito | null;
-  persists: boolean;
-  focusId: string | null;
-  notice: string | null;
-  accountHref: string;
-}) {
-  const firstName = customerName?.split(' ')[0];
-  // Sin sesión y sin toritos, la vista previa enseña uno para que se entienda la idea.
-  const residents =
-    toritos && toritos.length === 0 && !customerName ? [pending ?? exampleTorito()] : toritos;
-  const count = residents?.length ?? 0;
-
-  return (
-    <EstabloStable
-      assetsPath={assetsPath}
-      toritos={residents}
-      persists={persists}
-      focusId={focusId}
-      intro={(establos) => (
-        <>
-          <p className="type-label inline-flex items-center gap-3">
-            <span aria-hidden="true" className="rombo" />
-            {!residents
-              ? 'Tu establo'
-              : `${count === 1 ? '1 torito' : `${count} toritos`} · ${
-                  establos === 1 ? '1 establo' : `${establos} establos`
-                }`}
-          </p>
-          <h1 className="type-h1 break-words">
-            {firstName ? `El establo de ${firstName}` : 'Así será tu establo'}
-          </h1>
-          <p className="type-body">
-            {!residents
-              ? 'Tus toritos ya vienen.'
-              : count > 0
-                ? 'Cada día tienen algo nuevo que contarte. Toca a un torito para que se acerque.'
-                : 'Todavía no tienes toritos. Escanea el QR de tu pieza para verlo nacer.'}
-          </p>
-          {notice && (
-            <p role="alert" className="type-meta rounded-sm bg-surface px-4 py-3 text-text">
-              {notice}
-            </p>
-          )}
-        </>
-      )}
-      actions={
-        customerName ? (
-          <nav aria-label="Salir del establo" className="flex flex-wrap gap-x-6 gap-y-2">
-            <a
-              href="/"
-              className="text-[15px] font-medium text-on-dark underline underline-offset-[6px]"
-            >
-              Ir a la tienda
-            </a>
-            <a
-              href={accountHref}
-              className="text-[15px] font-medium text-on-dark underline underline-offset-[6px]"
-            >
-              Mi cuenta
-            </a>
-          </nav>
-        ) : (
-          <GoogleButton label="Guardar con Google" />
-        )
-      }
-    />
   );
 }

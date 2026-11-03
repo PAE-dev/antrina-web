@@ -29,7 +29,7 @@ function toCustomerWithStats(record: CustomerRecord): CustomerWithStats {
   return {
     id: record.id,
     name: record.name,
-    phone: record.phone,
+    phone: record.phone ?? record.contactPhone,
     email: record.email,
     note: record.note,
     hasWebAccount: record.googleSubject !== null,

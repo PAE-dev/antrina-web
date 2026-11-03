@@ -1,12 +1,14 @@
 import {
   type CustomerAccount,
   type CustomerAccountRepository,
+  type CustomerProfile,
   type CustomerSession,
   type CustomerSessionStore,
   CUSTOMER_SESSION_TTL_MS,
   type DomainError,
   type GoogleIdentity,
   type GoogleIdentityProvider,
+  type ImageStorage,
   type NewCustomerSession,
   type SessionTokenService,
 } from '@antrina/domain';
@@ -15,9 +17,15 @@ import {
   CompleteGoogleSignInUseCase,
   CustomerLogoutUseCase,
   GetCurrentCustomerUseCase,
+  RemoveCustomerAvatarUseCase,
+  SetCustomerAvatarUseCase,
   StartGoogleSignInUseCase,
+  UpdateCustomerProfileUseCase,
 } from '../src/index.js';
 import { FakeClock } from './fakes.js';
+
+/** Existe en Node; este paquete no carga sus tipos. */
+declare const btoa: (data: string) => string;
 
 const ANA: GoogleIdentity = {
   subject: 'google-1',
@@ -61,6 +69,12 @@ class InMemoryCustomers implements CustomerAccountRepository {
       id: `customer-${this.bySubject.size + 1}`,
       name: identity.name,
       email: identity.email,
+      phone: null,
+      avatarKey: null,
+      city: null,
+      district: null,
+      addressLine: null,
+      addressReference: null,
     };
     this.bySubject.set(identity.subject, account);
     return account;
@@ -70,6 +84,21 @@ class InMemoryCustomers implements CustomerAccountRepository {
     const account = { ...(await this.findById(id))!, email: identity.email };
     this.bySubject.set(identity.subject, account);
     return account;
+  }
+
+  private replace(id: string, change: Partial<CustomerAccount>): CustomerAccount {
+    const [subject, account] = [...this.bySubject].find(([, item]) => item.id === id)!;
+    const updated = { ...account, ...change };
+    this.bySubject.set(subject, updated);
+    return updated;
+  }
+
+  async updateProfile(id: string, profile: CustomerProfile): Promise<CustomerAccount> {
+    return this.replace(id, profile);
+  }
+
+  async setAvatar(id: string, avatarKey: string | null): Promise<CustomerAccount> {
+    return this.replace(id, { avatarKey });
   }
 }
 
@@ -121,6 +150,18 @@ describe('acceso de clientes con Google', () => {
     },
     hash: (token) => `hash:${token}`,
   };
+  const stored = new Map<string, Uint8Array>();
+  const storage = {
+    publicUrl: (key: string) => `https://media.test/${key}`,
+    putImage: async ({ prefix, bytes, contentType }) => {
+      const key = `${prefix}/${stored.size + 1}.${contentType.split('/')[1]}`;
+      stored.set(key, bytes);
+      return key;
+    },
+    delete: async (key: string) => {
+      stored.delete(key);
+    },
+  } as Pick<ImageStorage, 'publicUrl' | 'putImage' | 'delete'> as ImageStorage;
   const input = {
     code: 'code',
     state: 'state',
@@ -136,8 +177,8 @@ describe('acceso de clientes con Google', () => {
     customers = new InMemoryCustomers();
     sessions = new InMemorySessions();
     clock = new FakeClock();
-    complete = new CompleteGoogleSignInUseCase(google, customers, sessions, tokens, clock);
-    current = new GetCurrentCustomerUseCase(customers, sessions, tokens, clock);
+    complete = new CompleteGoogleSignInUseCase(google, customers, sessions, tokens, clock, storage);
+    current = new GetCurrentCustomerUseCase({ customers, sessions, tokens, clock }, storage);
   });
 
   it('no inicia el acceso si Google no está configurado', () => {
@@ -151,7 +192,12 @@ describe('acceso de clientes con Google', () => {
   it('crea la cuenta la primera vez y abre una sesión de 30 días', async () => {
     const result = await complete.execute(input);
 
-    expect(result.customer).toEqual({ id: 'customer-1', name: 'Ana', email: 'ana@example.com' });
+    expect(result.customer).toMatchObject({
+      id: 'customer-1',
+      name: 'Ana',
+      email: 'ana@example.com',
+      avatarUrl: null,
+    });
     expect(result.expiresAt.getTime()).toBe(clock.now().getTime() + CUSTOMER_SESSION_TTL_MS);
     await expect(current.execute({ sessionToken: result.sessionToken })).resolves.toEqual(
       result.customer,
@@ -164,7 +210,11 @@ describe('acceso de clientes con Google', () => {
 
     const result = await complete.execute(input);
 
-    expect(result.customer).toEqual({ id: 'customer-1', name: 'Ana', email: 'nuevo@example.com' });
+    expect(result.customer).toMatchObject({
+      id: 'customer-1',
+      name: 'Ana',
+      email: 'nuevo@example.com',
+    });
     expect(customers.bySubject.size).toBe(1);
   });
 
@@ -204,5 +254,98 @@ describe('acceso de clientes con Google', () => {
     const { sessionToken } = await complete.execute(input);
     await new CustomerLogoutUseCase(sessions, tokens).execute({ sessionToken });
     await expectCode(current.execute({ sessionToken }), 'auth.unauthorized');
+  });
+
+  describe('perfil', () => {
+    const WEBP = btoa('RIFF\u0000\u0000\u0000\u0000WEBPVP8 ');
+    const deps = () => ({ customers, sessions, tokens, clock });
+    const emptyProfile = {
+      phone: null,
+      city: null,
+      district: null,
+      addressLine: null,
+      addressReference: null,
+    };
+
+    beforeEach(() => stored.clear());
+
+    it('guarda los datos limpios y normaliza el celular', async () => {
+      const { sessionToken } = await complete.execute(input);
+      const update = new UpdateCustomerProfileUseCase(deps(), storage);
+
+      const me = await update.execute({
+        sessionToken,
+        body: {
+          ...emptyProfile,
+          name: '  Ana   Díaz ',
+          phone: '+51 987 654-321',
+          addressLine: '  Av. Larco   123 ',
+        },
+      });
+
+      expect(me).toMatchObject({
+        name: 'Ana Díaz',
+        phone: '+51987654321',
+        addressLine: 'Av. Larco 123',
+        email: 'ana@example.com',
+      });
+    });
+
+    it('rechaza un celular o un nombre inválidos', async () => {
+      const { sessionToken } = await complete.execute(input);
+      const update = new UpdateCustomerProfileUseCase(deps(), storage);
+
+      await expectCode(
+        update.execute({ sessionToken, body: { ...emptyProfile, name: 'Ana', phone: '12' } }),
+        'customer.invalid_phone',
+      );
+      await expectCode(
+        update.execute({ sessionToken, body: { ...emptyProfile, name: ' ' } }),
+        'customer.invalid_name',
+      );
+    });
+
+    it('no deja cambiar nada sin sesión', async () => {
+      const update = new UpdateCustomerProfileUseCase(deps(), storage);
+      await expectCode(
+        update.execute({ sessionToken: undefined, body: { ...emptyProfile, name: 'Ana' } }),
+        'auth.unauthorized',
+      );
+    });
+
+    it('sube la foto, borra la anterior y la puede quitar', async () => {
+      const { sessionToken } = await complete.execute(input);
+      const setAvatar = new SetCustomerAvatarUseCase(deps(), storage);
+      const removeAvatar = new RemoveCustomerAvatarUseCase(deps(), storage);
+
+      const first = await setAvatar.execute({ sessionToken, body: { imageBase64: WEBP } });
+      expect(first.avatarUrl).toBe('https://media.test/customers/customer-1/1.webp');
+
+      const second = await setAvatar.execute({ sessionToken, body: { imageBase64: WEBP } });
+      expect(second.avatarUrl).not.toBe(first.avatarUrl);
+      expect(stored.size).toBe(1);
+
+      const removed = await removeAvatar.execute({ sessionToken });
+      expect(removed.avatarUrl).toBeNull();
+      expect(stored.size).toBe(0);
+    });
+
+    it('rechaza lo que no es una imagen, aunque diga serlo', async () => {
+      const { sessionToken } = await complete.execute(input);
+      const setAvatar = new SetCustomerAvatarUseCase(deps(), storage);
+
+      await expectCode(
+        setAvatar.execute({
+          sessionToken,
+          body: { imageBase64: btoa('<script>alert(1)</script>') },
+        }),
+        'customer.invalid_avatar',
+      );
+      await expectCode(
+        setAvatar.execute({ sessionToken, body: { imageBase64: 'x'.repeat(200_000) } }),
+        'customer.invalid_avatar',
+      );
+      expect(stored.size).toBe(0);
+    });
   });
 });

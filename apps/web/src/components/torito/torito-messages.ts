@@ -64,6 +64,9 @@ function hash(text: string): number {
 }
 
 /** Cada torito recorre todos los mensajes en su propio orden, sin repetir hasta terminarlos. */
+/** El día anterior, en la misma hora de Lima que `todayKey`. */
+export const yesterdayKey = (now = new Date()) => todayKey(new Date(now.getTime() - DAY_MS));
+
 export function messageOfTheDay(pieceId: string, date = todayKey()): string {
   const dayNumber = Math.floor(Date.parse(`${date}T00:00:00Z`) / DAY_MS);
   return MESSAGES[(hash(pieceId) + dayNumber) % MESSAGES.length]!;

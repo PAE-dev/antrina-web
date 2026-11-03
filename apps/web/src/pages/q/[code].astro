@@ -71,7 +71,13 @@ const notice = (() => {
     alternates={alternates}
     noindex
   >
-    <ToritoBirth client:load assetsPath="/torito" establoHref={routes.stable()} piece={piece} />
+    <ToritoBirth
+      client:load
+      assetsPath="/torito"
+      establoHref={routes.stable()}
+      forestHref={routes.forest()}
+      piece={piece}
+    />
   </BaseLayout>
 ) : (
   <MessageView

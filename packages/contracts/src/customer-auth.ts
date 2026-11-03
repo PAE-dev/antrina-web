@@ -3,6 +3,26 @@ export interface CustomerMeDto {
   id: string;
   name: string;
   email: string;
+  phone: string | null;
+  avatarUrl: string | null;
+  city: string | null;
+  district: string | null;
+  addressLine: string | null;
+  addressReference: string | null;
+}
+
+export interface UpdateCustomerProfileRequest {
+  name: string;
+  phone: string | null;
+  city: string | null;
+  district: string | null;
+  addressLine: string | null;
+  addressReference: string | null;
+}
+
+/** La foto ya recortada y reducida en el navegador. */
+export interface SetCustomerAvatarRequest {
+  imageBase64: string;
 }
 
 /** Motivo que la API añade a `?error=` al volver a la tienda tras un acceso fallido. */
@@ -12,6 +32,8 @@ export const CUSTOMER_AUTH_ROUTES = {
   googleStart: '/auth/google',
   googleCallback: '/auth/google/callback',
   me: '/auth/me',
+  profile: '/auth/me/profile',
+  avatar: '/auth/me/avatar',
   logout: '/auth/logout',
 } as const;
 

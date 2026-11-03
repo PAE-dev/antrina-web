@@ -203,19 +203,27 @@ model StockMovement {
 
 /// Cliente de la tienda. El teléfono (E.164) es la clave para unirlo con WhatsApp.
 model Customer {
-  id            String            @id @default(cuid())
-  name          String
-  phone         String?           @unique
-  email         String?
-  note          String?
+  id               String            @id @default(cuid())
+  name             String
+  phone            String?           @unique
+  email            String?
+  note             String?
   /// Identificador de su cuenta de Google (`sub`); null si solo existe en el panel.
-  googleSubject String?           @unique
-  lastLoginAt   DateTime?
-  orders        Order[]
-  sessions      CustomerSession[]
-  toritos       Torito[]
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  googleSubject    String?           @unique
+  /// Lo escribe el propio cliente, sin verificar: por eso no es `phone`, que identifica clientes.
+  contactPhone     String?
+  /// Clave de su foto en el almacenamiento, nunca una URL.
+  avatarKey        String?
+  city             String?
+  district         String?
+  addressLine      String?
+  addressReference String?
+  lastLoginAt      DateTime?
+  orders           Order[]
+  sessions         CustomerSession[]
+  toritos          Torito[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
   @@index([name])
 }

@@ -59,10 +59,13 @@ const isSignedIn = () => document.cookie.split('; ').includes(`${CUSTOMER_SIGNED
 export function ToritoBirth({
   assetsPath,
   establoHref,
+  forestHref,
   piece,
 }: {
   assetsPath: string;
   establoHref: string;
+  /** Después de nacer, su puerta se abre en el bosque. */
+  forestHref: string;
   piece: PieceViewDto | null;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -169,7 +172,7 @@ export function ToritoBirth({
       intention: cleanText(chosenIntention, INTENTION_MAX_LENGTH) || null,
     };
     if (!piece) {
-      window.location.assign(`${establoHref}?ejemplo=3`);
+      window.location.assign(`${forestHref}?ejemplo=1`);
       return;
     }
     const keepForAfterLogin = () => {
@@ -194,7 +197,7 @@ export function ToritoBirth({
         TORITO_ROUTES.pieceClaim(piece.code),
         claim,
       );
-      window.location.assign(`${establoHref}?nuevo=${torito.id}`);
+      window.location.assign(`${forestHref}?desbloquear=torito&nuevo=${torito.id}`);
     } catch (failure) {
       setSaving(false);
       // La cookie indicadora puede sobrevivir a una sesión ya caducada.

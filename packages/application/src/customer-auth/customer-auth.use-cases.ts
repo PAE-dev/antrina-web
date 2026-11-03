@@ -9,6 +9,7 @@ import {
   type GoogleAuthorization,
   type GoogleIdentity,
   type GoogleIdentityProvider,
+  type ImageUrlResolver,
   isCustomerSessionActive,
   type SessionTokenService,
 } from '@antrina/domain';
@@ -17,8 +18,18 @@ function unauthorized(): DomainError {
   return new DomainError('Inicia sesión para continuar', 'auth.unauthorized');
 }
 
-function toMeDto(account: CustomerAccount): CustomerMeDto {
-  return { id: account.id, name: account.name, email: account.email };
+export function toCustomerMeDto(account: CustomerAccount, urls: ImageUrlResolver): CustomerMeDto {
+  return {
+    id: account.id,
+    name: account.name,
+    email: account.email,
+    phone: account.phone,
+    avatarUrl: account.avatarKey ? urls.publicUrl(account.avatarKey) : null,
+    city: account.city,
+    district: account.district,
+    addressLine: account.addressLine,
+    addressReference: account.addressReference,
+  };
 }
 
 /** Prepara la ida a Google. */
@@ -57,6 +68,7 @@ export class CompleteGoogleSignInUseCase {
     private readonly sessions: CustomerSessionStore,
     private readonly tokens: SessionTokenService,
     private readonly clock: Clock,
+    private readonly urls: ImageUrlResolver,
   ) {}
 
   async execute(input: CompleteGoogleSignInInput): Promise<CustomerSignInResult> {
@@ -83,7 +95,7 @@ export class CompleteGoogleSignInUseCase {
       expiresAt,
       userAgent: input.userAgent,
     });
-    return { sessionToken: token, expiresAt, customer: toMeDto(account) };
+    return { sessionToken: token, expiresAt, customer: toCustomerMeDto(account, this.urls) };
   }
 
   /**
@@ -99,28 +111,41 @@ export class CompleteGoogleSignInUseCase {
 }
 
 /** Resuelve el cliente de una cookie de sesión. */
+export interface CustomerSessionDeps {
+  customers: CustomerAccountRepository;
+  sessions: CustomerSessionStore;
+  tokens: SessionTokenService;
+  clock: Clock;
+}
+
+/** Quién hace la petición; si la sesión ya no vale, la borra. */
+export async function requireCustomer(
+  deps: CustomerSessionDeps,
+  sessionToken: string | null | undefined,
+): Promise<CustomerAccount> {
+  if (!sessionToken) throw unauthorized();
+  const session = await deps.sessions.findByTokenHash(deps.tokens.hash(sessionToken));
+  if (!session) throw unauthorized();
+  if (!isCustomerSessionActive(session, deps.clock.now())) {
+    await deps.sessions.delete(session.id);
+    throw unauthorized();
+  }
+  const account = await deps.customers.findById(session.customerId);
+  if (!account) {
+    await deps.sessions.delete(session.id);
+    throw unauthorized();
+  }
+  return account;
+}
+
 export class GetCurrentCustomerUseCase {
   constructor(
-    private readonly customers: CustomerAccountRepository,
-    private readonly sessions: CustomerSessionStore,
-    private readonly tokens: SessionTokenService,
-    private readonly clock: Clock,
+    private readonly deps: CustomerSessionDeps,
+    private readonly urls: ImageUrlResolver,
   ) {}
 
   async execute(input: { sessionToken: string | null | undefined }): Promise<CustomerMeDto> {
-    if (!input.sessionToken) throw unauthorized();
-    const session = await this.sessions.findByTokenHash(this.tokens.hash(input.sessionToken));
-    if (!session) throw unauthorized();
-    if (!isCustomerSessionActive(session, this.clock.now())) {
-      await this.sessions.delete(session.id);
-      throw unauthorized();
-    }
-    const account = await this.customers.findById(session.customerId);
-    if (!account) {
-      await this.sessions.delete(session.id);
-      throw unauthorized();
-    }
-    return toMeDto(account);
+    return toCustomerMeDto(await requireCustomer(this.deps, input.sessionToken), this.urls);
   }
 }
 

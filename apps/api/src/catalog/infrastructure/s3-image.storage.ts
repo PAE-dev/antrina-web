@@ -71,6 +71,24 @@ export class S3ImageStorage implements ImageStorage {
     };
   }
 
+  async putImage(input: {
+    prefix: string;
+    contentType: ImageContentType;
+    bytes: Uint8Array;
+  }): Promise<string> {
+    const storageKey = `${input.prefix}/${randomUUID()}.${EXTENSIONS[input.contentType]}`;
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.config.bucket,
+        Key: storageKey,
+        Body: input.bytes,
+        ContentType: input.contentType,
+        CacheControl: CACHE_CONTROL,
+      }),
+    );
+    return storageKey;
+  }
+
   async stat(storageKey: string): Promise<StoredObject | null> {
     try {
       const head = await this.client.send(

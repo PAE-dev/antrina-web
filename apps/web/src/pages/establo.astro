@@ -1,40 +1,8 @@
 ---
-import { EstabloExperience } from '../components/torito/EstabloExperience';
-import { getPageCopy } from '../i18n/pages';
-import BaseLayout from '../layouts/BaseLayout.astro';
-import { getCurrentCustomer, parseAuthError } from '../lib/account';
 import { routes } from '../lib/routes';
 
 export const prerender = false;
 
-const MAX_EXAMPLE_TORITOS = 30;
-
-const session = await getCurrentCustomer(Astro.request.headers.get('cookie'));
-// La respuesta depende de la cookie: nunca debe guardarla la CDN.
-Astro.response.headers.set('Cache-Control', 'no-store');
-
-const params = Astro.url.searchParams;
-const authError = parseAuthError(params.get('error'));
-const exampleCount =
-  Math.max(0, Math.min(Math.floor(Number(params.get('ejemplo')) || 0), MAX_EXAMPLE_TORITOS)) ||
-  null;
+// El establo ahora vive dentro de la puerta del torito.
+return Astro.redirect(`${routes.stable()}${Astro.url.search}`, 301);
 ---
-
-<BaseLayout
-  locale="es"
-  title="Tu establo"
-  description="El establo donde viven tus Toritos de Pucará."
-  alternates={{ es: '/establo' }}
-  noindex
->
-  <EstabloExperience
-    client:load
-    assetsPath="/torito"
-    customerName={session.status === 'ok' ? session.customer.name : null}
-    isPreview={params.get('vista') === 'previa'}
-    exampleCount={exampleCount}
-    newToritoId={params.get('nuevo')}
-    authError={authError ? getPageCopy('es').account.errors[authError] : null}
-    accountHref={routes.account('es')}
-  />
-</BaseLayout>

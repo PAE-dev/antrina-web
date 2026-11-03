@@ -32,24 +32,35 @@ interface Visit {
   streak: number;
 }
 
-type ToritoChanges = Partial<Pick<OwnedTorito, 'intention' | 'lastVisitOn' | 'visitStreak'>>;
+export type ToritoChanges = Partial<Pick<OwnedTorito, 'intention' | 'lastVisitOn' | 'visitStreak'>>;
 
 export function EstabloStable({
   assetsPath,
+  view,
   toritos: sourceToritos,
   persists,
   focusId,
-  intro,
-  actions,
+  children,
+  emptyCollection,
+  showsToday,
+  onToritoChange,
+  onScan,
 }: {
   assetsPath: string;
+  /** Las dos pantallas del mundo: el interior del establo y todos sus toritos. */
+  view: 'main' | 'collection';
   toritos: readonly OwnedTorito[] | null;
   /** Falso en las vistas de ejemplo: los cambios no se guardan. */
   persists: boolean;
   /** Torito que acaba de llegar: el establo se abre donde está. */
   focusId: string | null;
-  intro: (establos: number) => ReactNode;
-  actions: ReactNode;
+  /** Tarjetas de debajo del establo. */
+  children: ReactNode;
+  emptyCollection: ReactNode;
+  /** En la vista previa no hay nadie a quien visitar todavía. */
+  showsToday: boolean;
+  onToritoChange: (id: string, change: ToritoChanges) => void;
+  onScan: () => void;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [activePage, setActivePage] = useState(0);
@@ -72,8 +83,10 @@ export function EstabloStable({
     // Solo al llegar: después manda quien desliza.
   }, [focusIndex]);
 
-  const changeTorito = (id: string, change: ToritoChanges) =>
+  const changeTorito = (id: string, change: ToritoChanges) => {
     setChanges((current) => ({ ...current, [id]: { ...current[id], ...change } }));
+    onToritoChange(id, change);
+  };
 
   const openVisit = (torito: OwnedTorito) => {
     const today = todayKey();
@@ -108,130 +121,146 @@ export function EstabloStable({
   };
 
   return (
-    <main className="surface-dark flex min-h-svh flex-col lg:flex-row lg:items-center lg:justify-center lg:gap-16 lg:p-8">
-      <div className="relative aspect-[1122/1402] w-full shrink-0 overflow-hidden lg:h-[calc(100svh-4rem)] lg:w-[calc((100svh-4rem)*0.8003)] lg:rounded-md">
-        <div
-          ref={scrollerRef}
-          className="flex size-full snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          onScroll={(event) => {
-            const { scrollLeft, clientWidth } = event.currentTarget;
-            setActivePage(Math.round(scrollLeft / clientWidth));
-          }}
-        >
-          {pages.map((page, pageIndex) => (
-            <div key={pageIndex} className="relative size-full shrink-0 snap-center">
-              <img
-                src={`${assetsPath}/establo-dentro.webp`}
-                alt={`Establo ${pageIndex + 1}: interior de adobe con tres corrales de paja`}
-                width={1122}
-                height={1402}
-                className="absolute inset-0 size-full object-cover"
-              />
-              {STALLS.map(({ center, width, bubble }, stallIndex) => {
-                const torito = page[stallIndex];
-                return (
-                  <div
-                    key={center}
-                    className="absolute bottom-[26%] aspect-[930/1040] -translate-x-1/2"
-                    style={{ left: `${center}%`, width: `${width}%` }}
-                  >
+    <>
+      <div className={view === 'main' ? 'world-page' : 'hidden'}>
+        <div className="world-scene relative aspect-[1122/1402] w-full shrink-0 overflow-hidden">
+          <div
+            ref={scrollerRef}
+            className="flex size-full snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            onScroll={(event) => {
+              const { scrollLeft, clientWidth } = event.currentTarget;
+              setActivePage(Math.round(scrollLeft / clientWidth));
+            }}
+          >
+            {pages.map((page, pageIndex) => (
+              <div key={pageIndex} className="relative size-full shrink-0 snap-center">
+                <img
+                  src={`${assetsPath}/establo-dentro.webp`}
+                  alt={`Establo ${pageIndex + 1}: interior de adobe con tres corrales de paja`}
+                  width={1122}
+                  height={1402}
+                  className="absolute inset-0 size-full object-cover"
+                />
+                {STALLS.map(({ center, width, bubble }, stallIndex) => {
+                  const torito = page[stallIndex];
+                  return (
                     <div
-                      aria-hidden="true"
-                      className="absolute inset-x-[6%] bottom-[-3%] h-[11%] rounded-[50%] bg-text opacity-30 blur-md"
-                    />
-                    {torito ? (
-                      <>
-                        {isNearby(pageIndex, activePage) && (
-                          <ToritoSprite
-                            key={`${torito.id}-${torito.color.id}`}
-                            torito={torito}
-                            assetsPath={assetsPath}
-                            bubbleAlign={bubble}
-                            isPaused={pageIndex !== activePage}
-                            onSelect={() => openVisit(torito)}
-                          />
-                        )}
-                        {torito.lastVisitOn !== todayKey() && (
-                          <span
-                            aria-hidden="true"
-                            className="pointer-events-none absolute -top-[4%] left-[62%] flex size-7 items-center justify-center motion-safe:animate-bounce"
-                          >
-                            <span className="rombo scale-[2.4]" />
-                          </span>
-                        )}
-                        <p className="absolute inset-x-0 top-[106%] mx-auto w-fit max-w-[120%] truncate rounded-sm bg-brand px-2 py-0.5 text-[12px] font-medium whitespace-nowrap text-on-dark lg:px-3 lg:py-1 lg:text-[13px]">
-                          {torito.name}
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <img
-                          src={`${assetsPath}/silueta.webp`}
-                          alt=""
-                          className="absolute inset-0 size-full opacity-20"
-                        />
-                        {toritos && (
-                          <p className="absolute inset-x-0 top-[106%] mx-auto w-fit rounded-sm bg-brand px-2 py-0.5 text-[12px] font-medium whitespace-nowrap text-on-dark-muted lg:px-3 lg:py-1 lg:text-[13px]">
-                            Corral libre
+                      key={center}
+                      className="absolute bottom-[26%] aspect-[930/1040] -translate-x-1/2"
+                      style={{ left: `${center}%`, width: `${width}%` }}
+                    >
+                      <div
+                        aria-hidden="true"
+                        className="absolute inset-x-[6%] bottom-[-3%] h-[11%] rounded-[50%] bg-text opacity-30 blur-md"
+                      />
+                      {torito ? (
+                        <>
+                          {isNearby(pageIndex, activePage) && (
+                            <ToritoSprite
+                              key={`${torito.id}-${torito.color.id}`}
+                              torito={torito}
+                              assetsPath={assetsPath}
+                              bubbleAlign={bubble}
+                              isPaused={pageIndex !== activePage}
+                              onSelect={() => openVisit(torito)}
+                            />
+                          )}
+                          {torito.lastVisitOn !== todayKey() && (
+                            <span
+                              aria-hidden="true"
+                              className="pointer-events-none absolute -top-[4%] left-[62%] flex size-7 items-center justify-center motion-safe:animate-bounce"
+                            >
+                              <span className="rombo scale-[2.4]" />
+                            </span>
+                          )}
+                          <p className="absolute inset-x-0 top-[106%] mx-auto w-fit max-w-[120%] truncate rounded-sm bg-brand px-2 py-0.5 text-[12px] font-medium whitespace-nowrap text-on-dark lg:px-3 lg:py-1 lg:text-[13px]">
+                            {torito.name}
                           </p>
-                        )}
-                      </>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
+                        </>
+                      ) : (
+                        <>
+                          <img
+                            src={`${assetsPath}/silueta.webp`}
+                            alt=""
+                            className="absolute inset-0 size-full opacity-20"
+                          />
+                          {toritos && (
+                            <p className="absolute inset-x-0 top-[106%] mx-auto w-fit rounded-sm bg-brand px-2 py-0.5 text-[12px] font-medium whitespace-nowrap text-on-dark-muted lg:px-3 lg:py-1 lg:text-[13px]">
+                              Corral libre
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+
+          {pages.length > 1 && (
+            <nav
+              aria-label="Establos"
+              className="absolute inset-x-0 bottom-3 mx-auto flex w-fit items-center gap-1 rounded-full bg-brand p-1 text-on-dark"
+            >
+              <Button
+                isIconOnly
+                size="sm"
+                variant="ghost"
+                aria-label="Establo anterior"
+                isDisabled={activePage === 0}
+                className="text-on-dark"
+                onPress={() => goToPage(activePage - 1)}
+              >
+                <ArrowRightIcon className="rotate-180" />
+              </Button>
+              <span aria-live="polite" className="px-2 text-[13px] font-medium whitespace-nowrap">
+                Establo {activePage + 1} de {pages.length}
+              </span>
+              <Button
+                isIconOnly
+                size="sm"
+                variant="ghost"
+                aria-label="Establo siguiente"
+                isDisabled={activePage === pages.length - 1}
+                className="text-on-dark"
+                onPress={() => goToPage(activePage + 1)}
+              >
+                <ArrowRightIcon />
+              </Button>
+            </nav>
+          )}
         </div>
 
-        {pages.length > 1 && (
-          <nav
-            aria-label="Establos"
-            className="absolute inset-x-0 bottom-3 mx-auto flex w-fit items-center gap-1 rounded-full bg-brand p-1 text-on-dark"
-          >
-            <Button
-              isIconOnly
-              size="sm"
-              variant="ghost"
-              aria-label="Establo anterior"
-              isDisabled={activePage === 0}
-              className="text-on-dark"
-              onPress={() => goToPage(activePage - 1)}
-            >
-              <ArrowRightIcon className="rotate-180" />
-            </Button>
-            <span aria-live="polite" className="px-2 text-[13px] font-medium whitespace-nowrap">
-              Establo {activePage + 1} de {pages.length}
-            </span>
-            <Button
-              isIconOnly
-              size="sm"
-              variant="ghost"
-              aria-label="Establo siguiente"
-              isDisabled={activePage === pages.length - 1}
-              className="text-on-dark"
-              onPress={() => goToPage(activePage + 1)}
-            >
-              <ArrowRightIcon />
-            </Button>
-          </nav>
-        )}
+        <section className="world-side">
+          {showsToday && toritos && toritos.length > 0 && (
+            <TodayCard
+              toritos={toritos}
+              focusId={focusId}
+              onVisit={(torito) => {
+                goToPage(Math.floor(toritos.indexOf(torito) / STALLS.length));
+                openVisit(torito);
+              }}
+            />
+          )}
+          {children}
+        </section>
       </div>
 
-      <section className="flex flex-1 flex-col gap-5 px-5 py-8 lg:w-[400px] lg:flex-none lg:px-0">
-        {intro(pages.length)}
-        {(toritos?.length ?? 0) > STALLS.length && (
-          <ToritoGallery
-            assetsPath={assetsPath}
-            toritos={toritos ?? []}
-            onSelect={(torito, index) => {
-              goToPage(Math.floor(index / STALLS.length));
-              openVisit(torito);
-            }}
-          />
-        )}
-        {actions}
-      </section>
+      {view === 'collection' && (
+        <div className="world-grid-page">
+          {toritos && toritos.length > 0 ? (
+            <ToritoGallery
+              assetsPath={assetsPath}
+              toritos={toritos}
+              onSelect={openVisit}
+              onScan={onScan}
+            />
+          ) : (
+            emptyCollection
+          )}
+        </div>
+      )}
 
       <ToritoVisit
         assetsPath={assetsPath}
@@ -239,7 +268,52 @@ export function EstabloStable({
         onClose={() => setVisit(null)}
         onIntentionChange={saveIntention}
       />
-    </main>
+    </>
+  );
+}
+
+/** Lo primero que se ve debajo del establo: quién tiene algo que contarte hoy. */
+function TodayCard({
+  toritos,
+  focusId,
+  onVisit,
+}: {
+  toritos: readonly OwnedTorito[];
+  focusId: string | null;
+  onVisit: (torito: OwnedTorito) => void;
+}) {
+  const today = todayKey();
+  const waiting = toritos.filter((torito) => torito.lastVisitOn !== today);
+  const newcomer = toritos.find((torito) => torito.id === focusId);
+  const next = newcomer && waiting.includes(newcomer) ? newcomer : waiting[0];
+
+  if (!next) {
+    return (
+      <div className="world-card">
+        <span className="world-card-label">Hoy</span>
+        <h2 className="font-display">Ya los visitaste a todos</h2>
+        <p>Vuelve mañana: tendrán algo nuevo que contarte.</p>
+      </div>
+    );
+  }
+  const others = waiting.length - 1;
+  return (
+    <div className="world-card">
+      <span className="world-card-label">{next === newcomer ? '¡Acaba de llegar!' : 'Hoy'}</span>
+      <h2 className="font-display break-words">{next.name} tiene algo que contarte</h2>
+      {others > 0 && (
+        <p>
+          {others === 1
+            ? 'Otro torito también te espera.'
+            : `Otros ${others} toritos también te esperan.`}
+        </p>
+      )}
+      <div className="world-card-actions">
+        <button type="button" className="world-primary" onClick={() => onVisit(next)}>
+          Visitar a {next.name}
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -247,31 +321,34 @@ function ToritoGallery({
   assetsPath,
   toritos,
   onSelect,
+  onScan,
 }: {
   assetsPath: string;
   toritos: readonly OwnedTorito[];
-  onSelect: (torito: OwnedTorito, index: number) => void;
+  onSelect: (torito: OwnedTorito) => void;
+  onScan: () => void;
 }) {
+  const today = todayKey();
   return (
-    <div className="flex flex-col gap-3">
-      <h2 className="text-[15px] font-medium text-on-dark">Todos mis toritos ({toritos.length})</h2>
-      <ul className="grid max-h-[38svh] grid-cols-4 gap-2 overflow-y-auto">
-        {toritos.map((torito, index) => (
-          <li key={torito.id}>
-            <button
-              type="button"
-              className="flex w-full cursor-pointer flex-col items-center gap-1 rounded-md border border-border-dark p-1.5 transition-colors hover:bg-brand-tint/10"
-              onClick={() => onSelect(torito, index)}
-            >
-              <ToritoThumb assetsPath={assetsPath} torito={torito} />
-              <span className="w-full truncate text-center text-[12px] text-on-dark">
-                {torito.name}
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <ul className="world-grid">
+      {toritos.map((torito) => (
+        <li key={torito.id}>
+          <button type="button" className="world-tile" onClick={() => onSelect(torito)}>
+            <ToritoThumb assetsPath={assetsPath} torito={torito} />
+            <span className="world-tile-name">{torito.name}</span>
+            <span className="world-tile-meta">
+              {torito.lastVisitOn === today ? 'Visitado hoy' : 'Te espera'}
+            </span>
+          </button>
+        </li>
+      ))}
+      <li>
+        <button type="button" className="world-tile is-empty" onClick={onScan}>
+          <span className="world-tile-name">Sumar otro</span>
+          <span className="world-tile-meta">Escanea su QR</span>
+        </button>
+      </li>
+    </ul>
   );
 }
 

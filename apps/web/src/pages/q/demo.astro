@@ -11,5 +11,11 @@ import { routes } from '../../lib/routes';
   alternates={{ es: '/q/demo' }}
   noindex
 >
-  <ToritoBirth client:load assetsPath="/torito" establoHref={routes.stable()} piece={null} />
+  <ToritoBirth
+    client:load
+    assetsPath="/torito"
+    establoHref={routes.stable()}
+    forestHref={routes.forest()}
+    piece={null}
+  />
 </BaseLayout>

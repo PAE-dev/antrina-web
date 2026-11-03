@@ -21,6 +21,7 @@ export * from './sales/orders.use-cases.js';
 export * from './sales/sales.mappers.js';
 
 export * from './customer-auth/customer-auth.use-cases.js';
+export * from './customer-auth/customer-profile.use-cases.js';
 
 export * from './toritos/toritos.use-cases.js';
 
