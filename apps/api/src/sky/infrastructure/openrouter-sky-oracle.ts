@@ -26,6 +26,13 @@ const TOPIC_LABEL: Record<SkyOracleQuestion['topic'], string> = {
   money: 'dinero',
 };
 
+/** Lo que se usa de la respuesta: la comprobación de tipos de Vercel ve vacío el `Response` global. */
+interface HttpResponse {
+  ok: boolean;
+  status: number;
+  json(): Promise<unknown>;
+}
+
 interface ChatCompletion {
   choices?: { message?: { content?: string | null }; finish_reason?: string | null }[];
   error?: { message?: string; code?: number | string };
@@ -76,7 +83,7 @@ export class OpenRouterSkyOracle implements SkyOracle {
         ],
       }),
       signal: AbortSignal.timeout(TIMEOUT_MS),
-    });
+    })) as unknown as HttpResponse;
     const body = (await response.json().catch(() => ({}))) as ChatCompletion;
     if (!response.ok || body.error) {
       throw new Error(`OpenRouter ${response.status}: ${body.error?.message ?? 'sin detalle'}`);
