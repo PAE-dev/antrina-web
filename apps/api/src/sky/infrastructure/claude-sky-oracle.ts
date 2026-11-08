@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { Anthropic } from '@anthropic-ai/sdk';
 import { Inject, Injectable } from '@nestjs/common';
 import { type SkyOracle, type SkyOracleQuestion } from '@antrina/domain';
 import { APP_ENV, type AppEnv } from '../../config/env.js';
