@@ -1,0 +1,7 @@
+Mundo de los Toritos — recursos de terceros (todos de dominio público, CC0):
+- bull.glb, llama.glb, alpaca.glb: Quaternius (https://quaternius.com), vía Poly Pizza. CC0.
+  El toro se pinta en tiempo real como cerámica de Pucará (terracota y crema).
+- house_a.glb, house_b.glb: modelos "House" (CC0) de Poly Pizza (https://poly.pizza/m/oJJIRwv6Bo y /m/RSwoYSLblu).
+- ceramic_vase_02, jug_01, planter_pot_clay, wicker_basket_01, spinning_wheel_01: Poly Haven (https://polyhaven.com). CC0.
+- sky_1k.hdr, sky_4k.jpg: HDRI "Qwantani Late Afternoon" de Poly Haven. CC0.
+Todos los modelos se optimizaron con gltf-transform (meshopt, texturas WebP).

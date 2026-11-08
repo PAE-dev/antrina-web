@@ -11,9 +11,11 @@ import {
   ValuePillars,
   ZodiacGrid,
 } from '@antrina/ui';
+import { SEASONAL_DOORS } from '../content/world-doors';
 import { getDictionary } from '../i18n/dictionaries';
 import { INTENTIONS, productTag, SIGNS } from '../i18n/taxonomy';
 import StoreLayout from '../layouts/StoreLayout.astro';
+import { WorldExperience } from './world/WorldExperience';
 import { getFeaturedProducts, getSiteImages } from '../lib/catalog';
 import { cardImage, SIZES, toImageSource } from '../lib/images';
 import { alternatesFor, productPath, routes } from '../lib/routes';
@@ -30,6 +32,39 @@ const [{ products }, siteImages] = await Promise.all([
   getSiteImages(locale),
 ]);
 const hero = siteImages.hero;
+
+// Puertas del bosque 3D: una por intención y las de temporada, alternadas alrededor del claro.
+const intentionDoors = INTENTIONS.map(({ category, slug, copy }) => ({
+  id: category,
+  label: copy[locale].label,
+  stones: copy[locale].stones,
+  text: copy[locale].text,
+  href: routes.intention(locale, slug[locale]),
+}));
+// La puerta Cuarzos lleva a "Tu cielo" (app de astrología y cuarzos), no a un mundo 3D.
+const seasonalDoors = SEASONAL_DOORS.map(({ id, slug, copy }) => ({
+  id,
+  label: copy[locale].label,
+  stones: copy[locale].caption,
+  text: copy[locale].text,
+  href: id === 'cuarzos' ? routes.sky(locale) : routes.category(locale, slug[locale]),
+  portal: id === 'cuarzos',
+}));
+const DOOR_ORDER = [
+  'amor',
+  'navidad',
+  'cuarzos',
+  'abundancia',
+  'felicidad',
+  'halloween',
+  'toritos',
+  'suerte',
+  'proteccion',
+  'mixto',
+];
+const worldDoors = [...intentionDoors, ...seasonalDoors].sort(
+  (a, b) => DOOR_ORDER.indexOf(a.id) - DOOR_ORDER.indexOf(b.id),
+);
 ---
 
 <StoreLayout
@@ -42,6 +77,13 @@ const hero = siteImages.hero;
   }
   jsonLd={[organization(), website(locale)]}
 >
+  <WorldExperience
+    client:only="react"
+    labels={t.world}
+    doors={worldDoors}
+    locale={locale}
+    accountHref={routes.account(locale)}
+  />
   <HeroSection
     eyebrow={t.hero.eyebrow}
     title={t.hero.title}

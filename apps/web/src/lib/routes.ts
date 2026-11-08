@@ -21,6 +21,7 @@ const SEGMENTS = {
     search: 'buscar',
     account: 'cuenta',
     cart: 'carrito',
+    sky: 'tu-cielo',
   },
   en: {
     catalog: 'trees',
@@ -40,6 +41,7 @@ const SEGMENTS = {
     search: 'search',
     account: 'account',
     cart: 'cart',
+    sky: 'your-sky',
   },
 } as const satisfies Record<LocaleCode, Record<string, string>>;
 
@@ -70,6 +72,7 @@ export const routes = {
   search: page('search'),
   account: page('account'),
   cart: page('cart'),
+  sky: page('sky'),
 };
 
 /** Categoría de los árboles: conserva sus URLs `/arbol/` y su catálogo `/arboles`. */

@@ -92,6 +92,7 @@ export const GET: APIRoute = async () => {
     })),
     page(routes.home),
     page(routes.catalog),
+    page(routes.sky),
     page((locale) => routes.intention(locale)),
     ...INTENTIONS.map((entry) => page((locale) => routes.intention(locale, entry.slug[locale]))),
     page((locale) => routes.sign(locale)),

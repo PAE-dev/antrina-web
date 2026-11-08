@@ -9,6 +9,19 @@ export interface S3Env {
   publicUrl: string;
 }
 
+/** Cuentas de cliente: acceso con Google y cookie de sesión de todo el sitio. */
+export interface AccountEnv {
+  /** Vacíos = el botón "Continuar con Google" se oculta. */
+  googleClientId: string;
+  googleClientSecret: string;
+  /** URL pública de esta API (para el redirect de Google): https://api.antrina.app */
+  apiPublicUrl: string;
+  /** Tienda (adonde se vuelve tras entrar): https://antrina.app */
+  siteUrl: string;
+  /** Dominio de la cookie para compartirla entre tienda y API (".antrina.app"); vacío = solo la API. */
+  cookieDomain: string | null;
+}
+
 export interface AppEnv {
   port: number;
   databaseUrl: string;
@@ -19,6 +32,7 @@ export interface AppEnv {
   /** 32 bytes para AES-256-GCM (semillas TOTP en reposo). */
   adminEncryptionKey: Buffer;
   s3: S3Env;
+  account: AccountEnv;
 }
 
 export const APP_ENV = Symbol('APP_ENV');
@@ -67,6 +81,21 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
     isProduction,
     adminOrigin: withDevDefault(source, 'ADMIN_ORIGIN', 'http://localhost:5174', isProduction),
     adminEncryptionKey: parseEncryptionKey(required(source, 'ADMIN_ENCRYPTION_KEY')),
+    account: {
+      googleClientId: source.GOOGLE_CLIENT_ID?.trim() ?? '',
+      googleClientSecret: source.GOOGLE_CLIENT_SECRET?.trim() ?? '',
+      apiPublicUrl: withDevDefault(
+        source,
+        'API_PUBLIC_URL',
+        `http://localhost:${source.PORT ?? '3001'}`,
+        isProduction,
+      ).replace(/\/+$/, ''),
+      siteUrl: withDevDefault(source, 'SITE_URL', 'http://localhost:4321', isProduction).replace(
+        /\/+$/,
+        '',
+      ),
+      cookieDomain: source.CUSTOMER_COOKIE_DOMAIN?.trim() || null,
+    },
     s3: {
       endpoint: s3Endpoint,
       region: withDevDefault(source, 'S3_REGION', 'us-east-1', isProduction),

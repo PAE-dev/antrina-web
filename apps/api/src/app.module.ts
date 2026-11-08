@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AccountModule } from './account/account.module.js';
 import { AdminAuthModule } from './admin-auth/admin-auth.module.js';
 import { AdminCatalogModule } from './admin-catalog/admin-catalog.module.js';
 import { AdminSalesModule } from './admin-sales/admin-sales.module.js';
@@ -25,6 +26,7 @@ import { SiteModule } from './site/site.module.js';
     AdminUsersModule,
     SiteModule,
     AdminSiteModule,
+    AccountModule,
   ],
   controllers: [HealthController],
 })

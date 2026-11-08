@@ -9,7 +9,12 @@ import { AppModule } from './app.module.js';
 import { type AppEnv, loadEnv } from './config/env.js';
 import { DomainExceptionFilter } from './shared/presentation/domain-exception.filter.js';
 
-/** Solo el panel recibe CORS con credenciales; la tienda consume la API pública sin cookies. */
+/**
+ * CORS con credenciales solo para el panel (rutas /admin) y para la tienda en las rutas de su cuenta
+ * (/me, /auth). El catálogo público no lleva cookies.
+ */
+const ACCOUNT_PATHS = /^\/(me|auth)(\/|$)/;
+
 function corsFor(env: AppEnv) {
   return (
     request: Request,
@@ -20,6 +25,8 @@ function corsFor(env: AppEnv) {
   ) => {
     const origin = request.get('origin');
     if (origin && origin === env.adminOrigin && request.path.startsWith('/admin')) {
+      callback(null, { origin, credentials: true });
+    } else if (origin && env.corsOrigins.includes(origin) && ACCOUNT_PATHS.test(request.path)) {
       callback(null, { origin, credentials: true });
     } else if (origin && env.corsOrigins.includes(origin) && !request.path.startsWith('/admin')) {
       callback(null, { origin });
@@ -39,6 +46,10 @@ async function bootstrap(): Promise<void> {
   app.use('/admin', (_request: Request, response: Response, next: NextFunction) => {
     response.setHeader('Cache-Control', 'no-store');
     response.setHeader('X-Robots-Tag', 'noindex, nofollow');
+    next();
+  });
+  app.use(['/me', '/auth'], (_request: Request, response: Response, next: NextFunction) => {
+    response.setHeader('Cache-Control', 'no-store');
     next();
   });
   app.enableCors(corsFor(env));

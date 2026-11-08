@@ -178,14 +178,15 @@ model StockMovement {
 
 /// Cliente de la tienda. El teléfono (E.164) es la clave para unirlo con WhatsApp.
 model Customer {
-  id        String   @id @default(cuid())
+  id        String           @id @default(cuid())
   name      String
-  phone     String?  @unique
+  phone     String?          @unique
   email     String?
   note      String?
   orders    Order[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  account   CustomerAccount?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
 
   @@index([name])
 }
@@ -372,4 +373,83 @@ model Promotion {
   isActive     Boolean      @default(true)
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
+}
+
+/// Cuenta de cliente de la tienda (acceso con Google). Una sola sesión sirve para todo el sitio.
+model CustomerAccount {
+  id          String            @id @default(cuid())
+  email       String            @unique
+  name        String
+  avatarUrl   String?
+  googleSub   String            @unique
+  /// Cliente de ventas con el mismo correo: sus pedidos son "mis compras".
+  customerId  String?           @unique
+  customer    Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  sessions    CustomerSession[]
+  skyProfile  SkyProfile?
+  questions   SkyQuestion[]
+  bonds       SkyBond[]
+  lastLoginAt DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+/// Sesión de cliente. Solo se guarda el hash SHA-256 del token de la cookie.
+model CustomerSession {
+  id         String          @id @default(cuid())
+  tokenHash  String          @unique
+  accountId  String
+  account    CustomerAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  lastSeenAt DateTime        @default(now())
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime        @default(now())
+
+  @@index([accountId])
+  @@index([expiresAt])
+}
+
+/// Datos de nacimiento de "Tu cielo".
+model SkyProfile {
+  accountId     String          @id
+  account       CustomerAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  /// YYYY-MM-DD
+  birthDate     String
+  /// HH:MM (null si no sabe la hora)
+  birthTime     String?
+  placeName     String?
+  placeRegion   String?
+  placeCountry  String?
+  placeLat      Float?
+  placeLon      Float?
+  placeTimezone String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+/// Preguntas hechas en "Pregunta al cielo" (se guardan las más recientes).
+model SkyQuestion {
+  id        String          @id @default(cuid())
+  accountId String
+  account   CustomerAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  question  String
+  topic     String
+  /// Día del cielo consultado (YYYY-MM-DD).
+  day       String
+  createdAt DateTime        @default(now())
+
+  @@index([accountId, createdAt])
+}
+
+/// Personas guardadas en Vínculos (compatibilidad).
+model SkyBond {
+  id        String          @id @default(cuid())
+  accountId String
+  account   CustomerAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  name      String
+  birthDate String
+  createdAt DateTime        @default(now())
+
+  @@index([accountId])
 }

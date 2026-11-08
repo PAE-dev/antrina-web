@@ -1,0 +1,94 @@
+---
+import { type LocaleCode } from '@antrina/contracts';
+import { STONES } from '../../content/stones';
+import { INTENTIONS, SIGNS } from '../../i18n/taxonomy';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { listProducts } from '../../lib/catalog';
+import { alternatesFor, productPath, routes } from '../../lib/routes';
+import { absoluteUrl, whatsappUrl } from '../../lib/site';
+import { formatMoney } from '@antrina/ui';
+import { SKY_LABELS } from '../../sky/content';
+import { SkyApp } from '../sky/SkyApp';
+
+interface Props {
+  locale: LocaleCode;
+}
+
+/**
+ * "Tu cielo": app de astrología y cuarzos (la puerta Cuarzos del bosque lleva aquí). La app vive
+ * en una isla de React; la página aporta los nombres, enlaces y textos de la tienda.
+ */
+const { locale } = Astro.props;
+const t = SKY_LABELS[locale];
+const signs = SIGNS.map((s) => ({
+  code: s.code,
+  label: s.copy[locale].label,
+  dates: s.copy[locale].dates,
+  stone: s.stone,
+  href: routes.sign(locale, s.slug[locale]),
+}));
+const stones = STONES.map((s) => ({
+  id: s.id,
+  name: s.copy[locale].name,
+  summary: s.copy[locale].summary,
+  href: routes.meanings(locale, s.slug[locale]),
+}));
+const intentionHref = Object.fromEntries(
+  INTENTIONS.map((i) => [i.category, routes.intention(locale, i.slug[locale])]),
+);
+// Tienda dentro de la app: así quien compra no sale de "Tu cielo".
+const catalog = await listProducts({ locale, limit: 60 });
+const products = catalog.map((p) => {
+  const href = productPath(locale, p.slug, p.categorySlug);
+  const message =
+    locale === 'es'
+      ? `Hola, me interesa "${p.name}" que vi en Tu cielo: ${absoluteUrl(href)}`
+      : `Hi, I'm interested in "${p.name}" from Your sky: ${absoluteUrl(href)}`;
+  return {
+    id: p.id,
+    name: p.name,
+    description: p.description,
+    image: p.imageUrl,
+    imageAlt: p.imageAlt ?? p.name,
+    price: formatMoney(p.price, locale),
+    compareAt: p.compareAtPrice ? formatMoney(p.compareAtPrice, locale) : null,
+    signs: p.signs,
+    intention: p.intention,
+    category: p.category.name,
+    href,
+    whatsapp: p.isPurchasable ? whatsappUrl(message) : null,
+  };
+});
+const intentionLabel = Object.fromEntries(
+  INTENTIONS.map((i) => [i.category, i.copy[locale].label]),
+);
+const description =
+  locale === 'es'
+    ? 'Calcula tu Sol y tu Luna, recibe una guía diaria para el amor, el dinero, el trabajo y la suerte, y descubre los cuarzos que acompañan tu signo.'
+    : 'Find your Sun and Moon signs, get a daily guide for love, money, work and luck, and discover the quartz stones that accompany your sign.';
+---
+
+<BaseLayout
+  locale={locale}
+  title={
+    locale === 'es' ? 'Tu cielo: tu signo y tus cuarzos' : 'Your sky: your sign and your stones'
+  }
+  description={description}
+  alternates={alternatesFor((code) => routes.sky(code))}
+>
+  <SkyApp
+    client:load
+    locale={locale}
+    signs={signs}
+    stones={stones}
+    products={products}
+    intentionHref={intentionHref}
+    intentionLabel={intentionLabel}
+    createTreeHref={routes.createTree(locale)}
+    homeHref={routes.home(locale)}
+    accountHref={routes.account(locale)}
+  />
+  <noscript>
+    <p style="padding:24px">{t.intro}</p>
+  </noscript>
+</BaseLayout>

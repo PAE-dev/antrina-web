@@ -1,0 +1,2 @@
+island_tree.glb — "Island Tree 02" de Poly Haven (https://polyhaven.com/a/island_tree_02).
+Licencia CC0 (dominio público). Optimizado con gltf-transform (simplificado, meshopt, WebP).

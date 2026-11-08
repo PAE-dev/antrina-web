@@ -1,0 +1,33 @@
+---
+import { type LocaleCode } from '@antrina/contracts';
+import StoreLayout from '../../layouts/StoreLayout.astro';
+import { alternatesFor, routes } from '../../lib/routes';
+import { AccountApp } from '../account/AccountApp';
+
+interface Props {
+  locale: LocaleCode;
+}
+
+/** "Mi cuenta": entrar con Google, Tu cielo guardado y compras. Sin valor para Google: `noindex`. */
+const { locale } = Astro.props;
+const title = locale === 'es' ? 'Mi cuenta' : 'My account';
+const description =
+  locale === 'es'
+    ? 'Entra con Google para guardar tu cielo, tus vínculos y tus compras en Antrina.'
+    : 'Sign in with Google to save your sky, your bonds and your purchases at Antrina.';
+---
+
+<StoreLayout
+  locale={locale}
+  title={title}
+  description={description}
+  alternates={alternatesFor((code) => routes.account(code))}
+  noindex
+>
+  <AccountApp
+    client:load
+    locale={locale}
+    skyHref={routes.sky(locale)}
+    catalogHref={routes.catalog(locale)}
+  />
+</StoreLayout>

@@ -1,5 +1,6 @@
 import { type LocaleCode, type ProductBadgeCode } from '@antrina/contracts';
 import { type HeaderLabels, type Pillar, type Testimonial } from '@antrina/ui';
+import { type WorldLabels } from '../components/world/WorldExperience';
 
 /**
  * Copys de la tienda. En títulos, `*palabras*` se muestra en color marca: úsalo en 1–2 palabras
@@ -48,6 +49,8 @@ export interface Dictionary {
     submit: string;
     disclaimer: string;
   };
+  /** Mundo 3D de la portada (Bosque de las Intenciones). */
+  world: WorldLabels;
   footer: {
     slogan: string;
     tagline: string;
@@ -192,6 +195,43 @@ const es: Dictionary = {
     submit: 'Suscribirme',
     disclaimer: 'Puedes darte de baja cuando quieras.',
   },
+  world: {
+    eyebrow: 'Bienvenido al taller',
+    title: 'El Bosque de *las Intenciones*',
+    text: 'Camina entre árboles de cuarzo y elige una puerta. Cada una se abre a un mundo distinto, como cada intención que guardamos en nuestras piezas.',
+    enter: 'Entrar al bosque',
+    skip: 'Ir directo a la tienda',
+    loading: 'Preparando el bosque',
+    hub: 'Bosque de las Intenciones',
+    controlsDesktop:
+      'W A S D para caminar · Ratón para mirar · Shift para correr · Esc para pausar',
+    controlsTouch: 'Flechas para caminar · Botones de la derecha para girar · Arrastra para mirar',
+    enterDoor: 'Entrar',
+    doorPrefix: 'Puerta de',
+    walkIn: 'Camina hacia la puerta o pulsa E',
+    backToForest: 'Volver al bosque',
+    backHint: 'Puerta del bosque',
+    viewTrees: 'Ver la colección',
+    toritosSign: {
+      title: 'Los toritos de Pucará',
+      body: 'En los Andes del Perú, cuando una familia termina su casa, celebra el techamiento: sobre el caballete del techo se coloca una pareja de toritos de cerámica. Se asocian con la prosperidad, la protección del hogar y la armonía de quienes viven dentro. Nacieron en Pucará (Puno) y hoy acompañan techos de todo el sur andino.',
+    },
+    resume: 'Seguir explorando',
+    paused: 'En pausa',
+    exit: 'Ir a la tienda',
+    reopen: 'Entrar al bosque',
+    soundOn: 'Activar sonido',
+    soundOff: 'Silenciar',
+    fullscreen: 'Pantalla completa',
+    touch: {
+      forward: 'Avanzar',
+      back: 'Retroceder',
+      left: 'Ir a la izquierda',
+      right: 'Ir a la derecha',
+      turnLeft: 'Girar a la izquierda',
+      turnRight: 'Girar a la derecha',
+    },
+  },
   footer: {
     slogan: 'Arraigado en tu intención',
     tagline: 'Árboles de cuarzo hechos a mano en nuestro taller familiar de Lima, Perú.',
@@ -335,6 +375,42 @@ const en: Dictionary = {
     emailPlaceholder: 'you@email.com',
     submit: 'Subscribe',
     disclaimer: 'You can unsubscribe at any time.',
+  },
+  world: {
+    eyebrow: 'Welcome to the workshop',
+    title: 'The Forest of *Intentions*',
+    text: 'Walk among quartz trees and choose a door. Each one opens onto a different world, like every intention we place in our pieces.',
+    enter: 'Enter the forest',
+    skip: 'Go straight to the shop',
+    loading: 'Growing the forest',
+    hub: 'Forest of Intentions',
+    controlsDesktop: 'W A S D to walk · Mouse to look · Shift to run · Esc to pause',
+    controlsTouch: 'Arrows to walk · Right buttons to turn · Drag to look',
+    enterDoor: 'Enter',
+    doorPrefix: 'Door of',
+    walkIn: 'Walk into the door or press E',
+    backToForest: 'Back to the forest',
+    backHint: 'Forest door',
+    viewTrees: 'See the collection',
+    toritosSign: {
+      title: 'The bulls of Pucará',
+      body: 'In the Peruvian Andes, when a family finishes building its home, it celebrates the roofing: a pair of ceramic bulls is placed on the ridge of the roof. They are associated with prosperity, the protection of the home and harmony for those who live inside. They come from Pucará (Puno) and today crown roofs across the southern Andes.',
+    },
+    resume: 'Keep exploring',
+    paused: 'Paused',
+    exit: 'Go to the shop',
+    reopen: 'Enter the forest',
+    soundOn: 'Turn sound on',
+    soundOff: 'Mute',
+    fullscreen: 'Full screen',
+    touch: {
+      forward: 'Move forward',
+      back: 'Move back',
+      left: 'Move left',
+      right: 'Move right',
+      turnLeft: 'Turn left',
+      turnRight: 'Turn right',
+    },
   },
   footer: {
     slogan: 'Rooted in intention',

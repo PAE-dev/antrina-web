@@ -89,12 +89,12 @@ describe('autenticación del panel', () => {
       ...ctx,
     });
     expect(result.status).toBe('AUTHENTICATED');
-    await expect(currentAdmin.execute({ sessionToken: result.sessionToken })).resolves.toMatchObject(
-      {
-        email: EMAIL,
-        role: 'OWNER',
-      },
-    );
+    await expect(
+      currentAdmin.execute({ sessionToken: result.sessionToken }),
+    ).resolves.toMatchObject({
+      email: EMAIL,
+      role: 'OWNER',
+    });
     expect(env.audit.entries.map((entry) => entry.action)).toEqual(['auth.login']);
   });
 
@@ -199,10 +199,7 @@ describe('autenticación del panel', () => {
   it('la sesión pendiente caduca a los 10 minutos', async () => {
     const pendingToken = await createPendingSession();
     env.clock.advance(ADMIN_SECURITY.pendingSessionTtlMs + 1);
-    await expectCode(
-      startEnrollment.execute({ sessionToken: pendingToken }),
-      'auth.unauthorized',
-    );
+    await expectCode(startEnrollment.execute({ sessionToken: pendingToken }), 'auth.unauthorized');
   });
 
   it('la sesión completa expira por inactividad y se puede cerrar', async () => {

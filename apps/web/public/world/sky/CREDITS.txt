@@ -1,0 +1,6 @@
+Tu cielo — recursos visuales
+- stones/*.webp: fotos de minerales proporcionadas por Antrina (packs minerales_realistas_png y minerales_app_pack_2),
+  recortadas y optimizadas. agata-fucsia.webp es el ágata teñida digitalmente.
+- planets/*.webp: lámina de planetas proporcionada por Antrina, recortada y optimizada.
+- moon_map_2k.jpg: mapa de color de la Luna, NASA Scientific Visualization Studio / LRO
+  (https://svs.gsfc.nasa.gov/4720). Dominio público.

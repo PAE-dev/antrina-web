@@ -1,0 +1,10 @@
+---
+import SkyView from '../components/views/SkyView.astro';
+import { CATALOG_CACHE_CONTROL } from '../lib/catalog';
+
+// La tienda interna muestra el catálogo vivo (cache de CDN de 1 min, como el resto de la tienda).
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', CATALOG_CACHE_CONTROL);
+---
+
+<SkyView locale="es" />
