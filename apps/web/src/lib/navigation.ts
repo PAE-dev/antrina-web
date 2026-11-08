@@ -87,6 +87,7 @@ export function buildFooterColumns(
         { label: t.nav.sign, href: routes.sign(locale) },
         { label: t.nav.size, href: routes.size(locale) },
         { label: t.nav.createTree, href: routes.createTree(locale) },
+        { label: t.nav.worlds, href: routes.forest() },
       ],
     },
     {

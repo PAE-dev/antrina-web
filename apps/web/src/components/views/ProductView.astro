@@ -1,10 +1,11 @@
 ---
 import { type LocaleCode, type ProductDetailDto, type ProductSummaryDto } from '@antrina/contracts';
-import { formatMoney, Photo, ButtonLink, ProductList } from '@antrina/ui';
+import { ArrowLink, formatMoney, Photo, ButtonLink, PortalIcon, ProductList } from '@antrina/ui';
 import { stoneById } from '../../content/stones';
 import { getDictionary } from '../../i18n/dictionaries';
 import { getPageCopy } from '../../i18n/pages';
 import { intentionByCategory, productTag, signByCode, sizeByCode } from '../../i18n/taxonomy';
+import { getCategories } from '../../lib/catalog';
 import StoreLayout from '../../layouts/StoreLayout.astro';
 import { cardImage, SIZES, toImageSource } from '../../lib/images';
 import { alternatesFor, productPath, routes, TREES_CATEGORY_SLUG } from '../../lib/routes';
@@ -27,6 +28,11 @@ const tag = productTag(locale, product);
 const size = product.size ? sizeByCode(product.size) : undefined;
 const signs = product.signs.flatMap((code) => signByCode(code) ?? []);
 const stones = intention?.stones.flatMap((id) => stoneById(id) ?? []) ?? [];
+// Un torito trae su QR: la ficha cuenta que tiene un mundo, igual que la app lo decide por categoría.
+const categories = (await getCategories(locale)) ?? [];
+const ownCategory = categories.find((category) => category.slug === product.categorySlug);
+const parentSlug = categories.find((category) => category.id === ownCategory?.parentId)?.slug;
+const opensWorld = [product.categorySlug, parentSlug].some((slug) => slug?.startsWith('torito'));
 
 /** Sin traducción propia en un idioma, esa versión no se indexa y apunta a la española. */
 const alternates = alternatesFor((code) => {
@@ -155,6 +161,18 @@ const firstImage = product.images[0];
               </ButtonLink>
               <p class="text-[13.5px] leading-relaxed text-text-muted">{copy.product.orderNote}</p>
             </div>
+
+            {opensWorld && (
+              <div class="flex gap-4 rounded-md bg-bg-alt p-5">
+                <span class="mt-0.5 shrink-0 text-clay" aria-hidden="true">
+                  <PortalIcon />
+                </span>
+                <div class="flex flex-col items-start gap-3">
+                  <p class="text-[15px] leading-relaxed text-text">{copy.product.worldsNote}</p>
+                  <ArrowLink href="/q/demo">{copy.product.worldsCta}</ArrowLink>
+                </div>
+              </div>
+            )}
 
             <div class="flex flex-col gap-4 border-t border-border pt-8">
               {paragraphs.map((paragraph) => (

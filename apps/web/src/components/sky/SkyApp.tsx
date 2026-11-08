@@ -1,5 +1,5 @@
 import {
-  type AccountDto,
+  type CustomerMeDto,
   type LocaleCode,
   type SkyBondDto,
   type SkyProfileDto,
@@ -70,7 +70,7 @@ import {
   type Nature,
 } from '../../sky/guide';
 import { SKY_UI } from '../../sky/labels';
-import { accountApi, googleLoginUrl, logout, useAccount } from '../../lib/account';
+import { googleLoginUrl, logout, skyApi, useAccount } from '../../lib/customer-client';
 import { AccountChip, GoogleMark } from '../account/AccountChip';
 import { compass, moonView } from '../../sky/moonview';
 import { AREA_STONES, SIGN_STONE, signStone, STONE_LIBRARY } from '../../sky/stones';
@@ -134,7 +134,7 @@ type Tab = 'today' | 'chart' | 'ask' | 'bonds' | 'shop';
 
 /** Cuenta de la persona y lo que guarda en ella (sincronizado con la base de datos). */
 interface SkyCloud {
-  account: AccountDto | null;
+  account: CustomerMeDto | null;
   googleEnabled: boolean;
   bonds: SkyBondDto[];
   saveBond: (name: string, birthDate: string) => Promise<void>;
@@ -370,8 +370,8 @@ export function SkyApp(props: SkyProps) {
       return;
     }
     let cancelled = false;
-    void accountApi
-      .sky()
+    void skyApi
+      .get()
       .then(async (data) => {
         if (cancelled) return;
         setBonds(data.bonds);
@@ -382,7 +382,7 @@ export function SkyApp(props: SkyProps) {
           setProfile(remote);
           setStep((current) => (current === 'welcome' || current === 'intro' ? 'app' : current));
         } else if (local && /^\d{4}-\d{2}-\d{2}$/.test(local.date)) {
-          await accountApi.saveSky(toProfileDto(local)).catch(() => undefined);
+          await skyApi.saveProfile(toProfileDto(local)).catch(() => undefined);
         }
         // Preguntas: las de la cuenta primero; las locales que falten se suben.
         const localAsks = readJson<AskEntry[]>(ASK_KEY) ?? [];
@@ -393,7 +393,7 @@ export function SkyApp(props: SkyProps) {
         }));
         const missing = localAsks.filter((l) => !remoteAsks.some((r) => r.question === l.question));
         for (const entry of missing.slice(0, 8).reverse()) {
-          void accountApi.addQuestion(entry).catch(() => undefined);
+          void skyApi.addQuestion(entry).catch(() => undefined);
         }
         writeJson(ASK_KEY, [...missing, ...remoteAsks].slice(0, 8));
       })
@@ -409,15 +409,15 @@ export function SkyApp(props: SkyProps) {
       googleEnabled,
       bonds,
       saveBond: async (name, birthDate) => {
-        const bond = await accountApi.addBond({ name, birthDate });
+        const bond = await skyApi.addBond({ name, birthDate });
         setBonds((list) => [bond, ...list]);
       },
       deleteBond: (id) => {
         setBonds((list) => list.filter((b) => b.id !== id));
-        void accountApi.deleteBond(id).catch(() => undefined);
+        void skyApi.deleteBond(id).catch(() => undefined);
       },
       recordQuestion: (entry) => {
-        if (account) void accountApi.addQuestion(entry).catch(() => undefined);
+        if (account) void skyApi.addQuestion(entry).catch(() => undefined);
       },
     }),
     [account, googleEnabled, bonds],
@@ -449,7 +449,7 @@ export function SkyApp(props: SkyProps) {
     };
     writeJson(PROFILE_KEY, next);
     setProfile(next);
-    if (account) void accountApi.saveSky(toProfileDto(next)).catch(() => undefined);
+    if (account) void skyApi.saveProfile(toProfileDto(next)).catch(() => undefined);
     if (editing) {
       setEditing(false);
       setStep('app');
@@ -464,7 +464,7 @@ export function SkyApp(props: SkyProps) {
   };
 
   const forget = () => {
-    if (account) void accountApi.forgetSky().catch(() => undefined);
+    if (account) void skyApi.forget().catch(() => undefined);
     setBonds([]);
     writeJson(PROFILE_KEY, null);
     writeJson(ASK_KEY, null);

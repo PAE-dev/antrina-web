@@ -20,6 +20,11 @@ export * from './sales/dashboard.use-case.js';
 export * from './sales/orders.use-cases.js';
 export * from './sales/sales.mappers.js';
 
+export * from './customer-auth/customer-auth.use-cases.js';
+export * from './customer-auth/customer-profile.use-cases.js';
+
+export * from './toritos/toritos.use-cases.js';
+
 export * from './admin/admin-auth.deps.js';
 export * from './admin/admin-users.use-cases.js';
 export * from './admin/create-admin-user.use-case.js';
@@ -28,5 +33,4 @@ export * from './admin/session.use-cases.js';
 export * from './admin/totp-enrollment.use-cases.js';
 export * from './admin/verify-totp.use-case.js';
 
-export * from './account/account.use-cases.js';
-export * from './account/sky.use-cases.js';
+export * from './sky/sky.use-cases.js';

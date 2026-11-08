@@ -1,6 +1,16 @@
+import { CUSTOMER_SIGNED_IN_COOKIE } from '@antrina/contracts';
 import { Accordion, Badge, Button, Drawer, Modal, Popover, SearchField } from '@heroui/react';
 import { useEffect, useState } from 'react';
-import { ArrowRightIcon, BagIcon, ChevronDownIcon, MenuIcon, SearchIcon, UserIcon } from './icons';
+import { ButtonLink } from './ButtonLink';
+import {
+  ArrowRightIcon,
+  BagIcon,
+  ChevronDownIcon,
+  MenuIcon,
+  SearchIcon,
+  PortalIcon,
+  UserIcon,
+} from './icons';
 import { Logo } from './Logo';
 import { type HeaderLabels, type LocaleOption, type NavCategory } from './types';
 
@@ -8,6 +18,8 @@ interface SiteHeaderProps {
   homeHref: string;
   searchAction: string;
   accountHref: string;
+  /** El bosque de los mundos: siempre a mano, para que se descubra desde la tienda. */
+  worldsHref: string;
   cartHref: string;
   cartCount: number;
   navigation: NavCategory[];
@@ -15,13 +27,14 @@ interface SiteHeaderProps {
   labels: HeaderLabels;
 }
 
-/** A partir de este índice los enlaces simples solo caben en escritorio ancho. */
+/** A partir de este índice los enlaces simples solo caben en escritorio muy ancho. */
 const WIDE_ONLY_FROM = 5;
 
 export function SiteHeader({
   homeHref,
   searchAction,
   accountHref,
+  worldsHref,
   cartHref,
   cartCount,
   navigation,
@@ -30,6 +43,7 @@ export function SiteHeader({
 }: SiteHeaderProps) {
   const [isSearchOpen, setSearchOpen] = useState(false);
   const isScrolled = useIsScrolled(8);
+  const isSignedIn = useIsSignedIn();
 
   return (
     <header
@@ -44,6 +58,9 @@ export function SiteHeader({
             locales={locales}
             labels={labels}
             homeHref={homeHref}
+            accountHref={accountHref}
+            worldsHref={worldsHref}
+            isSignedIn={isSignedIn}
           />
           <Logo href={homeHref} label={labels.home} />
         </div>
@@ -54,7 +71,9 @@ export function SiteHeader({
               <li
                 key={item.href}
                 className={
-                  index >= WIDE_ONLY_FROM && item.items.length === 0 ? 'hidden xl:block' : ''
+                  index >= WIDE_ONLY_FROM && item.items.length === 0
+                    ? 'hidden min-[1800px]:block'
+                    : ''
                 }
               >
                 <NavEntry item={item} viewAllLabel={labels.viewAll} />
@@ -73,6 +92,15 @@ export function SiteHeader({
           >
             <SearchIcon />
           </Button>
+          {/* Los mundos van aquí y no en el menú: siempre visibles, sin quitarle sitio a las categorías. */}
+          <a
+            href={worldsHref}
+            title={labels.worldsText}
+            className="inline-flex size-10 items-center justify-center gap-2 rounded-full text-clay-strong transition-colors hover:bg-bg-alt 2xl:mr-1 2xl:w-auto 2xl:border 2xl:border-border-strong 2xl:px-4"
+          >
+            <PortalIcon />
+            <span className="type-menu sr-only text-text 2xl:not-sr-only">{labels.worlds}</span>
+          </a>
           <a
             href={accountHref}
             aria-label={labels.account}
@@ -118,6 +146,17 @@ function useIsScrolled(threshold: number): boolean {
   }, [threshold]);
 
   return isScrolled;
+}
+
+/** Las páginas llegan cacheadas sin saber quién las ve: se decide ya en el navegador. */
+function useIsSignedIn(): boolean {
+  const [isSignedIn, setSignedIn] = useState(false);
+
+  useEffect(() => {
+    setSignedIn(document.cookie.split('; ').includes(`${CUSTOMER_SIGNED_IN_COOKIE}=1`));
+  }, []);
+
+  return isSignedIn;
 }
 
 const navItemClass =
@@ -218,11 +257,17 @@ function MobileMenu({
   locales,
   labels,
   homeHref,
+  accountHref,
+  worldsHref,
+  isSignedIn,
 }: {
   navigation: NavCategory[];
   locales: LocaleOption[];
   labels: HeaderLabels;
   homeHref: string;
+  accountHref: string;
+  worldsHref: string;
+  isSignedIn: boolean;
 }) {
   const groups = navigation.filter((item) => item.items.length > 0);
   const links = navigation.filter((item) => item.items.length === 0);
@@ -246,6 +291,19 @@ function MobileMenu({
               <Logo href={homeHref} label={labels.home} />
             </Drawer.Header>
             <Drawer.Body className="flex flex-col gap-8">
+              <a
+                href={worldsHref}
+                className="surface-dark flex items-center gap-4 rounded-md px-4 py-4 transition-opacity hover:opacity-90"
+              >
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-full border border-border-dark text-on-dark">
+                  <PortalIcon />
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="text-[17px] font-medium text-on-dark">{labels.worlds}</span>
+                  <span className="type-meta text-on-dark-muted">{labels.worldsText}</span>
+                </span>
+                <ArrowRightIcon className="shrink-0 text-on-dark" />
+              </a>
               <Accordion className="border-y border-border">
                 {groups.map((group) => (
                   <Accordion.Item key={group.href} id={group.href}>
@@ -297,9 +355,33 @@ function MobileMenu({
                   </li>
                 ))}
               </ul>
+            </Drawer.Body>
+            <Drawer.Footer className="flex-col items-stretch gap-4 border-t border-border pt-5">
+              {isSignedIn ? (
+                <ButtonLink href={accountHref} variant="primary" className="w-full">
+                  <UserIcon />
+                  {labels.account}
+                </ButtonLink>
+              ) : (
+                <>
+                  <ButtonLink href={accountHref} variant="primary" className="w-full">
+                    <UserIcon />
+                    {labels.signIn}
+                  </ButtonLink>
+                  <p className="type-meta text-center">
+                    {labels.signUpPrompt}{' '}
+                    <a
+                      href={accountHref}
+                      className="font-medium text-clay-strong underline underline-offset-4"
+                    >
+                      {labels.signUp}
+                    </a>
+                  </p>
+                </>
+              )}
               <nav
                 aria-label={labels.language}
-                className="mt-auto flex gap-2 font-mono text-[13px]"
+                className="flex justify-center gap-2 font-mono text-[13px]"
               >
                 {locales.map((locale) => (
                   <a
@@ -315,7 +397,7 @@ function MobileMenu({
                   </a>
                 ))}
               </nav>
-            </Drawer.Body>
+            </Drawer.Footer>
           </Drawer.Dialog>
         </Drawer.Content>
       </Drawer.Backdrop>

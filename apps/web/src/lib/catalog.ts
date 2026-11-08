@@ -50,7 +50,6 @@ export async function getFeaturedProducts(
   try {
     const query: ListProductsQuery = { locale, featured: true, limit };
     const body = await getJson<ListProductsResponse>(CATALOG_ROUTES.products, { ...query });
-    if (body.data.length === 0) throw new Error('catálogo vacío');
     return { products: body.data, source: 'api' };
   } catch (error) {
     warn('API no disponible, usando fallback', error);

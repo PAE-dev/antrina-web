@@ -20,6 +20,7 @@ import { OrdersPage } from './pages/OrdersPage';
 import { PieceLabelsPage } from './pages/PieceLabelsPage';
 import { ProductDrawer } from './pages/ProductDrawer';
 import { ProductsPage } from './pages/ProductsPage';
+import { QrCodesPage } from './pages/QrCodesPage';
 import { SetupMfaPage } from './pages/SetupMfaPage';
 import { SiteImagesPage } from './pages/SiteImagesPage';
 import { UserDrawer } from './pages/UserDrawer';
@@ -65,6 +66,7 @@ const router = createBrowserRouter([
       },
       { path: '/inventario', element: <InventoryPage /> },
       { path: '/categorias', element: <CategoriesPage /> },
+      { path: '/codigos-qr', element: <QrCodesPage /> },
       {
         path: '/clientes',
         element: <CustomersPage />,

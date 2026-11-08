@@ -31,6 +31,14 @@ export * from './admin/ports/admin-user.repository.js';
 export * from './admin/ports/audit-log.js';
 export * from './admin/ports/security.js';
 
+export * from './customer-auth/customer-account.js';
+export * from './customer-auth/ports/customer-account.repository.js';
+export * from './customer-auth/ports/customer-session.store.js';
+export * from './customer-auth/ports/google-identity.provider.js';
+
+export * from './toritos/torito.js';
+export * from './toritos/ports/torito.repository.js';
+
 export * from './promotion/promotion.js';
 export * from './promotion/ports/promotion.repository.js';
 
@@ -39,6 +47,5 @@ export * from './checkout/ports/payment-gateway.js';
 
 export * from './notification/ports/order-notifier.js';
 
-export * from './account/account.js';
-export * from './account/sky-profile.js';
-export * from './account/ports/account.ports.js';
+export * from './sky/sky-profile.js';
+export * from './sky/ports/sky.repository.js';

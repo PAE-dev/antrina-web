@@ -26,6 +26,12 @@ export interface ImageStorage extends ImageUrlResolver {
     contentType: ImageContentType;
     sizeBytes: number;
   }): Promise<ImageUploadTarget>;
+  /** Guarda desde el servidor lo que ya se validó aquí; devuelve la clave del objeto. */
+  putImage(input: {
+    prefix: string;
+    contentType: ImageContentType;
+    bytes: Uint8Array;
+  }): Promise<string>;
   stat(storageKey: string): Promise<StoredObject | null>;
   delete(storageKey: string): Promise<void>;
 }

@@ -12,6 +12,7 @@ const OPTIMIZE = import.meta.env.VERCEL === '1' || runtimeEnv?.VERCEL === '1';
 export const SIZES = {
   card: '(min-width: 1024px) 25vw, 50vw',
   half: '(min-width: 1024px) 42vw, 100vw',
+  split: '(min-width: 1024px) 50vw, 100vw',
   gallery: '(min-width: 1024px) 55vw, 100vw',
 } as const;
 

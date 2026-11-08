@@ -17,8 +17,12 @@ import { loadProduct } from './admin-products.use-cases.js';
 
 function toProductPieceDto(piece: ProductPiece): ProductPieceDto {
   return {
-    ...piece,
+    id: piece.id,
+    productId: piece.productId,
+    serial: piece.serial,
+    code: piece.code,
     voidedAt: piece.voidedAt?.toISOString() ?? null,
+    claimedAt: piece.claimedAt?.toISOString() ?? null,
     createdAt: piece.createdAt.toISOString(),
   };
 }
@@ -31,8 +35,11 @@ export class ListProductPiecesUseCase {
 
   async execute(productId: string): Promise<ProductPieceListResponse> {
     await loadProduct(this.products, productId);
-    const pieces = await this.pieces.listByProduct(productId);
-    return { data: pieces.map(toProductPieceDto) };
+    const [pieces, opensTorito] = await Promise.all([
+      this.pieces.listByProduct(productId),
+      this.pieces.opensToritoExperience(productId),
+    ]);
+    return { data: pieces.map(toProductPieceDto), opensTorito };
   }
 }
 
@@ -75,7 +82,10 @@ export class GenerateProductPiecesUseCase {
         toSerial: created.at(-1)?.serial ?? null,
       },
     });
-    return { data: created.map(toProductPieceDto) };
+    return {
+      data: created.map(toProductPieceDto),
+      opensTorito: await this.pieces.opensToritoExperience(productId),
+    };
   }
 }
 

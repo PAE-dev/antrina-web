@@ -1,5 +1,16 @@
 ---
 import AccountView from '../../components/views/AccountView.astro';
+import { loadAccountPage } from '../../lib/account';
+
+export const prerender = false;
+
+const { session, photo } = await loadAccountPage('en', Astro.request.headers.get('cookie'));
+// La respuesta depende de la cookie: nunca debe guardarla la CDN.
+Astro.response.headers.set('Cache-Control', 'no-store');
+if (session.status === 'unavailable') {
+  Astro.response.status = 503;
+  Astro.response.headers.set('Retry-After', '60');
+}
 ---
 
-<AccountView locale="en" />
+<AccountView locale="en" session={session} photo={photo} />

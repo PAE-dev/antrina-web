@@ -19,4 +19,5 @@ export * from './StorySection';
 export * from './Testimonials';
 export * from './types';
 export * from './ValuePillars';
+export * from './WorldsTeaser';
 export * from './ZodiacGrid';

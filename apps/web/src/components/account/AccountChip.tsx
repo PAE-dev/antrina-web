@@ -1,6 +1,6 @@
 import { type LocaleCode } from '@antrina/contracts';
 import { useEffect, useRef, useState } from 'react';
-import { googleLoginUrl, logout, useAccount } from '../../lib/account';
+import { googleLoginUrl, logout, useAccount } from '../../lib/customer-client';
 
 const COPY = {
   es: {

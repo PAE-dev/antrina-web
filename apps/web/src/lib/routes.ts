@@ -73,6 +73,10 @@ export const routes = {
   account: page('account'),
   cart: page('cart'),
   sky: page('sky'),
+  /** Prototipo: la app de los mundos solo existe en español. El establo es el mundo del torito. */
+  stable: () => '/mundos/torito',
+  /** El bosque de las puertas: de aquí se entra a cada mundo. */
+  forest: () => '/mundos',
 };
 
 /** Categoría de los árboles: conserva sus URLs `/arbol/` y su catálogo `/arboles`. */

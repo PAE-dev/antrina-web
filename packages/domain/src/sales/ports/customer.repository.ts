@@ -4,6 +4,8 @@ export interface CustomerCriteria {
   query?: string;
   /** Solo clientes con teléfono (vista de WhatsApp). */
   withPhone?: boolean;
+  /** Solo los registrados en la tienda, del más reciente al más antiguo. */
+  webAccount?: boolean;
   limit: number;
   offset: number;
 }

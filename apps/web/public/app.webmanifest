@@ -1,0 +1,14 @@
+{
+  "name": "Antrina · El bosque de las puertas",
+  "short_name": "Antrina",
+  "description": "Escanea tu pieza Antrina y abre su mundo.",
+  "start_url": "/mundos",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#060b22",
+  "background_color": "#060b22",
+  "icons": [
+    { "src": "/favicon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/favicon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

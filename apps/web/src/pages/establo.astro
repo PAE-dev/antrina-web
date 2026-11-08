@@ -1,0 +1,8 @@
+---
+import { routes } from '../lib/routes';
+
+export const prerender = false;
+
+// El establo ahora vive dentro de la puerta del torito.
+return Astro.redirect(`${routes.stable()}${Astro.url.search}`, 301);
+---

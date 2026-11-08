@@ -140,12 +140,14 @@ export class AdminCustomersController {
   list(
     @Query('q') q?: string,
     @Query('withPhone') withPhone?: string,
+    @Query('webAccount') webAccount?: string,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
   ): Promise<CustomerListResponse> {
     return this.listCustomers.execute({
       ...(q ? { q } : {}),
       ...(parseBoolean(withPhone) ? { withPhone: true } : {}),
+      ...(parseBoolean(webAccount) ? { webAccount: true } : {}),
       ...pagingQuery(page, pageSize),
     });
   }

@@ -14,6 +14,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   ClearStockUseCase,
   GenerateProductPiecesUseCase,
+  ListProductPiecesUseCase,
   ListInventoryUseCase,
   VoidProductPieceUseCase,
 } from '../src/index.js';
@@ -165,6 +166,9 @@ class InMemoryPieces implements ProductPieceRepository {
   async findById(id: string) {
     return this.rows.find((row) => row.id === id) ?? null;
   }
+  async opensToritoExperience(productId: string) {
+    return productId === 'torito';
+  }
   async createBatch(productId: string, codes: readonly string[]) {
     const start = (await this.listByProduct(productId)).length + 1;
     const created = codes.map((code, index) => ({
@@ -173,6 +177,7 @@ class InMemoryPieces implements ProductPieceRepository {
       serial: start + index,
       code,
       voidedAt: null,
+      claimedAt: null,
       createdAt: new Date(),
     }));
     this.rows.push(...created);
@@ -218,6 +223,21 @@ describe('códigos QR por pieza', () => {
       entityId: 'torito',
       changes: { quantity: 3, fromSerial: 3, toSerial: 5 },
     });
+  });
+
+  it('dice si el QR abre el torito y qué códigos ya se usaron', async () => {
+    const generated = await generate.execute('torito', { quantity: 2 }, 'admin');
+    expect(generated.opensTorito).toBe(true);
+    const claimedAt = new Date('2026-11-01T12:00:00Z');
+    pieces.rows[0]!.claimedAt = claimedAt;
+
+    const list = new ListProductPiecesUseCase(
+      { findById: async (id: string) => product(id, 'toritos', 5, status) } as never,
+      pieces,
+    );
+    const { data, opensTorito } = await list.execute('torito');
+    expect(opensTorito).toBe(true);
+    expect(data.map((piece) => piece.claimedAt)).toEqual([claimedAt.toISOString(), null]);
   });
 
   it('valida la cantidad y el producto', async () => {
