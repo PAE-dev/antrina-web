@@ -1,5 +1,6 @@
 import { type LocaleCode } from '@antrina/contracts';
-import { type SignCode } from './astrology';
+import { type SignCode } from './astrology.js';
+import { type AspectKind } from './ephemeris.js';
 
 /**
  * Textos de "Tu cielo": glosario, onboarding, guía diaria y respuestas (es/en).
@@ -19,7 +20,6 @@ export type Body =
   | 'neptune'
   | 'pluto'
   | 'ascendant';
-export type AspectKind = 'conjunction' | 'sextile' | 'square' | 'trine' | 'opposition';
 export type Nature = 'flow' | 'tension' | 'blend';
 export type AskTopic = 'self' | 'love' | 'work' | 'money';
 export type GlossaryKey =

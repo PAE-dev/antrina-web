@@ -1,7 +1,6 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { ELEMENT_OF, type SignCode } from '../../sky/astrology';
-import { ELEMENT_COLOR, SIGN_SKY, STONE_HEX } from '../../sky/content';
+import { ELEMENT_COLOR, ELEMENT_OF, SIGN_SKY, type SignCode, STONE_HEX } from '@antrina/sky';
 
 /** Piezas visuales de "Tu cielo": rueda de selección, hoja inferior, luna, planetas y estrellas. */
 

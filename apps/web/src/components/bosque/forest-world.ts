@@ -1,50 +1,19 @@
-import worldsConfig from './worlds.json';
+import { WORLDS_CONFIG, type WorldDto, type WorldStatus } from '@antrina/contracts';
 
-/**
- * `soon`: el mundo aún no existe. `unlockable`: se abre con el producto del cliente. `open`:
- * abierto para todos (sin producto); si su `target` está fuera de `/mundos`, la puerta lleva a esa
- * página (la Puerta Zodiacal abre "Tu cielo").
- */
-export type WorldStatus = 'soon' | 'unlockable' | 'open';
+export type { WorldStatus };
+export type World = WorldDto;
 
 /** El mundo vive en otra página de la tienda, no dentro de la app. */
 export const isExternalWorld = (world: World) =>
   world.target !== null && !world.target.startsWith('/mundos');
 
-export interface World {
-  id: string;
-  name: string;
-  sprite: string;
-  width: number;
-  height: number;
-  /** Tamaño respecto a la puerta más grande. */
-  scale: number;
-  /** Hueco de la puerta dentro del sprite, en fracciones. `round` es lo curvo del arco. */
-  arch: { x: number; y: number; w: number; h: number; round: number };
-  lights: number[][];
-  status: WorldStatus;
-  target: string | null;
-  inside: string | null;
-  lockedText: string;
-  openText: string;
-  /** La tienda de este mundo: solo vende lo de su categoría. */
-  shop: { label: string; categoryPrefix: string; intro: string } | null;
-  /** La interfaz es la misma en todos los mundos: esto es lo que cambia. */
-  theme: { bg: string; accent: string };
-  mainTab: string;
-  collectionTab: string;
-  tips: string[];
-  /** Lo que se precarga antes de entrar. */
-  assets: string[];
-}
-
-/** Para agregar un mundo basta con su sprite y una entrada en `worlds.json`. */
-export const WORLDS = worldsConfig.worlds as World[];
-export const GENERAL_TIPS = worldsConfig.tips;
+/** Para agregar un mundo basta con su sprite y una entrada en `WORLDS_CONFIG` (`@antrina/contracts`). */
+export const WORLDS = WORLDS_CONFIG.worlds;
+export const GENERAL_TIPS = WORLDS_CONFIG.tips;
 export const worldById = (id: string) => WORLDS.find((world) => world.id === id);
 export const START_INDEX = Math.max(
   0,
-  WORLDS.findIndex((world) => world.id === worldsConfig.start),
+  WORLDS.findIndex((world) => world.id === WORLDS_CONFIG.start),
 );
 
 export interface ForestLayout {

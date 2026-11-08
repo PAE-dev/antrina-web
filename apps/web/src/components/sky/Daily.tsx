@@ -10,32 +10,30 @@ import {
   useRef,
   useState,
 } from 'react';
-import { type SignCode } from '../../sky/astrology';
-import { SIGN_SKY } from '../../sky/content';
 import {
+  DAILY_UI,
   dailyAlly,
   type DailyArea,
   dayProfile,
   type DayProfile,
-  fortuneFor,
-  limaDay,
-  rankingFor,
-  type RankedSign,
-  streakOf,
-  STREAK_GOAL,
-} from '../../sky/daily';
-import {
-  DAILY_UI,
   FORTUNE_LEVEL_LABEL,
   FORTUNE_VERSES,
+  fortuneFor,
+  limaDay,
   LUCKY_COLORS,
   LUCKY_ITEMS,
+  type NatalChart,
   PERSONAL_BRIDGE,
   RANK_NOTE,
   RANK_PHRASES,
-} from '../../sky/daily-content';
-import { type NatalChart } from '../../sky/ephemeris';
-import { STONE_LIBRARY } from '../../sky/stones';
+  type RankedSign,
+  rankingFor,
+  SIGN_SKY,
+  type SignCode,
+  STONE_LIBRARY,
+  STREAK_GOAL,
+  streakOf,
+} from '@antrina/sky';
 import { skyApi } from '../../lib/customer-client';
 import { Panel, Sheet, StoneImage } from './parts';
 

@@ -1,0 +1,284 @@
+/**
+ * Los mundos de `/mundos` (bosque de puertas). Fuente única para la tienda (`components/bosque/`) y
+ * la app móvil (`GET /worlds`). Para agregar un mundo basta con su sprite y una entrada aquí.
+ * Las rutas de imagen (`sprite`, `inside`, `assets`) y `target` son de la tienda: la API devuelve
+ * también `assetBaseUrl` para resolverlas.
+ */
+
+export const WORLDS_ROUTES = {
+  config: '/worlds',
+} as const;
+
+/**
+ * `soon`: el mundo aún no existe. `unlockable`: se abre con el producto del cliente. `open`:
+ * abierto para todos (sin producto); si su `target` está fuera de `/mundos`, la puerta lleva a esa
+ * página (la Puerta Zodiacal abre "Tu cielo").
+ */
+export type WorldStatus = 'soon' | 'unlockable' | 'open';
+
+export interface WorldDto {
+  id: string;
+  name: string;
+  sprite: string;
+  width: number;
+  height: number;
+  /** Tamaño respecto a la puerta más grande. */
+  scale: number;
+  /** Hueco de la puerta dentro del sprite, en fracciones. `round` es lo curvo del arco. */
+  arch: { x: number; y: number; w: number; h: number; round: number };
+  lights: number[][];
+  status: WorldStatus;
+  target: string | null;
+  inside: string | null;
+  lockedText: string;
+  openText: string;
+  /** La tienda de este mundo: solo vende lo de su categoría (`GET /catalog/world-shop`). */
+  shop: { label: string; categoryPrefix: string; intro: string } | null;
+  /** La interfaz es la misma en todos los mundos: esto es lo que cambia. */
+  theme: { bg: string; accent: string };
+  mainTab: string;
+  collectionTab: string;
+  tips: string[];
+  /** Lo que se precarga antes de entrar. */
+  assets: string[];
+}
+
+export interface WorldsConfigDto {
+  /** Id del mundo que se muestra primero. */
+  start: string;
+  worlds: WorldDto[];
+  /** Consejos generales del bosque. */
+  tips: string[];
+}
+
+export interface WorldsConfigResponse extends WorldsConfigDto {
+  /** Origen de la tienda (`STORE_ORIGIN`) para las rutas de imagen y `target`. */
+  assetBaseUrl: string;
+}
+
+export const WORLDS_CONFIG: WorldsConfigDto = {
+  start: 'bonsai',
+  worlds: [
+    {
+      id: 'textil',
+      name: 'El Reino de los Hilos',
+      sprite: '/bosque/puerta-textil.webp',
+      width: 448,
+      height: 594,
+      scale: 0.86,
+      arch: {
+        x: 0.278,
+        y: 0.42,
+        w: 0.482,
+        h: 0.41,
+        round: 0.05,
+      },
+      lights: [
+        [0.17, 0.82],
+        [0.84, 0.82],
+      ],
+      status: 'soon',
+      target: null,
+      inside: null,
+      lockedText: 'Se está tejiendo',
+      openText: '',
+      shop: null,
+      theme: {
+        bg: '#1f1020',
+        accent: '#ff6f91',
+      },
+      mainTab: 'Telar',
+      collectionTab: 'Tejidos',
+      tips: ['Cada hilo cuenta una historia.'],
+      assets: [],
+    },
+    {
+      id: 'zodiacal',
+      name: 'La Puerta Zodiacal',
+      sprite: '/bosque/puerta-zodiacal.webp',
+      width: 464,
+      height: 668,
+      scale: 0.92,
+      arch: {
+        x: 0.288,
+        y: 0.348,
+        w: 0.48,
+        h: 0.479,
+        round: 0.9,
+      },
+      lights: [
+        [0.24, 0.82],
+        [0.83, 0.81],
+      ],
+      status: 'open',
+      target: '/tu-cielo',
+      inside: null,
+      lockedText: 'Sus estrellas aún no se alinean',
+      openText: 'Tu carta, tu día y los cuarzos de tu signo',
+      shop: null,
+      theme: {
+        bg: '#0d1138',
+        accent: '#ffd98a',
+      },
+      mainTab: 'Cielo',
+      collectionTab: 'Signos',
+      tips: ['Tu signo también tiene una puerta.'],
+      assets: [],
+    },
+    {
+      id: 'bonsai',
+      name: 'El Jardín de los Bonsáis',
+      sprite: '/bosque/puerta-bonsai.webp',
+      width: 672,
+      height: 734,
+      scale: 1,
+      arch: {
+        x: 0.305,
+        y: 0.404,
+        w: 0.375,
+        h: 0.435,
+        round: 1,
+      },
+      lights: [
+        [0.12, 0.41],
+        [0.86, 0.41],
+      ],
+      status: 'soon',
+      target: null,
+      inside: null,
+      lockedText: 'Abrirá con tus árboles de cuarzo',
+      openText: '',
+      shop: {
+        label: 'Ver árboles',
+        categoryPrefix: 'arbol',
+        intro: 'Arbolitos de cuarzo hechos a mano en nuestro taller de Lima.',
+      },
+      theme: {
+        bg: '#0e1f16',
+        accent: '#ffc66b',
+      },
+      mainTab: 'Jardín',
+      collectionTab: 'Árboles',
+      tips: ['Cada árbol de cuarzo se hace a mano en Lima.'],
+      assets: [],
+    },
+    {
+      id: 'torito',
+      name: 'El Valle de los Toritos',
+      sprite: '/bosque/puerta-torito.webp',
+      width: 760,
+      height: 832,
+      scale: 0.97,
+      arch: {
+        x: 0.297,
+        y: 0.312,
+        w: 0.408,
+        h: 0.483,
+        round: 0.95,
+      },
+      lights: [
+        [0.19, 0.7],
+        [0.81, 0.7],
+      ],
+      status: 'unlockable',
+      target: '/mundos/torito',
+      inside: '/torito/establo-dentro.webp',
+      lockedText: 'Se abre con el QR de tu torito',
+      openText: 'Tus toritos te esperan',
+      shop: {
+        label: 'Comprar',
+        categoryPrefix: 'torito',
+        intro: 'Toritos de Pucará hechos a mano para tu establo.',
+      },
+      theme: {
+        bg: '#24140c',
+        accent: '#ffb347',
+      },
+      mainTab: 'Establo',
+      collectionTab: 'Toritos',
+      tips: [
+        'Visita a tus toritos cada día: siempre tienen algo nuevo que contarte.',
+        'Cada QR despierta a un solo torito. Guárdalo con cariño.',
+        'En cada establo caben tres toritos. Si llegan más, se abre otro.',
+        'Puedes escribir una intención para que tu torito te la recuerde.',
+        'Si tu torito fue un regalo, adentro te espera un mensaje.',
+      ],
+      assets: [
+        '/torito/establo-dentro.webp',
+        '/torito/base.webp',
+        '/torito/fill.webp',
+        '/torito/mask.png',
+        '/torito/silueta.webp',
+      ],
+    },
+    {
+      id: 'andino',
+      name: 'La Cumbre Andina',
+      sprite: '/bosque/puerta-andino.webp',
+      width: 388,
+      height: 632,
+      scale: 0.9,
+      arch: {
+        x: 0.235,
+        y: 0.348,
+        w: 0.488,
+        h: 0.482,
+        round: 0.9,
+      },
+      lights: [[0.84, 0.8]],
+      status: 'soon',
+      target: null,
+      inside: null,
+      lockedText: 'El camino aún se está abriendo',
+      openText: '',
+      shop: null,
+      theme: {
+        bg: '#10192c',
+        accent: '#ffc66b',
+      },
+      mainTab: 'Cumbre',
+      collectionTab: 'Piezas',
+      tips: ['El camino a la cumbre se abre poco a poco.'],
+      assets: [],
+    },
+    {
+      id: 'solar',
+      name: 'El Portal Solar',
+      sprite: '/bosque/puerta-solar.webp',
+      width: 534,
+      height: 550,
+      scale: 0.86,
+      arch: {
+        x: 0.25,
+        y: 0.34,
+        w: 0.5,
+        h: 0.57,
+        round: 0.9,
+      },
+      lights: [
+        [0.2, 0.78],
+        [0.84, 0.78],
+      ],
+      status: 'soon',
+      target: null,
+      inside: null,
+      lockedText: 'Despertará más adelante',
+      openText: '',
+      shop: null,
+      theme: {
+        bg: '#1d1033',
+        accent: '#ffc66b',
+      },
+      mainTab: 'Portal',
+      collectionTab: 'Piezas',
+      tips: ['El sol despierta cuando estás listo.'],
+      assets: [],
+    },
+  ],
+  tips: [
+    'Cada pieza Antrina abre su propia puerta del bosque.',
+    'Escanea el QR de tu pieza y su mundo se abrirá para ti.',
+    'Todas nuestras piezas se hacen a mano en un taller familiar de Lima.',
+    'Agrega Antrina a tu pantalla de inicio y entra como a una app.',
+  ],
+};

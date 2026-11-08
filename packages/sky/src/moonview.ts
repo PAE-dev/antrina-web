@@ -1,4 +1,4 @@
-import { julianDay, moonLongitude, sunLongitude } from './astrology';
+import { julianDay, moonLongitude, sunLongitude } from './astrology.js';
 
 /**
  * La Luna tal como se ve desde un lugar y un momento: fase (iluminación y ángulo de fase), hacia

@@ -4,12 +4,14 @@ import {
   ListCategoriesUseCase,
   ListProductIndexUseCase,
   ListProductsUseCase,
+  ListWorldShopUseCase,
 } from '@antrina/application';
 import {
   type ListCategoriesResponse,
   type ListProductsResponse,
   type ProductDetailDto,
   type ProductIndexResponse,
+  type WorldShopResponse,
 } from '@antrina/contracts';
 import {
   isProductIntention,
@@ -30,6 +32,7 @@ export class CatalogController {
     @Inject(GetProductUseCase) private readonly getProduct: GetProductUseCase,
     @Inject(ListProductIndexUseCase) private readonly listProductIndex: ListProductIndexUseCase,
     @Inject(ListCategoriesUseCase) private readonly listCategories: ListCategoriesUseCase,
+    @Inject(ListWorldShopUseCase) private readonly listWorldShop: ListWorldShopUseCase,
   ) {}
 
   @Get('products')
@@ -72,5 +75,14 @@ export class CatalogController {
   async categories(@Query('locale') locale?: string): Promise<ListCategoriesResponse> {
     const data = await this.listCategories.execute({ locale: resolveLocale(locale) });
     return { data };
+  }
+
+  /** Tienda de un mundo de `/mundos` (`shop.categoryPrefix`): sus productos y subcategorías. */
+  @Get('world-shop')
+  worldShop(
+    @Query('prefix') prefix?: string,
+    @Query('locale') locale?: string,
+  ): Promise<WorldShopResponse> {
+    return this.listWorldShop.execute({ prefix: prefix ?? '', locale: resolveLocale(locale) });
   }
 }

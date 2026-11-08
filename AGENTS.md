@@ -10,8 +10,9 @@ Lee esto antes de tocar código: define **dónde va cada cambio** y qué está p
 | Ruta                   | Qué es                                                      | Puede importar                                      |
 | ---------------------- | ----------------------------------------------------------- | --------------------------------------------------- |
 | `packages/domain`      | Entidades, value objects (`Money`, `Locale`) y **puertos**  | Nada (TS puro)                                      |
-| `packages/application` | Casos de uso (`ListProductsUseCase`…) que orquestan puertos | `domain`, `contracts`                               |
+| `packages/application` | Casos de uso (`ListProductsUseCase`…) que orquestan puertos | `domain`, `contracts`, `sky`                        |
 | `packages/contracts`   | DTOs serializables compartidos API ↔ web/admin              | Nada                                                |
+| `packages/sky`         | Cálculos y textos de "Tu cielo" (TS puro, sin red)          | `contracts`                                         |
 | `packages/ui`          | Componentes React + HeroUI v3 y **tokens de diseño** (CSS)  | `contracts`, `@heroui/react`, `react`               |
 | `packages/config`      | tsconfig, ESLint (fronteras de capas), Prettier             | —                                                   |
 | `apps/api`             | NestJS 12 (ESM). Presentación + adapters de infraestructura | Todo lo anterior salvo `ui`; Prisma solo aquí       |
@@ -83,14 +84,14 @@ Contextos actuales:
   `/mundos/<mundo>` (interior), `/mundos/<mundo>/coleccion`, `/mundos/<mundo>/tienda` y `/mundos/perfil`; `/establo` redirige a `/mundos/torito`. La
   cabecera de cifras, el menú líquido (`LiquidTabBar`), la hoja de escanear, tienda, perfil y la carga
   (`AppLoader`, progreso real de imágenes) son comunes: cada mundo solo aporta su pantalla en
-  `WORLD_SCREENS` y su entrada en `worlds.json` (sprite, tema, pestañas, consejos, recursos). Solo se
+  `WORLD_SCREENS` y su entrada en `WORLDS_CONFIG` (`packages/contracts/src/worlds.ts`; sprite, tema, pestañas, consejos, recursos). Solo se
   muestran cifras reales; afuera solo las puertas abiertas: lo que se colecciona se cuenta dentro de
   cada mundo. Cada puerta: `status: "unlockable"` se abre con el producto del cliente (hoy
   solo `torito`) y `"soon"` aún no existe. Tras reclamar un QR se llega a `/mundos?desbloquear=torito`:
   se rompe el candado y se entra. Si vuelve de Google con un torito pendiente, lo reclama `AntrinaApp`.
   El menú (solo íconos) cambia según dónde estás: afuera solo Bosque, Escanear y Perfil; dentro de un mundo se suman su
-  interior y su Tienda. La tienda es de cada mundo y solo con sesión (`worlds.json` → `shop.categoryPrefix`,
-  datos de `/mundos-api/tienda?categoria=`): pide por WhatsApp con los datos del perfil en el mensaje; sin
+  interior y su Tienda. La tienda es de cada mundo y solo con sesión (`WORLDS_CONFIG` → `shop.categoryPrefix`,
+  datos de `/mundos-api/tienda?categoria=`, que lee `GET /catalog/world-shop` y añade fotos, rutas y WhatsApp): pide por WhatsApp con los datos del perfil en el mensaje; sin
   `PUBLIC_WHATSAPP_NUMBER` lleva a Contacto. No hay carrito ni pago. Un mundo sin interior puede tener ya su
   tienda. El material de todo es el vidrio de `app.css`. Fraunces va con `opsz` 30 (el 144 de la tienda es
   ilegible en tamaños pequeños).
@@ -105,9 +106,21 @@ Contextos actuales:
   cuenta de Google de `customer-auth` (`SkyProfile`, `SkyQuestion` —las 20 más recientes— y `SkyBond`,
   por `customerId`). Rutas `/cielo-api/sky*`; la tienda las reenvía desde su dominio
   (`pages/cielo-api/[...path].ts`). Sin sesión todo funciona en `localStorage`; al entrar, el cielo de
-  la cuenta manda y, si está vacía, se sube el del dispositivo. Cálculos en `apps/web/src/sky/`
-  (Meeus/JPL, casas Porphyry), piedra y lema por signo en `sky/stones.ts` (los de la caja del árbol).
+  la cuenta manda y, si está vacía, se sube el del dispositivo. Cálculos y textos en `packages/sky`
+  (`@antrina/sky`: Meeus/JPL, casas Porphyry), piedra y lema por signo en `stones.ts` (los de la caja
+  del árbol). La tienda calcula en el navegador con ese paquete; la búsqueda de ciudades
+  (`apps/web/src/sky/geo.ts`) y los textos de interfaz (`sky/labels.ts`) siguen en la web.
   La Puerta Zodiacal de `/mundos` (`status: "open"`, `target` fuera de `/mundos`) lleva aquí.
+  Los mismos cálculos, sin sesión y sin guardar nada, para la app móvil (`SkyCalcController`, casos de
+  uso en `application/src/sky/sky-calc.use-cases.ts`): `POST /cielo-api/sky/chart` (carta natal),
+  `POST /cielo-api/sky/synastry` (compatibilidad y lectura sin IA), `POST /cielo-api/sky/daily` (el día
+  de una persona: ranking, índices, aliado, cuarzo de la suerte y tránsito) y
+  `GET /cielo-api/sky/ranking?day=&locale=` (cacheado hasta la medianoche de Lima). Los textos llegan
+  ya en el idioma pedido; sin lugar, la hora de nacimiento se toma en `timezone` (por defecto Lima).
+- Mundos para la app móvil: `GET /worlds` devuelve `WORLDS_CONFIG` más `assetBaseUrl` (`STORE_ORIGIN`,
+  para resolver `sprite`, `inside` y `assets`), y `GET /catalog/world-shop?prefix=&locale=` la tienda de
+  un mundo (productos de las categorías raíz con ese prefijo y de sus subcategorías, más las
+  subcategorías con productos).
 - Bosque 3D de la portada (`components/world/`, `src/world/`, Three.js, solo cliente): puertas por
   intención y de temporada. La de Cuarzos abre "Tu cielo"; la colección del mundo de los toritos lleva a
   `/mundos/torito`. Usa la misma sesión (`AccountChip` + `lib/customer-client.ts`).

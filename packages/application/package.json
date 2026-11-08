@@ -21,7 +21,8 @@
   },
   "dependencies": {
     "@antrina/contracts": "workspace:*",
-    "@antrina/domain": "workspace:*"
+    "@antrina/domain": "workspace:*",
+    "@antrina/sky": "workspace:*"
   },
   "devDependencies": {
     "@antrina/config": "workspace:*",

@@ -1,7 +1,7 @@
 import { type LocaleCode } from '@antrina/contracts';
-import { ELEMENT_OF, elementHarmony, type SignCode } from './astrology';
-import { aspectValue } from './daily';
-import { type NatalChart, type Planet } from './ephemeris';
+import { ELEMENT_OF, elementHarmony, type SignCode } from './astrology.js';
+import { aspectValue } from './daily.js';
+import { type NatalChart, type Planet } from './ephemeris.js';
 
 /**
  * Sinastría: compara las dos cartas planeta por planeta (ángulos reales, no solo el signo) y da un

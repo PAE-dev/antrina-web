@@ -1,5 +1,5 @@
 import { type LocaleCode } from '@antrina/contracts';
-import { type SignCode } from './astrology';
+import { type SignCode } from './astrology.js';
 
 /**
  * Piedras del zodiaco de Antrina (las mismas de la caja del "Arbolito de la Felicidad"): una por

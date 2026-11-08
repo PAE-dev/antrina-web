@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { CATALOG_CACHE_CONTROL, getCategories, listProducts } from '../../lib/catalog';
+import { CATALOG_CACHE_CONTROL, getWorldShop } from '../../lib/catalog';
 import { cardImage } from '../../lib/images';
 import { productPath, routes } from '../../lib/routes';
 import { absoluteUrl, WHATSAPP_NUMBER } from '../../lib/site';
@@ -8,24 +8,23 @@ export const prerender = false;
 
 const LOCALE = 'es';
 
-/** La tienda de un mundo: solo lo que pertenece a su categoría y a sus subcategorías. */
+/**
+ * La tienda de un mundo: la API filtra por categoría (`GET /catalog/world-shop`, la misma que usa
+ * la app móvil) y aquí se añaden lo propio de la tienda (fotos optimizadas, rutas y WhatsApp).
+ */
 export const GET: APIRoute = async ({ url }) => {
   const prefix = url.searchParams.get('categoria') ?? '';
-  const [products, categories] = await Promise.all([
-    listProducts({ locale: LOCALE }),
-    getCategories(LOCALE),
-  ]);
-  const all = categories ?? [];
-  const roots = prefix
-    ? all.filter((category) => !category.parentId && category.slug.startsWith(prefix))
-    : [];
-  const children = all.filter((category) => roots.some((root) => root.id === category.parentId));
-  const slugs = new Set([...roots, ...children].map((category) => category.slug));
-  const worldProducts = products.filter((product) => slugs.has(product.categorySlug));
+  const shop = await getWorldShop(prefix, LOCALE);
+  if (!shop) {
+    return new Response(JSON.stringify({ message: 'Catálogo no disponible' }), {
+      status: 503,
+      headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
+    });
+  }
 
   return new Response(
     JSON.stringify({
-      products: worldProducts.map((product) => {
+      products: shop.products.map((product) => {
         const path = productPath(LOCALE, product.slug, product.categorySlug);
         return {
           ...product,
@@ -34,9 +33,7 @@ export const GET: APIRoute = async ({ url }) => {
           url: absoluteUrl(path),
         };
       }),
-      subcategories: children
-        .filter((child) => worldProducts.some((product) => product.categorySlug === child.slug))
-        .map(({ slug, name }) => ({ slug, name })),
+      subcategories: shop.subcategories,
       whatsappNumber: WHATSAPP_NUMBER || null,
       contactPath: routes.contact(LOCALE),
     }),

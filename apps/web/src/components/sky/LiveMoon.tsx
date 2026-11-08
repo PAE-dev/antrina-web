@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { moonView } from '../../sky/moonview';
+import { moonView } from '@antrina/sky';
 
 /**
  * La Luna de ahora, como se ve desde el lugar del usuario: esfera 3D con el mapa de color de la

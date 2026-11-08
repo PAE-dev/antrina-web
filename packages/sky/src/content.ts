@@ -1,5 +1,5 @@
 import { type LocaleCode } from '@antrina/contracts';
-import { type Element, type Modality, type MoonPhase, type SignCode } from './astrology';
+import { type Element, type Modality, type MoonPhase, type SignCode } from './astrology.js';
 
 /**
  * Textos de "Tu cielo" (es/en). Tono de tradición y acompañamiento ("se asocia con"): la

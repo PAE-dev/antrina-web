@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@antrina/contracts": "workspace:*",
+    "@antrina/sky": "workspace:*",
     "@antrina/ui": "workspace:*",
     "@astrojs/react": "^7.0.0",
     "@astrojs/vercel": "^11.0.11",

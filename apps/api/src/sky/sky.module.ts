@@ -6,7 +6,11 @@ import {
   BondReadingUseCase,
   DeleteSkyBondUseCase,
   DeleteSkyDataUseCase,
+  GetNatalChartUseCase,
+  GetSkyDailyUseCase,
   GetSkyDataUseCase,
+  GetSkyRankingUseCase,
+  GetSynastryUseCase,
   MarkSkyDayUseCase,
   SaveSkyProfileUseCase,
 } from '@antrina/application';
@@ -16,6 +20,7 @@ import { AskRateLimitGuard } from './presentation/ask-rate-limit.guard.js';
 import { CustomerAuthModule } from '../customer-auth/customer-auth.module.js';
 import { OpenRouterSkyOracle } from './infrastructure/openrouter-sky-oracle.js';
 import { PrismaSkyRepository } from './infrastructure/prisma-sky.repository.js';
+import { SkyCalcController } from './presentation/sky-calc.controller.js';
 import { AskSkyController, SkyController } from './presentation/sky.controller.js';
 import { SKY_CLOCK, SKY_ORACLE, SKY_REPOSITORY } from './sky.tokens.js';
 
@@ -31,10 +36,19 @@ const skyClockUseCase = <T>(UseCase: new (sky: SkyRepository, clock: Clock) => T
   inject: [SKY_REPOSITORY, SKY_CLOCK],
 });
 
-/** "Tu cielo" (astrología y cuarzos) guardado en la cuenta de Google del cliente. */
+const clockUseCase = <T>(UseCase: new (clock: Clock) => T) => ({
+  provide: UseCase,
+  useFactory: (clock: Clock) => new UseCase(clock),
+  inject: [SKY_CLOCK],
+});
+
+/**
+ * "Tu cielo" (astrología y cuarzos): lo guardado en la cuenta de Google del cliente y los cálculos
+ * sin sesión (`@antrina/sky`) para la app móvil.
+ */
 @Module({
   imports: [CustomerAuthModule],
-  controllers: [SkyController, AskSkyController],
+  controllers: [SkyCalcController, SkyController, AskSkyController],
   providers: [
     { provide: SKY_REPOSITORY, useClass: PrismaSkyRepository },
     { provide: SKY_CLOCK, useClass: SystemClock },
@@ -63,6 +77,10 @@ const skyClockUseCase = <T>(UseCase: new (sky: SkyRepository, clock: Clock) => T
     skyClockUseCase(AddSkyQuestionUseCase),
     skyClockUseCase(AddSkyBondUseCase),
     skyClockUseCase(MarkSkyDayUseCase),
+    clockUseCase(GetNatalChartUseCase),
+    clockUseCase(GetSynastryUseCase),
+    clockUseCase(GetSkyDailyUseCase),
+    clockUseCase(GetSkyRankingUseCase),
   ],
 })
 export class SkyModule {}

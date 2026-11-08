@@ -1,6 +1,6 @@
 /**
  * Catálogo de piedras de Antrina (panel, tienda y "Tu cielo" usan estos ids). El significado largo
- * de cada una vive en la tienda (`apps/web/src/content/stones.ts` y `sky/stones.ts`).
+ * de cada una vive en la tienda (`apps/web/src/content/stones.ts` y `@antrina/sky`).
  */
 export interface StoneCatalogEntry {
   id: string;

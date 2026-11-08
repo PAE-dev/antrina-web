@@ -130,4 +130,15 @@ export const CATALOG_ROUTES = {
   product: (slug: string) => `/catalog/products/${encodeURIComponent(slug)}`,
   productIndex: '/catalog/product-index',
   categories: '/catalog/categories',
+  /** Tienda de un mundo de `/mundos`: `?prefix=<shop.categoryPrefix>&locale=`. */
+  worldShop: '/catalog/world-shop',
 } as const;
+
+/**
+ * Tienda de un mundo: los productos de las categorías raíz cuyo slug empieza por el prefijo y de
+ * sus subcategorías, más las subcategorías que tienen productos (los filtros de la tienda).
+ */
+export interface WorldShopResponse {
+  products: ProductSummaryDto[];
+  subcategories: { slug: string; name: string }[];
+}

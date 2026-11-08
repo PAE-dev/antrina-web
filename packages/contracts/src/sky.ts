@@ -1,3 +1,6 @@
+import { type LocaleCode } from './common.js';
+import { type ZodiacSignCode } from './catalog.js';
+
 /**
  * "Tu cielo" guardado en la cuenta (sesión de Google de la tienda). La tienda reenvía estas rutas
  * desde su dominio (`/cielo-api/*`) para que lleven la cookie de sesión.
@@ -13,6 +16,11 @@ export const SKY_ROUTES = {
   ask: '/cielo-api/ask',
   /** Lectura de compatibilidad escrita por IA (sin sesión; limitada por IP). */
   bondReading: '/cielo-api/bond-reading',
+  /** Cálculos (sin sesión): los mismos de la tienda, para la app móvil. */
+  chart: '/cielo-api/sky/chart',
+  synastry: '/cielo-api/sky/synastry',
+  daily: '/cielo-api/sky/daily',
+  ranking: '/cielo-api/sky/ranking',
 } as const;
 
 export interface SkyPlaceDto {
@@ -118,4 +126,150 @@ export interface BondReadingRequest {
 /** `reading` es null si la IA no está disponible (la app usa su texto propio). */
 export interface BondReadingResponse {
   reading: string | null;
+}
+
+/* ------------------------------------------------------------------ cálculos (`@antrina/sky`) */
+
+/** Datos de nacimiento para calcular una carta. */
+export interface SkyBirthRequest {
+  /** YYYY-MM-DD */
+  birthDate: string;
+  /** HH:MM o null si no se sabe la hora (se usa el mediodía). */
+  birthTime: string | null;
+  /** Con lugar y hora hay ascendente y casas. */
+  place: SkyPlaceDto | null;
+  /** Zona horaria IANA si no hay lugar (por defecto America/Lima). */
+  timezone?: string;
+}
+
+export type SkyPointCode =
+  | 'sun'
+  | 'moon'
+  | 'mercury'
+  | 'venus'
+  | 'mars'
+  | 'jupiter'
+  | 'saturn'
+  | 'uranus'
+  | 'neptune'
+  | 'pluto'
+  | 'ascendant';
+
+export interface SkyPlacementDto {
+  point: SkyPointCode;
+  /** Longitud eclíptica (0–360). */
+  longitude: number;
+  sign: ZodiacSignCode;
+  /** Grados dentro del signo (0–30). */
+  degree: number;
+  /** Casa (1–12) o null sin hora y lugar. */
+  house: number | null;
+  retrograde: boolean;
+}
+
+export interface NatalChartResponse {
+  sun: ZodiacSignCode;
+  moon: ZodiacSignCode;
+  rising: ZodiacSignCode | null;
+  placements: SkyPlacementDto[];
+  ascendant: SkyPlacementDto | null;
+  /** Cúspides de las 12 casas (Porphyry) o null. */
+  cusps: number[] | null;
+}
+
+export type SkyBondAreaCode = 'moods' | 'talk' | 'love' | 'dreams';
+
+export interface SynastryRequest {
+  locale: LocaleCode;
+  me: SkyBirthRequest;
+  them: SkyBirthRequest;
+  /** Nombre de la otra persona (para la lectura sin IA). */
+  name?: string;
+}
+
+export interface SynastryResponse {
+  /** 0–100 */
+  percent: number;
+  rows: { area: SkyBondAreaCode; score: number; mine: ZodiacSignCode; theirs: ZodiacSignCode }[];
+  /** Aspectos más fuertes, ya en palabras del idioma pedido. */
+  highlights: string[];
+  /** Lectura armada sin IA con los mismos datos. */
+  reading: string;
+}
+
+export type SkyMoonPhaseCode = 'new' | 'waxing' | 'full' | 'waning';
+export type SkyDailyAreaCode = 'love' | 'money' | 'work' | 'energy';
+export type SkyDayToneCode = 'bright' | 'steady' | 'calm';
+
+/** Un signo en el ranking del día, con sus textos ya en el idioma pedido. */
+export interface SkyRankedSignDto {
+  sign: ZodiacSignCode;
+  position: number;
+  /** 0–100 */
+  score: number;
+  tier: 'high' | 'mid' | 'low';
+  phrase: string;
+  color: { hex: string; name: string };
+  number: number;
+  /** Hora de la suerte (inicio, 0–23). */
+  hour: number;
+  item: string;
+  stone: { id: string; name: string };
+}
+
+export interface SkyDayOfSkyDto {
+  moon: ZodiacSignCode;
+  phase: SkyMoonPhaseCode;
+  /** 0–1 */
+  illumination: number;
+  daysToFull: number;
+  daysToNew: number;
+}
+
+/** Ranking de los 12 signos de un día (el mismo para todos; cambia a medianoche de Lima). */
+export interface SkyRankingResponse {
+  day: string;
+  sky: SkyDayOfSkyDto;
+  ranking: SkyRankedSignDto[];
+}
+
+export interface SkyDailyRequest {
+  locale: LocaleCode;
+  birth: SkyBirthRequest;
+  /** YYYY-MM-DD; por defecto hoy en Lima. */
+  day?: string;
+  /** Semilla del papel de la fortuna (en la tienda, el id del dispositivo o de la cuenta). */
+  seed?: string;
+}
+
+export interface SkyTransitDto {
+  transiting: SkyPointCode;
+  natal: SkyPointCode;
+  aspect: 'conjunction' | 'sextile' | 'square' | 'trine' | 'opposition';
+  orb: number;
+}
+
+/** El día de una persona: de aquí salen todos los textos de "Hoy" para que no se contradigan. */
+export interface SkyDailyResponse extends SkyRankingResponse {
+  me: {
+    sign: ZodiacSignCode;
+    rank: SkyRankedSignDto;
+    /** 0–100 por área (tránsitos del día sobre la carta). */
+    indices: Record<SkyDailyAreaCode, number>;
+    score: number;
+    tone: SkyDayToneCode;
+    best: SkyDailyAreaCode;
+    worst: SkyDailyAreaCode;
+    /** Signo con el que mejor fluye hoy. */
+    ally: ZodiacSignCode;
+    fortune: {
+      level: SkyFortuneLevelCode;
+      label: string;
+      verseIndex: number;
+      verse: string;
+      stoneId: string;
+    };
+    /** Tránsito más exacto del día, si hay. */
+    transit: SkyTransitDto | null;
+  };
 }

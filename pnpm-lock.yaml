@@ -129,6 +129,9 @@ importers:
       '@antrina/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@antrina/sky':
+        specifier: workspace:*
+        version: link:../../packages/sky
       '@aws-sdk/client-s3':
         specifier: ^3.1146.0
         version: 3.1146.0
@@ -205,6 +208,9 @@ importers:
       '@antrina/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@antrina/sky':
+        specifier: workspace:*
+        version: link:../../packages/sky
       '@antrina/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -293,6 +299,9 @@ importers:
       '@antrina/domain':
         specifier: workspace:*
         version: link:../domain
+      '@antrina/sky':
+        specifier: workspace:*
+        version: link:../sky
     devDependencies:
       '@antrina/config':
         specifier: workspace:*
@@ -316,6 +325,19 @@ importers:
         version: 6.0.3
 
   packages/domain:
+    devDependencies:
+      '@antrina/config':
+        specifier: workspace:*
+        version: link:../config
+      typescript:
+        specifier: ~6.0.3
+        version: 6.0.3
+
+  packages/sky:
+    dependencies:
+      '@antrina/contracts':
+        specifier: workspace:*
+        version: link:../contracts
     devDependencies:
       '@antrina/config':
         specifier: workspace:*

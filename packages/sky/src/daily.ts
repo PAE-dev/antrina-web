@@ -7,7 +7,7 @@ import {
   seededIndex,
   SIGN_CODES,
   type SignCode,
-} from './astrology';
+} from './astrology.js';
 import {
   FORTUNE_LEVELS,
   type FortuneLevel,
@@ -15,9 +15,9 @@ import {
   LUCKY_COLORS,
   LUCKY_ITEMS,
   RANK_PHRASES,
-} from './daily-content';
-import { longitudeOf, type NatalChart, type Planet } from './ephemeris';
-import { STONE_LIBRARY } from './stones';
+} from './daily-content.js';
+import { longitudeOf, type NatalChart, type Planet } from './ephemeris.js';
+import { STONE_LIBRARY } from './stones.js';
 
 /**
  * El cielo del día para todos: ranking de los 12 signos (calculado con los planetas de hoy, no al

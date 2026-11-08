@@ -8,18 +8,17 @@ import {
 import {
   assertBirthDate,
   assertBirthTime,
-  assertPlace,
   type Clock,
   DomainError,
   SKY_LIMITS,
   SKY_FORTUNE_LEVELS,
   SKY_TOPICS,
   type SkyDay,
-  type SkyPlace,
   type SkyProfile,
   type SkyRepository,
 } from '@antrina/domain';
 import { optionalString, requireOneOf, requireString } from '../shared/input.js';
+import { parsePlace } from './sky-input.js';
 
 const SKY_DAYS_KEPT = 90;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -36,29 +35,6 @@ function toDayDto(day: SkyDay): SkyDayDto {
 
 function toProfileDto(profile: SkyProfile): SkyProfileDto {
   return { birthDate: profile.birthDate, birthTime: profile.birthTime, place: profile.place };
-}
-
-function requireNumber(value: unknown, field: string): number {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    throw new DomainError(`El campo "${field}" debe ser un número`, 'input.invalid');
-  }
-  return value;
-}
-
-function parsePlace(value: unknown): SkyPlace | null {
-  if (value === null || value === undefined) return null;
-  if (typeof value !== 'object') throw new DomainError('Lugar inválido', 'sky.invalid_place');
-  const raw = value as Record<string, unknown>;
-  const place: SkyPlace = {
-    name: requireString(raw.name, 'place.name', 120).trim(),
-    region: (optionalString(raw.region, 'place.region', 120) ?? '').trim(),
-    country: (optionalString(raw.country, 'place.country', 120) ?? '').trim(),
-    lat: requireNumber(raw.lat, 'place.lat'),
-    lon: requireNumber(raw.lon, 'place.lon'),
-    timezone: requireString(raw.timezone, 'place.timezone', 64),
-  };
-  assertPlace(place);
-  return place;
 }
 
 /** Perfil, preguntas y vínculos de "Tu cielo" de la cuenta. */

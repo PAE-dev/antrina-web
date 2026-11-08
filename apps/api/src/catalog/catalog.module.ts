@@ -4,6 +4,7 @@ import {
   ListCategoriesUseCase,
   ListProductIndexUseCase,
   ListProductsUseCase,
+  ListWorldShopUseCase,
 } from '@antrina/application';
 import {
   type CategoryRepository,
@@ -56,6 +57,15 @@ import { CatalogController } from './presentation/catalog.controller.js';
       provide: ListCategoriesUseCase,
       useFactory: (categories: CategoryRepository) => new ListCategoriesUseCase(categories),
       inject: [CATEGORY_REPOSITORY],
+    },
+    {
+      provide: ListWorldShopUseCase,
+      useFactory: (
+        products: ProductRepository,
+        categories: CategoryRepository,
+        storage: ImageStorage,
+      ) => new ListWorldShopUseCase(products, categories, storage),
+      inject: [PRODUCT_REPOSITORY, CATEGORY_REPOSITORY, IMAGE_STORAGE],
     },
   ],
   exports: [PRODUCT_REPOSITORY, CATEGORY_REPOSITORY, PRODUCT_IMAGE_REPOSITORY, IMAGE_STORAGE],

@@ -14,6 +14,7 @@ import { PrismaModule } from './shared/infrastructure/prisma/prisma.module.js';
 import { SiteModule } from './site/site.module.js';
 import { SkyModule } from './sky/sky.module.js';
 import { ToritosModule } from './toritos/toritos.module.js';
+import { WorldsModule } from './worlds/worlds.module.js';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ToritosModule } from './toritos/toritos.module.js';
     SiteModule,
     AdminSiteModule,
     SkyModule,
+    WorldsModule,
   ],
   controllers: [HealthController],
 })

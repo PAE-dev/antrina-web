@@ -51,7 +51,14 @@ export default tseslint.config(
     files: ['packages/application/**/*.ts'],
     rules: restrict(
       [...FRAMEWORKS, '@antrina/ui'],
-      'La capa de aplicación solo depende de @antrina/domain y @antrina/contracts.',
+      'La capa de aplicación solo depende de @antrina/domain, @antrina/contracts y @antrina/sky.',
+    ),
+  },
+  {
+    files: ['packages/sky/**/*.ts'],
+    rules: restrict(
+      [...FRAMEWORKS, '@antrina/application', '@antrina/domain', '@antrina/ui'],
+      '@antrina/sky es cálculo puro compartido por la tienda y la API: solo importa @antrina/contracts.',
     ),
   },
   {

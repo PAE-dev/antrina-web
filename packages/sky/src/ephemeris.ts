@@ -1,4 +1,4 @@
-import { julianDay, moonLongitude, signOf, sunLongitude, type SignCode } from './astrology';
+import { julianDay, moonLongitude, signOf, sunLongitude, type SignCode } from './astrology.js';
 
 /**
  * Carta natal completa sin dependencias: planetas con los elementos keplerianos aproximados de

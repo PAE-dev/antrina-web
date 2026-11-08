@@ -2,10 +2,17 @@ import { type LocaleCode, PRODUCT_STONES, stoneName } from '@antrina/contracts';
 import { ArrowRightIcon } from '@antrina/ui';
 import { Button } from '@heroui/react';
 import { useMemo, useState } from 'react';
-import { SIGN_CODES, type SignCode } from '../../sky/astrology';
-import { SIGN_SKY, STONE_HEX } from '../../sky/content';
-import { type NatalChart } from '../../sky/ephemeris';
-import { AREA_STONES, SIGN_STONE, signStone, STONE_LIBRARY } from '../../sky/stones';
+import {
+  AREA_STONES,
+  type NatalChart,
+  SIGN_CODES,
+  SIGN_SKY,
+  SIGN_STONE,
+  type SignCode,
+  signStone,
+  STONE_HEX,
+  STONE_LIBRARY,
+} from '@antrina/sky';
 import { Sheet, StoneImage } from './parts';
 
 /**

@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
-import { SIGN_CODES } from '../../sky/astrology';
-import { SIGN_SKY } from '../../sky/content';
-import { type Planet } from '../../sky/ephemeris';
+import { type Planet, SIGN_CODES, SIGN_SKY } from '@antrina/sky';
 
 /**
  * Planetario: la Tierra al centro, la rueda del zodiaco alrededor y cada planeta (con su foto) en

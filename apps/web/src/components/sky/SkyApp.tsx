@@ -21,65 +21,70 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  ELEMENT_OF,
-  julianDay,
-  MODALITY_OF,
-  seededIndex,
-  SIGN_CODES,
-  skyOfDay,
-  type Element,
-  type SignCode,
-} from '../../sky/astrology';
-import {
   AREA_CONTENT,
+  chartFromBirth,
+  AREA_STONES,
   AREAS,
-  COMPAT_ROWS,
-  ELEMENT_COLOR,
-  ELEMENT_LABEL,
-  MODALITY_LABEL,
-  PHASE_LABEL,
-  SIGN_SKY,
-  SKY_LABELS,
-} from '../../sky/content';
-import {
-  longitudeOf,
-  natalChart,
-  PLANETS,
-  transitsFor,
-  type NatalChart,
-  type Placement,
-  type Planet,
-  type Transit,
-} from '../../sky/ephemeris';
-import { searchPlaces, zonedToUtc, type Place } from '../../sky/geo';
-import {
   ASK_ANSWERS,
   ASK_QUESTIONS,
+  type AskTopic,
   ASPECT_INFO,
   BODY_INFO,
+  bondFallback,
+  compass,
+  COMPAT_ROWS,
   DAILY,
+  dayProfile,
+  type DayTone,
   DO_DONT,
+  DO_PREFIX,
+  type Element,
+  ELEMENT_COLOR,
+  ELEMENT_LABEL,
+  ELEMENT_OF,
   GLOSSARY,
+  type GlossaryKey,
   HOUSE_INFO,
   INTRO_SLIDES,
+  julianDay,
+  longitudeOf,
+  LUCKY_COLORS,
+  LUCKY_ITEMS,
+  MODALITY_LABEL,
+  MODALITY_OF,
   MOON_DAY,
+  MOON_PHASE_INFO,
+  moonCycle,
+  moonView,
   NATAL_TEXT,
-  REVEAL_LINES,
-  TRANSIT_TEXT,
-  type AskTopic,
-  type GlossaryKey,
+  type NatalChart,
   type Nature,
-} from '../../sky/guide';
+  PHASE_LABEL,
+  type Placement,
+  type Planet,
+  PLANETS,
+  REVEAL_LINES,
+  seededIndex,
+  SIGN_CODES,
+  SIGN_SKY,
+  SIGN_STONE,
+  type SignCode,
+  signStone,
+  SKY_LABELS,
+  skyOfDay,
+  STONE_LIBRARY,
+  synastry,
+  toneOf,
+  type Transit,
+  TRANSIT_TEXT,
+  transitsFor,
+} from '@antrina/sky';
+import { searchPlaces, type Place } from '../../sky/geo';
 import { SKY_UI } from '../../sky/labels';
 import { logout, skyApi, useAccount, useGoogleLoginUrl } from '../../lib/customer-client';
 import { AccountChip, GoogleMark } from '../account/AccountChip';
-import { compass, moonView } from '../../sky/moonview';
-import { AREA_STONES, SIGN_STONE, signStone, STONE_LIBRARY } from '../../sky/stones';
 import { LiveMoon } from './LiveMoon';
 import { Orrery } from './Orrery';
-import { dayProfile, type DayTone, moonCycle, toneOf } from '../../sky/daily';
-import { bondFallback, synastry } from '../../sky/synastry';
-import { DO_PREFIX, LUCKY_COLORS, LUCKY_ITEMS, MOON_PHASE_INFO } from '../../sky/daily-content';
 import {
   CollectionCard,
   DailyChecklist,
@@ -347,22 +352,8 @@ const isoDate = (y: number, m: number, d: number) => `${y}-${pad(m)}-${pad(d)}`;
 const daysIn = (y: number, m: number) => new Date(y, m, 0).getDate();
 const dayKey = (d: Date) => isoDate(d.getFullYear(), d.getMonth() + 1, d.getDate());
 
-/** Carta de un perfil: con lugar y hora hay ascendente y casas. */
-function chartOf(profile: Profile): NatalChart {
-  const [y, m, d] = profile.date.split('-').map(Number) as [number, number, number];
-  const time = profile.time ?? '12:00';
-  const utc = profile.place
-    ? zonedToUtc(profile.date, time, profile.place.timezone)
-    : (() => {
-        const [hh, mm] = time.split(':').map(Number) as [number, number];
-        return new Date(y, m - 1, d, hh, mm).getTime();
-      })();
-  return natalChart({
-    utc,
-    place:
-      profile.place && profile.time ? { lat: profile.place.lat, lon: profile.place.lon } : null,
-  });
-}
+/** Carta de un perfil: con lugar y hora hay ascendente y casas (sin lugar, hora del dispositivo). */
+const chartOf = (profile: Profile): NatalChart => chartFromBirth(profile);
 
 const sunOf = (chart: NatalChart) => chart.placements.find((p) => p.point === 'sun')!;
 const moonOf = (chart: NatalChart) => chart.placements.find((p) => p.point === 'moon')!;

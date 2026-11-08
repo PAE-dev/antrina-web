@@ -11,6 +11,7 @@ import {
   type ProductSummaryDto,
   SITE_ROUTES,
   type SiteImagesResponse,
+  type WorldShopResponse,
 } from '@antrina/contracts';
 import { getFallbackProducts } from './fallback-products';
 
@@ -104,6 +105,19 @@ export async function getCategories(locale: LocaleCode): Promise<CategoryDto[] |
     return (await getJson<ListCategoriesResponse>(CATALOG_ROUTES.categories, { locale })).data;
   } catch (error) {
     warn('categorías no disponibles', error);
+    return null;
+  }
+}
+
+/** Tienda de un mundo de `/mundos` (categorías con ese prefijo). `null` si la API no responde. */
+export async function getWorldShop(
+  prefix: string,
+  locale: LocaleCode,
+): Promise<WorldShopResponse | null> {
+  try {
+    return await getJson<WorldShopResponse>(CATALOG_ROUTES.worldShop, { prefix, locale });
+  } catch (error) {
+    warn('tienda del mundo no disponible', error);
     return null;
   }
 }

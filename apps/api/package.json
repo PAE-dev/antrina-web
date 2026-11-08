@@ -20,6 +20,7 @@
     "@antrina/application": "workspace:*",
     "@antrina/contracts": "workspace:*",
     "@antrina/domain": "workspace:*",
+    "@antrina/sky": "workspace:*",
     "@aws-sdk/client-s3": "^3.1146.0",
     "@aws-sdk/s3-request-presigner": "^3.1146.0",
     "@nestjs/common": "^12.1.2",

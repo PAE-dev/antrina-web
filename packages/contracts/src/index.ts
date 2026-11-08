@@ -10,3 +10,4 @@ export * from './customer-auth.js';
 export * from './toritos.js';
 export * from './sky.js';
 export * from './stones.js';
+export * from './worlds.js';
