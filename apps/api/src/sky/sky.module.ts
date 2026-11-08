@@ -12,7 +12,7 @@ import { type Clock, type SkyOracle, type SkyRepository } from '@antrina/domain'
 import { SystemClock } from '../admin-auth/infrastructure/crypto-session-token.service.js';
 import { AskRateLimitGuard } from './presentation/ask-rate-limit.guard.js';
 import { CustomerAuthModule } from '../customer-auth/customer-auth.module.js';
-import { ClaudeSkyOracle } from './infrastructure/claude-sky-oracle.js';
+import { OpenRouterSkyOracle } from './infrastructure/openrouter-sky-oracle.js';
 import { PrismaSkyRepository } from './infrastructure/prisma-sky.repository.js';
 import { AskSkyController, SkyController } from './presentation/sky.controller.js';
 import { SKY_CLOCK, SKY_ORACLE, SKY_REPOSITORY } from './sky.tokens.js';
@@ -36,7 +36,7 @@ const skyClockUseCase = <T>(UseCase: new (sky: SkyRepository, clock: Clock) => T
   providers: [
     { provide: SKY_REPOSITORY, useClass: PrismaSkyRepository },
     { provide: SKY_CLOCK, useClass: SystemClock },
-    { provide: SKY_ORACLE, useClass: ClaudeSkyOracle },
+    { provide: SKY_ORACLE, useClass: OpenRouterSkyOracle },
     {
       provide: AskSkyUseCase,
       useFactory: (oracle: SkyOracle) => {

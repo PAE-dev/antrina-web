@@ -1,12 +1,11 @@
-import { Anthropic } from '@anthropic-ai/sdk';
 import { Inject, Injectable } from '@nestjs/common';
 import { type SkyOracle, type SkyOracleQuestion } from '@antrina/domain';
 import { APP_ENV, type AppEnv } from '../../config/env.js';
 
-/** Haiku 5.5: rápido y económico (~US$ 0,0004 por respuesta) para respuestas breves. */
-const MODEL = 'claude-haiku-5-5';
+const ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
+const TIMEOUT_MS = 25_000;
 
-/** Voz de Antrina: estable (va primero para que el prompt se pueda cachear). */
+/** Voz de Antrina: estable (va primero para que el proveedor pueda cachear el prompt). */
 const SYSTEM = `Eres la voz de "Tu cielo", la app de astrología de Antrina, un taller familiar de Lima que hace árboles de cuarzo a mano. Respondes preguntas personales mirando la carta natal de la persona y el cielo del día.
 
 Cómo respondes:
@@ -27,23 +26,26 @@ const TOPIC_LABEL: Record<SkyOracleQuestion['topic'], string> = {
   money: 'dinero',
 };
 
-/** Adapter del oráculo con Claude (Anthropic). Sin `ANTHROPIC_API_KEY`, la app usa sus textos. */
-@Injectable()
-export class ClaudeSkyOracle implements SkyOracle {
-  private readonly client: Anthropic | null;
+interface ChatCompletion {
+  choices?: { message?: { content?: string | null }; finish_reason?: string | null }[];
+  error?: { message?: string; code?: number | string };
+}
 
-  constructor(@Inject(APP_ENV) env: AppEnv) {
-    this.client = env.anthropicApiKey
-      ? new Anthropic({ apiKey: env.anthropicApiKey, timeout: 25_000, maxRetries: 0 })
-      : null;
-  }
+/**
+ * Adapter del oráculo vía OpenRouter (API compatible con Chat Completions). El modelo se elige con
+ * `OPENROUTER_MODEL` (por defecto Claude Haiku 5.5). Sin `OPENROUTER_API_KEY`, la app usa sus textos.
+ */
+@Injectable()
+export class OpenRouterSkyOracle implements SkyOracle {
+  constructor(@Inject(APP_ENV) private readonly env: AppEnv) {}
 
   isConfigured(): boolean {
-    return this.client !== null;
+    return this.env.openRouter !== null;
   }
 
   async answer(input: SkyOracleQuestion): Promise<string> {
-    if (!this.client) throw new Error('sin clave de Anthropic');
+    const config = this.env.openRouter;
+    if (!config) throw new Error('sin clave de OpenRouter');
     const context = [
       `Idioma: ${input.locale}`,
       `Tema: ${TOPIC_LABEL[input.topic]}`,
@@ -54,25 +56,36 @@ export class ClaudeSkyOracle implements SkyOracle {
       `Piedra sugerida: ${input.stone.name}: ${input.stone.meaning}`,
     ].join('\n');
 
-    const response = await this.client.messages.create({
-      model: MODEL,
-      max_tokens: 2000,
-      // Respuesta breve de chat: poco razonamiento y la primera palabra cuanto antes.
-      thinking: { type: 'adaptive' },
-      output_config: { effort: 'low' },
-      system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
-      messages: [
-        {
-          role: 'user',
-          content: `${context}\n\n<pregunta>\n${input.question}\n</pregunta>`,
-        },
-      ],
+    const response = await fetch(ENDPOINT, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${config.apiKey}`,
+        'content-type': 'application/json',
+        // Atribución opcional que OpenRouter muestra en su panel.
+        'http-referer': config.siteUrl,
+        'x-title': 'Antrina · Tu cielo',
+      },
+      body: JSON.stringify({
+        model: config.model,
+        // El modelo razona antes de responder: espacio de sobra y poco razonamiento (respuesta breve).
+        max_tokens: 2500,
+        reasoning: { effort: 'low' },
+        messages: [
+          { role: 'system', content: SYSTEM },
+          { role: 'user', content: `${context}\n\n<pregunta>\n${input.question}\n</pregunta>` },
+        ],
+      }),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
     });
-
-    if (response.stop_reason === 'refusal') throw new Error('el modelo declinó la pregunta');
-    return response.content
-      .map((block) => (block.type === 'text' ? block.text : ''))
-      .join('')
-      .trim();
+    const body = (await response.json().catch(() => ({}))) as ChatCompletion;
+    if (!response.ok || body.error) {
+      throw new Error(`OpenRouter ${response.status}: ${body.error?.message ?? 'sin detalle'}`);
+    }
+    const choice = body.choices?.[0];
+    if (choice?.finish_reason === 'content_filter')
+      throw new Error('el modelo declinó la pregunta');
+    const text = (choice?.message?.content ?? '').trim();
+    if (!text) throw new Error(`respuesta vacía (finish_reason: ${choice?.finish_reason ?? '?'})`);
+    return text;
   }
 }

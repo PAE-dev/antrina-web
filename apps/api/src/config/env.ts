@@ -22,9 +22,17 @@ export interface AppEnv {
   storeOrigin: string;
   /** Sin credenciales la API arranca igual y la tienda avisa de que el acceso no está disponible. */
   google: GoogleEnv | null;
-  /** "Pregunta al cielo" con Claude; vacía = la app usa sus textos propios. */
-  anthropicApiKey: string | null;
+  /** "Pregunta al cielo" vía OpenRouter; null = la app usa sus textos propios. */
+  openRouter: OpenRouterEnv | null;
   s3: S3Env;
+}
+
+export interface OpenRouterEnv {
+  apiKey: string;
+  /** Id del modelo en OpenRouter (`anthropic/claude-haiku-5.5` por defecto). */
+  model: string;
+  /** Para la atribución en OpenRouter (`http-referer`). */
+  siteUrl: string;
 }
 
 export interface GoogleEnv {
@@ -86,7 +94,13 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
     adminEncryptionKey: parseEncryptionKey(required(source, 'ADMIN_ENCRYPTION_KEY')),
     storeOrigin: (source.STORE_ORIGIN?.trim() || 'http://localhost:4321').replace(/\/+$/, ''),
     google: loadGoogleEnv(source),
-    anthropicApiKey: source.ANTHROPIC_API_KEY?.trim() || null,
+    openRouter: source.OPENROUTER_API_KEY?.trim()
+      ? {
+          apiKey: source.OPENROUTER_API_KEY.trim(),
+          model: source.OPENROUTER_MODEL?.trim() || 'anthropic/claude-haiku-5.5',
+          siteUrl: (source.STORE_ORIGIN?.trim() || 'http://localhost:4321').replace(/\/+$/, ''),
+        }
+      : null,
     s3: {
       endpoint: s3Endpoint,
       region: withDevDefault(source, 'S3_REGION', 'us-east-1', isProduction),
