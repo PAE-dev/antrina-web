@@ -111,6 +111,21 @@ export function WorldExperience({ doors, labels, locale, accountHref }: Props) {
 
   const open = phase !== 'closed';
 
+  // El bosque ilustrado (HTML estático de `WorldPoster`) cubre la espera; se desvanece cuando el 3D
+  // está listo, y desaparece al instante si no hay WebGL o si el bosque se cerró.
+  useEffect(() => {
+    const poster = document.getElementById('world-poster');
+    if (!poster) return;
+    if (!supported || phase === 'closed') {
+      poster.remove();
+      return;
+    }
+    if (phase === 'loading') return;
+    poster.classList.add('is-gone');
+    const timer = window.setTimeout(() => poster.remove(), 1500);
+    return () => window.clearTimeout(timer);
+  }, [phase, supported]);
+
   // Monta el motor cuando la experiencia está abierta.
   useEffect(() => {
     if (!open || !supported || !mountRef.current) return;
@@ -167,10 +182,10 @@ export function WorldExperience({ doors, labels, locale, accountHref }: Props) {
   // Bloquea el scroll de la tienda mientras el mundo está abierto.
   useEffect(() => {
     if (!open || !supported) return;
-    const previous = document.documentElement.style.overflow;
     document.documentElement.style.overflow = 'hidden';
     return () => {
-      document.documentElement.style.overflow = previous;
+      // El cartel ilustrado también bloquea el scroll al cargar: al cerrar se libera del todo.
+      document.documentElement.style.overflow = '';
     };
   }, [open, supported]);
 
@@ -247,7 +262,9 @@ export function WorldExperience({ doors, labels, locale, accountHref }: Props) {
   return (
     <div
       ref={rootRef}
-      className="fixed inset-0 z-[60] touch-none overscroll-none bg-brand text-on-dark select-none"
+      className={`fixed inset-0 z-[60] touch-none overscroll-none text-on-dark select-none ${
+        phase === 'loading' ? 'bg-transparent' : 'bg-brand'
+      }`}
       role="dialog"
       aria-modal="true"
       aria-label={labels.title.replaceAll('*', '')}

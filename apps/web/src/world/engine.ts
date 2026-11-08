@@ -458,17 +458,17 @@ export class WorldEngine {
   async init(): Promise<void> {
     const report = (value: number) => this.callbacks.onProgress?.(value);
     report(0.05);
-    await Promise.race([
+    // Fuentes (para los carteles) y archivos del bosque a la vez; el progreso avanza por archivo.
+    const fonts = Promise.race([
       Promise.all([
         document.fonts.load('600 96px Fraunces'),
         document.fonts.load('500 40px "DM Sans"'),
       ]),
       new Promise((resolve) => setTimeout(resolve, 2500)),
     ]).catch(() => undefined);
-    report(0.25);
+    await Promise.all([fonts, preloadGroveTextures((fraction) => report(0.05 + fraction * 0.6))]);
+    report(0.7);
     await nextFrame();
-    await preloadGroveTextures();
-    report(0.4);
     this.buildWorld(HUB_ID, report);
     report(0.9);
     await nextFrame();

@@ -18,6 +18,7 @@ import { getDictionary } from '../i18n/dictionaries';
 import { INTENTIONS, productTag, SIGNS } from '../i18n/taxonomy';
 import StoreLayout from '../layouts/StoreLayout.astro';
 import { WorldExperience } from './world/WorldExperience';
+import WorldPoster from './world/WorldPoster.astro';
 import { getFeaturedProducts, getSiteImages } from '../lib/catalog';
 import { cardImage, SIZES, toImageSource } from '../lib/images';
 import { alternatesFor, productPath, routes } from '../lib/routes';
@@ -90,6 +91,7 @@ const lastIndex = products.length > 0 ? 2 : 1;
   }
   jsonLd={[organization(), website(locale)]}
 >
+  <WorldPoster />
   <WorldExperience
     client:only="react"
     labels={t.world}

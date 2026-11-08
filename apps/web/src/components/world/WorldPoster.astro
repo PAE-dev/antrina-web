@@ -1,0 +1,316 @@
+---
+/**
+ * Bosque ilustrado (SVG + CSS, sin descargas) que cubre la portada mientras carga el bosque 3D.
+ * Va en el HTML estático: se ve al instante, antes de que cargue JavaScript. `WorldExperience` lo
+ * desvanece cuando el 3D está listo (o lo quita si el visitante ya salió del bosque en esta sesión).
+ * Paleta de escena propia (como `forest.css` de /mundos): noche, luna tenue y faroles cálidos.
+ */
+
+// Pseudoaleatorio con semilla fija: el dibujo es siempre el mismo (sin saltos entre visitas).
+function seeded(seed: number) {
+  let s = seed;
+  return () => {
+    s = (s * 16807) % 2147483647;
+    return (s - 1) / 2147483646;
+  };
+}
+
+/** Silueta de cedro: pisos de ramas que se estrechan hacia la punta. */
+function conifer(x: number, base: number, height: number, width: number, tiers = 6): string {
+  let d = '';
+  for (let i = 0; i < tiers; i++) {
+    const t = i / tiers;
+    const y = base - height * t * 0.92;
+    const w = width * (1 - t * 0.78);
+    const top = y - (height / tiers) * 1.55;
+    d += `M${x - w / 2},${y} Q${x - w * 0.18},${y - 6} ${x},${top} Q${x + w * 0.18},${y - 6} ${x + w / 2},${y} Z `;
+  }
+  d += `M${x - width * 0.05},${base} L${x - width * 0.035},${base - height * 0.2} L${x + width * 0.035},${base - height * 0.2} L${x + width * 0.05},${base} Z`;
+  return d;
+}
+
+function treeLine(seed: number, count: number, base: number, minH: number, maxH: number) {
+  const rand = seeded(seed);
+  let d = '';
+  for (let i = 0; i < count; i++) {
+    const x = (i / count) * 1700 - 50 + rand() * 50;
+    const h = minH + rand() * (maxH - minH);
+    d += conifer(x, base + rand() * 14, h, h * (0.34 + rand() * 0.12), 5 + Math.round(rand() * 2));
+  }
+  return d;
+}
+
+const far = treeLine(7, 34, 640, 150, 260);
+const mid = treeLine(19, 18, 700, 240, 380);
+const near = `${conifer(70, 930, 820, 340, 8)} ${conifer(1560, 930, 860, 360, 8)} ${conifer(1370, 940, 560, 240, 7)}`;
+
+const starRand = seeded(3);
+const stars = Array.from({ length: 70 }, () => ({
+  x: starRand() * 1600,
+  y: starRand() * 420,
+  r: 0.6 + starRand() * 1.3,
+  delay: (starRand() * 6).toFixed(2),
+}));
+
+const lamps = [
+  { x: 360, y: 700 },
+  { x: 640, y: 728 },
+  { x: 980, y: 722 },
+  { x: 1230, y: 702 },
+];
+
+const flyRand = seeded(11);
+const fireflies = Array.from({ length: 22 }, () => ({
+  x: 200 + flyRand() * 1200,
+  y: 520 + flyRand() * 300,
+  delay: (flyRand() * 8).toFixed(2),
+  dur: (7 + flyRand() * 7).toFixed(2),
+}));
+---
+
+<div id="world-poster" class="world-poster" aria-hidden="true">
+  <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice" class="world-poster-scene">
+    <defs>
+      <linearGradient id="wp-sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#03050b"></stop>
+        <stop offset="0.55" stop-color="#0a1226"></stop>
+        <stop offset="1" stop-color="#121c33"></stop>
+      </linearGradient>
+      <radialGradient id="wp-halo">
+        <stop offset="0" stop-color="#dfe6f5" stop-opacity="0.32"></stop>
+        <stop offset="1" stop-color="#dfe6f5" stop-opacity="0"></stop>
+      </radialGradient>
+      <radialGradient id="wp-moon" cx="0.42" cy="0.4">
+        <stop offset="0" stop-color="#f4f0e4"></stop>
+        <stop offset="1" stop-color="#c9c6bd"></stop>
+      </radialGradient>
+      <radialGradient id="wp-lamp">
+        <stop offset="0" stop-color="#ffb453" stop-opacity="0.75"></stop>
+        <stop offset="0.35" stop-color="#ff9a3c" stop-opacity="0.22"></stop>
+        <stop offset="1" stop-color="#ff9a3c" stop-opacity="0"></stop>
+      </radialGradient>
+      <linearGradient id="wp-ground" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#0b1322"></stop>
+        <stop offset="1" stop-color="#03060c"></stop>
+      </linearGradient>
+      <filter id="wp-blur">
+        <feGaussianBlur stdDeviation="18"></feGaussianBlur>
+      </filter>
+    </defs>
+
+    <rect width="1600" height="900" fill="url(#wp-sky)"></rect>
+    <g class="wp-stars">
+      {stars.map((s) => (
+        <circle cx={s.x} cy={s.y} r={s.r} fill="#eef2fb" style={`animation-delay:-${s.delay}s`} />
+      ))}
+    </g>
+    <circle cx="930" cy="175" r="190" fill="url(#wp-halo)"></circle>
+    <g class="wp-moon">
+      <circle cx="930" cy="175" r="46" fill="url(#wp-moon)"></circle>
+      <circle cx="916" cy="165" r="9" fill="#b9b6ad" opacity="0.45"></circle>
+      <circle cx="944" cy="189" r="6" fill="#b9b6ad" opacity="0.35"></circle>
+      <circle cx="938" cy="157" r="4" fill="#b9b6ad" opacity="0.3"></circle>
+    </g>
+
+    <g class="wp-layer wp-far">
+      <path d={far} fill="#0e182c"></path>
+    </g>
+    <ellipse
+      class="wp-mist wp-mist-1"
+      cx="800"
+      cy="650"
+      rx="900"
+      ry="60"
+      fill="#9fb0cc"
+      opacity="0.12"
+      filter="url(#wp-blur)"
+    ></ellipse>
+    <g class="wp-layer wp-mid">
+      <path d={mid} fill="#09111f"></path>
+    </g>
+
+    <rect y="690" width="1600" height="210" fill="url(#wp-ground)"></rect>
+    {lamps.map((l, i) => (
+      <g class="wp-lamp" style={`animation-delay:-${i * 0.9}s`}>
+        <circle cx={l.x} cy={l.y - 70} r="120" fill="url(#wp-lamp)" />
+        <rect x={l.x - 3} y={l.y - 70} width="6" height="70" fill="#1a1410" />
+        <rect x={l.x - 9} y={l.y - 84} width="18" height="16" rx="3" fill="#ffcf8a" />
+      </g>
+    ))}
+    <ellipse
+      class="wp-mist wp-mist-2"
+      cx="700"
+      cy="760"
+      rx="1000"
+      ry="70"
+      fill="#b7c3d9"
+      opacity="0.1"
+      filter="url(#wp-blur)"
+    ></ellipse>
+
+    <g class="wp-flies">
+      {fireflies.map((f) => (
+        <circle
+          cx={f.x}
+          cy={f.y}
+          r="2.6"
+          fill="#ffd27a"
+          style={`animation-delay:-${f.delay}s;animation-duration:${f.dur}s`}
+        />
+      ))}
+    </g>
+    <g class="wp-layer wp-near">
+      <path d={near} fill="#03060c"></path>
+    </g>
+  </svg>
+  <div class="world-poster-vignette"></div>
+</div>
+
+<script is:inline>
+  // Quien ya salió del bosque en esta sesión ve la tienda directamente (igual que WorldExperience).
+  (function () {
+    try {
+      var gl = document.createElement('canvas');
+      var ok = !!(gl.getContext('webgl2') || gl.getContext('webgl'));
+      if (!ok || sessionStorage.getItem('antrina-world-exited') === '1') {
+        var poster = document.getElementById('world-poster');
+        if (poster) poster.remove();
+      } else {
+        document.documentElement.style.overflow = 'hidden';
+      }
+    } catch (e) {
+      /* sin almacenamiento: se queda el bosque */
+    }
+  })();
+</script>
+
+<style is:global>
+  .world-poster {
+    position: fixed;
+    inset: 0;
+    z-index: 59;
+    background: #03050b;
+    overflow: hidden;
+    transition: opacity 1.4s ease;
+  }
+  .world-poster.is-gone {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .world-poster-scene {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform-origin: 70% 60%;
+    animation: wp-drift 26s ease-in-out infinite alternate;
+  }
+  .world-poster-vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 60% 45%, transparent 35%, rgba(2, 4, 9, 0.75) 100%);
+  }
+  .wp-stars circle {
+    animation: wp-twinkle 5s ease-in-out infinite;
+  }
+  .wp-lamp {
+    animation: wp-flicker 3.6s ease-in-out infinite;
+  }
+  .wp-mist {
+    animation: wp-mist 22s ease-in-out infinite alternate;
+  }
+  .wp-mist-2 {
+    animation-duration: 30s;
+    animation-direction: alternate-reverse;
+  }
+  .wp-far {
+    animation: wp-parallax 26s ease-in-out infinite alternate;
+  }
+  .wp-near {
+    animation: wp-parallax-near 26s ease-in-out infinite alternate;
+  }
+  .wp-flies circle {
+    animation: wp-fly 10s ease-in-out infinite;
+  }
+  @keyframes wp-drift {
+    from {
+      transform: scale(1.02);
+    }
+    to {
+      transform: scale(1.09) translateY(-1%);
+    }
+  }
+  @keyframes wp-twinkle {
+    0%,
+    100% {
+      opacity: 0.25;
+    }
+    50% {
+      opacity: 0.95;
+    }
+  }
+  @keyframes wp-flicker {
+    0%,
+    100% {
+      opacity: 0.9;
+    }
+    45% {
+      opacity: 1;
+    }
+    60% {
+      opacity: 0.78;
+    }
+  }
+  @keyframes wp-mist {
+    from {
+      transform: translateX(-80px);
+    }
+    to {
+      transform: translateX(80px);
+    }
+  }
+  @keyframes wp-parallax {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-18px);
+    }
+  }
+  @keyframes wp-parallax-near {
+    from {
+      transform: translateX(0) scale(1);
+    }
+    to {
+      transform: translateX(26px) scale(1.02);
+    }
+  }
+  @keyframes wp-fly {
+    0%,
+    100% {
+      transform: translate(0, 0);
+      opacity: 0;
+    }
+    20% {
+      opacity: 0.9;
+    }
+    50% {
+      transform: translate(26px, -38px);
+      opacity: 0.6;
+    }
+    80% {
+      opacity: 0.95;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .world-poster-scene,
+    .wp-stars circle,
+    .wp-lamp,
+    .wp-mist,
+    .wp-far,
+    .wp-near,
+    .wp-flies circle {
+      animation: none;
+    }
+  }
+</style>

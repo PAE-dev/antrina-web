@@ -388,38 +388,41 @@ export function getGrassMaps(): {
   return grassMaps;
 }
 
-export async function preloadGroveTextures(): Promise<void> {
-  await loadCenterTree();
-  if (barkMaps) return;
+/** Árbol central y 6 texturas, todo a la vez. `onFile` recibe la fracción descargada (0–1). */
+export async function preloadGroveTextures(onFile?: (fraction: number) => void): Promise<void> {
+  const total = 7;
+  let done = 0;
+  const tick = <T>(value: T): T => {
+    done += 1;
+    onFile?.(done / total);
+    return value;
+  };
+  const tree = loadCenterTree().then(tick, tick);
+  if (barkMaps) {
+    await tree;
+    return;
+  }
   const loader = new THREE.TextureLoader();
   const load = async (name: string, color: boolean, prefix = 'japanese_cedar_bark') => {
-    const texture = await loader.loadAsync(`/world/textures/${prefix}_${name}_1k.jpg`);
+    const texture = tick(await loader.loadAsync(`/world/textures/${prefix}_${name}_1k.webp`));
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
     texture.colorSpace = color ? THREE.SRGBColorSpace : THREE.NoColorSpace;
     texture.anisotropy = 8;
     return texture;
   };
-  try {
-    const [map, normal, arm] = await Promise.all([
-      load('diff', true),
-      load('nor_gl', false),
-      load('arm', false),
-    ]);
-    barkMaps = { map, normal, arm };
-  } catch {
-    barkMaps = null; // sin texturas: queda solo el tallado procedimental
-  }
-  try {
-    const [map, normal, arm] = await Promise.all([
-      load('diff', true, 'leafy_grass'),
-      load('nor_gl', false, 'leafy_grass'),
-      load('arm', false, 'leafy_grass'),
-    ]);
-    grassMaps = { map, normal, arm };
-  } catch {
-    grassMaps = null;
-  }
+  const set = (prefix?: string) =>
+    Promise.all([
+      load('diff', true, prefix),
+      load('nor_gl', false, prefix),
+      load('arm', false, prefix),
+    ])
+      .then(([map, normal, arm]) => ({ map, normal, arm }))
+      // Sin texturas queda el tallado procedimental (corteza) o el color base (pasto).
+      .catch(() => null);
+  const [bark, grass] = await Promise.all([set(), set('leafy_grass'), tree]);
+  barkMaps = bark;
+  grassMaps = grass;
 }
 
 /** Corteza para un tronco: `around` metros de circunferencia, `tall` de alto. */
