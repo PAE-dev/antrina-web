@@ -1,4 +1,11 @@
-import { type SkyBond, type SkyProfile, type SkyQuestion, type SkyTopic } from '../sky-profile.js';
+import {
+  type SkyDay,
+  type SkyDayPatch,
+  type SkyBond,
+  type SkyProfile,
+  type SkyQuestion,
+  type SkyTopic,
+} from '../sky-profile.js';
 
 export interface SkyProfileInput {
   birthDate: string;
@@ -24,4 +31,8 @@ export interface SkyRepository {
   addBond(customerId: string, input: { name: string; birthDate: string }): Promise<SkyBond>;
   /** Devuelve false si el vínculo no existe o es de otro cliente. */
   deleteBond(customerId: string, bondId: string): Promise<boolean>;
+  /** Últimos días con actividad (más reciente primero). */
+  listDays(customerId: string, limit: number): Promise<SkyDay[]>;
+  /** Crea el día o marca lo nuevo; lo ya marcado (y el papel ya sacado) no se borra. */
+  markDay(customerId: string, day: string, patch: SkyDayPatch): Promise<SkyDay>;
 }

@@ -1,0 +1,148 @@
+---
+import { type LocaleCode } from '@antrina/contracts';
+import { ButtonLink, SectionIndex } from '@antrina/ui';
+import { SIGNS } from '../../i18n/taxonomy';
+import StoreLayout from '../../layouts/StoreLayout.astro';
+import { alternatesFor, routes } from '../../lib/routes';
+import { absoluteUrl } from '../../lib/site';
+import { breadcrumbs } from '../../lib/structured-data';
+import { limaDay, rankingFor } from '../../sky/daily';
+import {
+  DAILY_UI,
+  LUCKY_COLORS,
+  LUCKY_ITEMS,
+  RANK_NOTE,
+  RANK_PHRASES,
+} from '../../sky/daily-content';
+import { STONE_LIBRARY } from '../../sky/stones';
+
+interface Props {
+  locale: LocaleCode;
+}
+
+/**
+ * "Ranking de hoy": los 12 signos del 1.° al 12.° según el cielo real del día (hora de Lima), con
+ * frase, color, número, hora, objeto y piedra de la suerte. Página pública e indexable; cambia a
+ * medianoche (la caché de la CDN dura hasta entonces).
+ */
+const { locale } = Astro.props;
+const t = DAILY_UI[locale];
+const day = limaDay();
+const ranking = rankingFor(day);
+const signs = new Map(SIGNS.map((s) => [s.code, s]));
+const dateLabel = new Date(`${day}T12:00:00`).toLocaleDateString(locale, {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+});
+const es = locale === 'es';
+const title = es
+  ? `Ranking de los signos hoy, ${dateLabel}`
+  : `Zodiac sign ranking today, ${dateLabel}`;
+const top = ranking[0]!;
+const description = es
+  ? `Horóscopo del día en ranking: ${signs.get(top.sign)!.copy.es.label} va primero. Frase, color, número, hora, objeto y piedra de la suerte para los 12 signos.`
+  : `Today's horoscope as a ranking: ${signs.get(top.sign)!.copy.en.label} leads. Lucky phrase, colour, number, hour, item and stone for all 12 signs.`;
+const path = routes.ranking(locale);
+const jsonLd = [
+  breadcrumbs([
+    { name: es ? 'Inicio' : 'Home', path: routes.home(locale) },
+    { name: t.rankingTitle, path },
+  ]),
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: title,
+    numberOfItems: ranking.length,
+    itemListElement: ranking.map((r) => ({
+      '@type': 'ListItem',
+      position: r.position,
+      name: signs.get(r.sign)!.copy[locale].label,
+      url: absoluteUrl(routes.sign(locale, signs.get(r.sign)!.slug[locale])),
+    })),
+  },
+];
+const ordinal = (n: number) => (es ? `${n}.°` : `#${n}`);
+---
+
+<StoreLayout
+  locale={locale}
+  title={title}
+  description={description}
+  alternates={alternatesFor((code) => routes.ranking(code))}
+  jsonLd={jsonLd}
+>
+  <section class="section">
+    <div class="container-page flex flex-col gap-10">
+      <header class="flex flex-col gap-5">
+        <SectionIndex label={t.rankingTitle} />
+        <h1 class="type-h1 max-w-[18ch]">{title}</h1>
+        <p class="type-body measure">
+          {es
+            ? 'Así viene el cielo hoy para cada signo, del que tiene más viento a favor al que conviene ir con calma. Se calcula con la posición real de la Luna y los planetas, y cambia a medianoche (hora de Lima).'
+            : 'This is how the sky looks today for each sign, from the one with the most tailwind to the one that should take it easy. It is calculated from the real positions of the Moon and planets and changes at midnight (Lima time).'}
+        </p>
+      </header>
+
+      <ol class="flex flex-col divide-y divide-border border-y border-border">
+        {ranking.map((r) => {
+          const sign = signs.get(r.sign)!;
+          const color = LUCKY_COLORS[r.colorIndex]!;
+          const stone = STONE_LIBRARY[r.stoneId]!;
+          const note =
+            r.position === 1 ? RANK_NOTE.first : r.position >= 10 ? RANK_NOTE.rescue : null;
+          return (
+            <li class="grid gap-4 py-6 md:grid-cols-[6rem_1fr_18rem] md:items-start">
+              <p class="font-display text-[48px] leading-none font-semibold text-text">
+                {ordinal(r.position)}
+              </p>
+              <div class="flex flex-col gap-2">
+                <h2 class="type-h3 font-display">
+                  <a href={routes.sign(locale, sign.slug[locale])} class="hover:text-clay-strong">
+                    {sign.copy[locale].label}
+                  </a>
+                  <span class="type-meta ml-2">{sign.copy[locale].dates}</span>
+                </h2>
+                <p class="type-body">{RANK_PHRASES[r.tier][locale][r.phraseIndex]}</p>
+                {note && <p class="type-meta">{note[locale]}</p>}
+              </div>
+              <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-[14px]">
+                <dt class="text-text-muted">{t.luckyColor}</dt>
+                <dd class="flex items-center gap-2">
+                  <span
+                    class="inline-block size-3 rounded-full border border-border-strong"
+                    style={`background:${color.hex}`}
+                  />
+                  {color.name[locale]}
+                </dd>
+                <dt class="text-text-muted">{t.luckyNumber}</dt>
+                <dd class="type-price">{r.number}</dd>
+                <dt class="text-text-muted">{t.luckyHour}</dt>
+                <dd class="type-price">
+                  {String(r.hour).padStart(2, '0')}:00–{String(r.hour + 1).padStart(2, '0')}:00
+                </dd>
+                <dt class="text-text-muted">{t.luckyItem}</dt>
+                <dd>{LUCKY_ITEMS[locale][r.itemIndex]}</dd>
+                <dt class="text-text-muted">{t.stoneOfDay}</dt>
+                <dd>{stone.name[locale]}</dd>
+              </dl>
+            </li>
+          );
+        })}
+      </ol>
+
+      <div class="flex flex-col items-start gap-4">
+        <p class="type-body measure">
+          {es
+            ? 'En Tu cielo ves tu puesto destacado, tu energía por área, tu galleta de cuarzo con el papel de la fortuna del día y un ritual de luz con tu piedra.'
+            : 'In Your sky you see your highlighted position, your energy by area, your quartz fortune cookie with the day’s paper and a light ritual with your stone.'}
+        </p>
+        <ButtonLink href={routes.sky(locale)} variant="primary" withArrow>
+          {es ? 'Abrir Tu cielo' : 'Open Your sky'}
+        </ButtonLink>
+        <p class="type-meta measure">{t.disclaimer}</p>
+      </div>
+    </div>
+  </section>
+</StoreLayout>

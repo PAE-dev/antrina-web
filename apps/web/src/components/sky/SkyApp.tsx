@@ -2,6 +2,7 @@ import {
   type CustomerMeDto,
   type LocaleCode,
   type SkyBondDto,
+  type SkyDayDto,
   type SkyProfileDto,
 } from '@antrina/contracts';
 import { ArrowRightIcon } from '@antrina/ui';
@@ -70,12 +71,20 @@ import {
   type Nature,
 } from '../../sky/guide';
 import { SKY_UI } from '../../sky/labels';
-import { googleLoginUrl, logout, skyApi, useAccount } from '../../lib/customer-client';
+import { logout, skyApi, useAccount, useGoogleLoginUrl } from '../../lib/customer-client';
 import { AccountChip, GoogleMark } from '../account/AccountChip';
 import { compass, moonView } from '../../sky/moonview';
 import { AREA_STONES, SIGN_STONE, signStone, STONE_LIBRARY } from '../../sky/stones';
 import { LiveMoon } from './LiveMoon';
 import { Orrery } from './Orrery';
+import {
+  CollectionCard,
+  DailyChecklist,
+  DailyProvider,
+  FortuneCookie,
+  IndicesCard,
+  RankingCard,
+} from './Daily';
 import { ProductSheet, ShopTab, StoneSheet, type SkyProduct } from './Shop';
 import {
   iconProps,
@@ -137,6 +146,8 @@ interface SkyCloud {
   account: CustomerMeDto | null;
   googleEnabled: boolean;
   bonds: SkyBondDto[];
+  /** Días guardados en la cuenta (racha, ranking, ritual y papel de la fortuna). */
+  days: SkyDayDto[];
   saveBond: (name: string, birthDate: string) => Promise<void>;
   deleteBond: (id: string) => void;
   recordQuestion: (entry: AskEntry) => void;
@@ -145,6 +156,7 @@ const CloudContext = createContext<SkyCloud>({
   account: null,
   googleEnabled: false,
   bonds: [],
+  days: [],
   saveBond: async () => undefined,
   deleteBond: () => undefined,
   recordQuestion: () => undefined,
@@ -192,8 +204,49 @@ function fromProfileDto(dto: SkyProfileDto): Profile {
   return { date: dto.birthDate, time: dto.birthTime, place: dto.place };
 }
 
+/** Hoy con el ritual diario: checklist y ranking arriba, galleta, índices y colección abajo. */
+function TodayDaily({
+  locale,
+  chart,
+  seed,
+  signBy,
+  onCompare,
+  children,
+}: {
+  locale: LocaleCode;
+  chart: NatalChart;
+  seed: string;
+  signBy: Map<SignCode, SkySign>;
+  onCompare: () => void;
+  children: ReactNode;
+}) {
+  const { account, days } = useContext(CloudContext);
+  const labels = useMemo(
+    () => new Map([...signBy.entries()].map(([code, sign]) => [code, sign.label])),
+    [signBy],
+  );
+  return (
+    <DailyProvider
+      locale={locale}
+      chart={chart}
+      seed={seed}
+      signLabels={labels}
+      signedIn={account !== null}
+      serverDays={days}
+    >
+      <DailyChecklist />
+      <RankingCard />
+      {children}
+      <FortuneCookie />
+      <IndicesCard chart={chart} onCompare={onCompare} />
+      <CollectionCard />
+    </DailyProvider>
+  );
+}
+
 /** Invitación a guardar el cielo en la cuenta (solo si no hay sesión). */
 function CloudNudge({ locale }: { locale: LocaleCode }) {
+  const loginUrl = useGoogleLoginUrl();
   const { account, googleEnabled } = useContext(CloudContext);
   if (account || !googleEnabled) return null;
   const t = CLOUD_UI[locale];
@@ -202,7 +255,7 @@ function CloudNudge({ locale }: { locale: LocaleCode }) {
       <p className="type-label !text-[var(--accent)]">{t.saveTitle}</p>
       <p className="mt-2 text-[15px] leading-relaxed text-on-dark/85">{t.saveText}</p>
       <a
-        href={googleLoginUrl()}
+        href={loginUrl}
         className="mt-4 inline-flex h-11 items-center gap-3 rounded-full bg-white px-5 text-[14px] font-medium text-black"
       >
         <GoogleMark />
@@ -364,6 +417,7 @@ export function SkyApp(props: SkyProps) {
   // el que ya estaba en este dispositivo. Sin sesión todo sigue funcionando en local.
   const { account, googleEnabled } = useAccount();
   const [bonds, setBonds] = useState<SkyBondDto[]>([]);
+  const [serverDays, setServerDays] = useState<SkyDayDto[]>([]);
   useEffect(() => {
     if (!account) {
       setBonds([]);
@@ -375,6 +429,7 @@ export function SkyApp(props: SkyProps) {
       .then(async (data) => {
         if (cancelled) return;
         setBonds(data.bonds);
+        setServerDays(data.days ?? []);
         const local = readJson<Profile>(PROFILE_KEY);
         if (data.profile) {
           const remote = fromProfileDto(data.profile);
@@ -408,6 +463,7 @@ export function SkyApp(props: SkyProps) {
       account,
       googleEnabled,
       bonds,
+      days: serverDays,
       saveBond: async (name, birthDate) => {
         const bond = await skyApi.addBond({ name, birthDate });
         setBonds((list) => [bond, ...list]);
@@ -420,7 +476,7 @@ export function SkyApp(props: SkyProps) {
         if (account) void skyApi.addQuestion(entry).catch(() => undefined);
       },
     }),
-    [account, googleEnabled, bonds],
+    [account, googleEnabled, bonds, serverDays],
   );
 
   const signBy = useMemo(() => new Map(signs.map((s) => [s.code, s])), [signs]);
@@ -720,6 +776,7 @@ function Welcome({
 }
 
 function WelcomeSignIn({ locale }: { locale: LocaleCode }) {
+  const loginUrl = useGoogleLoginUrl();
   const { account, googleEnabled } = useContext(CloudContext);
   if (account || !googleEnabled) return null;
   const t = CLOUD_UI[locale];
@@ -727,7 +784,7 @@ function WelcomeSignIn({ locale }: { locale: LocaleCode }) {
     <p className="text-[14px] text-on-dark-muted">
       {t.haveAccount}{' '}
       <a
-        href={googleLoginUrl()}
+        href={loginUrl}
         className="inline-flex items-center gap-1.5 text-on-dark underline underline-offset-4"
       >
         <GoogleMark size={14} />
@@ -1127,14 +1184,22 @@ function AppShell({
       </header>
       <div key={tab} className="sky-in flex flex-col gap-5 pt-6 pb-36">
         {tab === 'today' && (
-          <Today
+          <TodayDaily
             locale={locale}
             chart={chart}
+            seed={profile.date}
             signBy={signBy}
-            openGlossary={openGlossary}
-            here={here}
-            onLocate={onLocate}
-          />
+            onCompare={() => setTab('bonds')}
+          >
+            <Today
+              locale={locale}
+              chart={chart}
+              signBy={signBy}
+              openGlossary={openGlossary}
+              here={here}
+              onLocate={onLocate}
+            />
+          </TodayDaily>
         )}
         {tab === 'today' && <CloudNudge locale={locale} />}
         {tab === 'chart' && (
@@ -2223,6 +2288,7 @@ function BondSave({
   onSaved: () => void;
   locale: LocaleCode;
 }) {
+  const loginUrl = useGoogleLoginUrl();
   const cloud = useContext(CloudContext);
   const c = CLOUD_UI[locale];
   const [busy, setBusy] = useState(false);
@@ -2230,7 +2296,7 @@ function BondSave({
     if (!cloud.googleEnabled) return null;
     return (
       <a
-        href={googleLoginUrl()}
+        href={loginUrl}
         className="mt-5 inline-flex items-center gap-2 text-[14px] text-on-dark underline underline-offset-4"
       >
         <GoogleMark size={14} />
@@ -2608,6 +2674,7 @@ function SettingsSheet({
   onForget: () => void;
   accountHref: string;
 }) {
+  const loginUrl = useGoogleLoginUrl();
   const ui = SKY_UI[locale];
   const cloud = useContext(CloudContext);
   const c = CLOUD_UI[locale];
@@ -2661,7 +2728,7 @@ function SettingsSheet({
           </>
         ) : cloud.googleEnabled ? (
           <a
-            href={googleLoginUrl()}
+            href={loginUrl}
             className="mt-3 inline-flex h-11 items-center gap-3 rounded-full bg-white px-5 text-[14px] font-medium text-black"
           >
             <GoogleMark />

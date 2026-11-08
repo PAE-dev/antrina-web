@@ -3,6 +3,7 @@ import {
   type AddSkyQuestionRequest,
   type AskSkyRequest,
   type AskSkyResponse,
+  type MarkSkyDayRequest,
   CUSTOMER_AUTH_ROUTES,
   CUSTOMER_SIGNED_IN_COOKIE,
   type CustomerMeDto,
@@ -10,6 +11,7 @@ import {
   SKY_ROUTES,
   type SkyBondDto,
   type SkyDataResponse,
+  type SkyDayDto,
   type SkyProfileDto,
   type SkyQuestionDto,
 } from '@antrina/contracts';
@@ -46,6 +48,13 @@ export function googleLoginUrl(next?: string): string {
       ? '/'
       : `${window.location.pathname}${window.location.search}`.replace(/[?&]error=[^&]*/, ''));
   return `${CUSTOMER_AUTH_ROUTES.googleStart}?next=${encodeURIComponent(back || '/')}`;
+}
+
+/** Igual que `googleLoginUrl()`, pero estable en el render del servidor (se ajusta al montar). */
+export function useGoogleLoginUrl(): string {
+  const [url, setUrl] = useState(() => googleLoginUrl('/'));
+  useEffect(() => setUrl(googleLoginUrl()), []);
+  return url;
 }
 
 /* ---------------------------------------------------------------- estado compartido */
@@ -117,6 +126,8 @@ export const skyApi = {
   addBond: (input: AddSkyBondRequest) =>
     call<SkyBondDto>(SKY_ROUTES.bonds, { method: 'POST', body: JSON.stringify(input) }),
   deleteBond: (id: string) => call<void>(SKY_ROUTES.bond(id), { method: 'DELETE' }),
+  markDay: (day: string, patch: MarkSkyDayRequest) =>
+    call<SkyDayDto>(SKY_ROUTES.day(day), { method: 'PUT', body: JSON.stringify(patch) }),
   /** Respuesta de la IA (o `answer: null` si no está disponible). Sin sesión. */
   ask: (input: AskSkyRequest) =>
     call<AskSkyResponse>(SKY_ROUTES.ask, { method: 'POST', body: JSON.stringify(input) }),

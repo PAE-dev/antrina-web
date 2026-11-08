@@ -8,6 +8,7 @@ export const SKY_ROUTES = {
   questions: '/cielo-api/sky/questions',
   bonds: '/cielo-api/sky/bonds',
   bond: (id: string) => `/cielo-api/sky/bonds/${encodeURIComponent(id)}`,
+  day: (day: string) => `/cielo-api/sky/days/${encodeURIComponent(day)}`,
   /** Pregunta al cielo respondida por IA (sin sesión; limitada por IP). */
   ask: '/cielo-api/ask',
 } as const;
@@ -45,10 +46,24 @@ export interface SkyBondDto {
   birthDate: string;
 }
 
+export type SkyFortuneLevelCode = 'great' | 'good' | 'serene' | 'awakening';
+
+/** Un día en "Tu cielo": racha, ranking visto, ritual y papel de la fortuna. */
+export interface SkyDayDto {
+  day: string;
+  rankingSeen: boolean;
+  ritualDone: boolean;
+  fortune: { level: SkyFortuneLevelCode; verseIndex: number; stoneId: string } | null;
+}
+
+export type MarkSkyDayRequest = Partial<Pick<SkyDayDto, 'rankingSeen' | 'ritualDone' | 'fortune'>>;
+
 export interface SkyDataResponse {
   profile: SkyProfileDto | null;
   questions: SkyQuestionDto[];
   bonds: SkyBondDto[];
+  /** Últimos 90 días con actividad. */
+  days: SkyDayDto[];
 }
 
 export type SaveSkyProfileRequest = SkyProfileDto;

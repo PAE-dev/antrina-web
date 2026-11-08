@@ -5,7 +5,7 @@ import { forwardToApi } from '../../lib/api-proxy';
 export const prerender = false;
 
 const SAFE_PATH = new RegExp(
-  `^${SKY_ROUTES.prefix}/(ask|sky(/questions|/bonds(/[A-Za-z0-9_-]+)?)?)$`,
+  `^${SKY_ROUTES.prefix}/(ask|sky(/questions|/bonds(/[A-Za-z0-9_-]+)?|/days/\\d{4}-\\d{2}-\\d{2})?)$`,
 );
 
 /** "Tu cielo": se reenvía a la API desde el dominio de la tienda (cookie de primera parte). */

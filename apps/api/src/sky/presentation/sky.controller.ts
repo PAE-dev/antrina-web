@@ -20,12 +20,14 @@ import {
   DeleteSkyDataUseCase,
   GetCurrentCustomerUseCase,
   GetSkyDataUseCase,
+  MarkSkyDayUseCase,
   SaveSkyProfileUseCase,
 } from '@antrina/application';
 import {
   type AskSkyResponse,
   type SkyBondDto,
   type SkyDataResponse,
+  type SkyDayDto,
   type SkyProfileDto,
   type SkyQuestionDto,
 } from '@antrina/contracts';
@@ -45,6 +47,7 @@ export class SkyController {
     @Inject(AddSkyQuestionUseCase) private readonly addQuestion: AddSkyQuestionUseCase,
     @Inject(AddSkyBondUseCase) private readonly addBond: AddSkyBondUseCase,
     @Inject(DeleteSkyBondUseCase) private readonly deleteBond: DeleteSkyBondUseCase,
+    @Inject(MarkSkyDayUseCase) private readonly markDay: MarkSkyDayUseCase,
   ) {}
 
   /** Sin sesión responde 401 (`auth.*`). */
@@ -83,6 +86,16 @@ export class SkyController {
   @UseGuards(CustomerOriginGuard)
   async bond(@Req() request: Request, @Body() body: unknown): Promise<SkyBondDto> {
     return this.addBond.execute(await this.customerId(request), body);
+  }
+
+  @Put('days/:day')
+  @UseGuards(CustomerOriginGuard)
+  async day(
+    @Req() request: Request,
+    @Param('day') day: string,
+    @Body() body: unknown,
+  ): Promise<SkyDayDto> {
+    return this.markDay.execute(await this.customerId(request), day, body);
   }
 
   @Delete('bonds/:id')

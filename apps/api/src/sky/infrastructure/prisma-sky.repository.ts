@@ -1,6 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
+  SKY_FORTUNE_LEVELS,
   SKY_TOPICS,
+  type SkyDay,
+  type SkyDayPatch,
+  type SkyFortuneLevel,
   type SkyBond,
   type SkyProfile,
   type SkyProfileInput,
@@ -13,6 +17,23 @@ import { PrismaService } from '../../shared/infrastructure/prisma/prisma.service
 
 type ProfileRecord = Prisma.SkyProfileGetPayload<object>;
 type QuestionRecord = Prisma.SkyQuestionGetPayload<object>;
+
+type DayRecord = Prisma.SkyDayGetPayload<object>;
+
+function toDay(record: DayRecord): SkyDay {
+  const level = (SKY_FORTUNE_LEVELS as readonly string[]).includes(record.fortuneLevel ?? '')
+    ? (record.fortuneLevel as SkyFortuneLevel)
+    : null;
+  return {
+    day: record.day,
+    rankingSeen: record.rankingSeen,
+    ritualDone: record.ritualDone,
+    fortune:
+      level && record.fortuneVerse !== null && record.fortuneStone
+        ? { level, verseIndex: record.fortuneVerse, stoneId: record.fortuneStone }
+        : null,
+  };
+}
 
 const BOND_FIELDS = { id: true, name: true, birthDate: true, createdAt: true } as const;
 
@@ -81,8 +102,42 @@ export class PrismaSkyRepository implements SkyRepository {
     return toProfile(record);
   }
 
+  async listDays(customerId: string, limit: number): Promise<SkyDay[]> {
+    const records = await this.prisma.skyDay.findMany({
+      where: { customerId },
+      orderBy: { day: 'desc' },
+      take: limit,
+    });
+    return records.map(toDay);
+  }
+
+  async markDay(customerId: string, day: string, patch: SkyDayPatch): Promise<SkyDay> {
+    const existing = await this.prisma.skyDay.findUnique({
+      where: { customerId_day: { customerId, day } },
+    });
+    const fortune =
+      patch.fortune && !existing?.fortuneLevel
+        ? {
+            fortuneLevel: patch.fortune.level,
+            fortuneVerse: patch.fortune.verseIndex,
+            fortuneStone: patch.fortune.stoneId,
+          }
+        : {};
+    const flags = {
+      ...(patch.rankingSeen ? { rankingSeen: true } : {}),
+      ...(patch.ritualDone ? { ritualDone: true } : {}),
+    };
+    const record = await this.prisma.skyDay.upsert({
+      where: { customerId_day: { customerId, day } },
+      create: { customerId, day, ...flags, ...fortune },
+      update: { ...flags, ...fortune },
+    });
+    return toDay(record);
+  }
+
   async deleteAll(customerId: string): Promise<void> {
     await this.prisma.$transaction([
+      this.prisma.skyDay.deleteMany({ where: { customerId } }),
       this.prisma.skyProfile.deleteMany({ where: { customerId } }),
       this.prisma.skyQuestion.deleteMany({ where: { customerId } }),
       this.prisma.skyBond.deleteMany({ where: { customerId } }),

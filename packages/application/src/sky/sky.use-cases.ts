@@ -1,5 +1,6 @@
 import {
   type SkyBondDto,
+  type SkyDayDto,
   type SkyDataResponse,
   type SkyProfileDto,
   type SkyQuestionDto,
@@ -11,12 +12,27 @@ import {
   type Clock,
   DomainError,
   SKY_LIMITS,
+  SKY_FORTUNE_LEVELS,
   SKY_TOPICS,
+  type SkyDay,
   type SkyPlace,
   type SkyProfile,
   type SkyRepository,
 } from '@antrina/domain';
 import { optionalString, requireOneOf, requireString } from '../shared/input.js';
+
+const SKY_DAYS_KEPT = 90;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const STONE_ID = /^[a-z]+(-[a-z]+)*$/;
+
+function toDayDto(day: SkyDay): SkyDayDto {
+  return {
+    day: day.day,
+    rankingSeen: day.rankingSeen,
+    ritualDone: day.ritualDone,
+    fortune: day.fortune,
+  };
+}
 
 function toProfileDto(profile: SkyProfile): SkyProfileDto {
   return { birthDate: profile.birthDate, birthTime: profile.birthTime, place: profile.place };
@@ -50,10 +66,11 @@ export class GetSkyDataUseCase {
   constructor(private readonly sky: SkyRepository) {}
 
   async execute(customerId: string): Promise<SkyDataResponse> {
-    const [profile, questions, bonds] = await Promise.all([
+    const [profile, questions, bonds, days] = await Promise.all([
       this.sky.getProfile(customerId),
       this.sky.listQuestions(customerId, SKY_LIMITS.questions),
       this.sky.listBonds(customerId),
+      this.sky.listDays(customerId, SKY_DAYS_KEPT),
     ]);
     return {
       profile: profile ? toProfileDto(profile) : null,
@@ -64,6 +81,7 @@ export class GetSkyDataUseCase {
         day: q.day,
       })),
       bonds: bonds.map((b): SkyBondDto => ({ id: b.id, name: b.name, birthDate: b.birthDate })),
+      days: days.map(toDayDto),
     };
   }
 }
@@ -143,5 +161,49 @@ export class DeleteSkyBondUseCase {
   async execute(customerId: string, bondId: string): Promise<void> {
     const deleted = await this.sky.deleteBond(customerId, bondId);
     if (!deleted) throw new DomainError('Vínculo no encontrado', 'sky.bond_not_found');
+  }
+}
+
+/**
+ * Marca un día en "Tu cielo" (entró, vio el ranking, hizo el ritual, sacó su papel). Solo se acepta
+ * hoy o los dos días anteriores (la zona horaria del visitante puede ir un día atrás o adelante).
+ */
+export class MarkSkyDayUseCase {
+  constructor(
+    private readonly sky: SkyRepository,
+    private readonly clock: Clock,
+  ) {}
+
+  async execute(customerId: string, day: string, body: unknown): Promise<SkyDayDto> {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) throw new DomainError('Día inválido', 'sky.invalid_day');
+    const at = Date.parse(`${day}T12:00:00Z`);
+    const now = this.clock.now().getTime();
+    if (Number.isNaN(at) || at > now + 2 * DAY_MS || at < now - 3 * DAY_MS) {
+      throw new DomainError('Solo se puede marcar el día de hoy', 'sky.invalid_day');
+    }
+    const raw = (body ?? {}) as Record<string, unknown>;
+    const patch: { rankingSeen?: boolean; ritualDone?: boolean; fortune?: SkyDay['fortune'] } = {};
+    if (raw.rankingSeen === true) patch.rankingSeen = true;
+    if (raw.ritualDone === true) patch.ritualDone = true;
+    if (raw.fortune !== undefined && raw.fortune !== null) {
+      const f = raw.fortune as Record<string, unknown>;
+      const verseIndex = f.verseIndex;
+      const stoneId = requireString(f.stoneId, 'fortune.stoneId', 40);
+      if (
+        typeof verseIndex !== 'number' ||
+        !Number.isInteger(verseIndex) ||
+        verseIndex < 0 ||
+        verseIndex > 50 ||
+        !STONE_ID.test(stoneId)
+      ) {
+        throw new DomainError('Papel de la fortuna inválido', 'input.invalid');
+      }
+      patch.fortune = {
+        level: requireOneOf(f.level, SKY_FORTUNE_LEVELS, 'fortune.level'),
+        verseIndex,
+        stoneId,
+      };
+    }
+    return toDayDto(await this.sky.markDay(customerId, day, patch));
   }
 }

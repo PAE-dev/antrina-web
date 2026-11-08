@@ -78,3 +78,22 @@ export function assertPlace(place: SkyPlace): void {
     /^[A-Za-z_]+(\/[A-Za-z0-9_+-]+)*$/.test(place.timezone);
   if (!ok) throw new DomainError('Lugar inválido', 'sky.invalid_place');
 }
+
+/** Niveles del papel de la fortuna (sin "mala suerte"). */
+export const SKY_FORTUNE_LEVELS = ['great', 'good', 'serene', 'awakening'] as const;
+export type SkyFortuneLevel = (typeof SKY_FORTUNE_LEVELS)[number];
+
+/** Lo que la persona hizo en "Tu cielo" un día: racha, ranking, ritual y papel de la fortuna. */
+export interface SkyDay {
+  /** YYYY-MM-DD (día de Lima). */
+  day: string;
+  rankingSeen: boolean;
+  ritualDone: boolean;
+  fortune: { level: SkyFortuneLevel; verseIndex: number; stoneId: string } | null;
+}
+
+export interface SkyDayPatch {
+  rankingSeen?: boolean;
+  ritualDone?: boolean;
+  fortune?: SkyDay['fortune'];
+}

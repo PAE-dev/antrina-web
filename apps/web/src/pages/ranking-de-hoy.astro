@@ -1,0 +1,13 @@
+---
+import RankingView from '../components/views/RankingView.astro';
+import { secondsToLimaMidnight } from '../sky/daily';
+
+// Cambia a medianoche de Lima: la CDN la guarda hasta entonces.
+export const prerender = false;
+Astro.response.headers.set(
+  'Cache-Control',
+  `public, s-maxage=${secondsToLimaMidnight()}, stale-while-revalidate=300`,
+);
+---
+
+<RankingView locale="es" />

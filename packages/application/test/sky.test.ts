@@ -1,6 +1,8 @@
 import {
   type DomainError,
   type SkyBond,
+  type SkyDay,
+  type SkyDayPatch,
   type SkyProfile,
   type SkyProfileInput,
   type SkyQuestion,
@@ -15,6 +17,7 @@ import {
   DeleteSkyBondUseCase,
   DeleteSkyDataUseCase,
   GetSkyDataUseCase,
+  MarkSkyDayUseCase,
   SaveSkyProfileUseCase,
 } from '../src/index.js';
 import { FakeClock } from './fakes.js';
@@ -23,7 +26,32 @@ class InMemorySky implements SkyRepository {
   profiles = new Map<string, SkyProfile>();
   questions: (SkyQuestion & { customerId: string })[] = [];
   bonds: (SkyBond & { customerId: string })[] = [];
+  days = new Map<string, SkyDay>();
   private seq = 0;
+  async listDays(customerId: string, limit: number) {
+    return [...this.days.entries()]
+      .filter(([k]) => k.startsWith(`${customerId}|`))
+      .map(([, v]) => v)
+      .sort((a, b) => b.day.localeCompare(a.day))
+      .slice(0, limit);
+  }
+  async markDay(customerId: string, day: string, patch: SkyDayPatch) {
+    const key = `${customerId}|${day}`;
+    const prev = this.days.get(key) ?? {
+      day,
+      rankingSeen: false,
+      ritualDone: false,
+      fortune: null,
+    };
+    const next: SkyDay = {
+      day,
+      rankingSeen: prev.rankingSeen || !!patch.rankingSeen,
+      ritualDone: prev.ritualDone || !!patch.ritualDone,
+      fortune: prev.fortune ?? patch.fortune ?? null,
+    };
+    this.days.set(key, next);
+    return next;
+  }
   async getProfile(customerId: string) {
     return this.profiles.get(customerId) ?? null;
   }
@@ -231,5 +259,51 @@ describe('Pregunta al cielo con IA', () => {
     await expectCode(ask.execute({ ...body, question: 'a'.repeat(141) }), 'input.invalid');
     await expectCode(ask.execute({ ...body, locale: 'fr' }), 'input.invalid');
     expect(o.calls).toHaveLength(0);
+  });
+});
+
+describe('Días de Tu cielo (racha, ranking, ritual y papel)', () => {
+  it('marca el día sin desmarcar lo hecho y guarda el primer papel', async () => {
+    const sky = new InMemorySky();
+    const clock = new FakeClock(new Date('2026-11-08T15:00:00Z'));
+    const mark = new MarkSkyDayUseCase(sky, clock);
+    await mark.execute('c', '2026-11-08', {});
+    await mark.execute('c', '2026-11-08', { rankingSeen: true });
+    await mark.execute('c', '2026-11-08', {
+      fortune: { level: 'great', verseIndex: 1, stoneId: 'jade' },
+    });
+    const again = await mark.execute('c', '2026-11-08', {
+      ritualDone: true,
+      fortune: { level: 'serene', verseIndex: 2, stoneId: 'citrino' },
+    });
+    expect(again).toEqual({
+      day: '2026-11-08',
+      rankingSeen: true,
+      ritualDone: true,
+      fortune: { level: 'great', verseIndex: 1, stoneId: 'jade' },
+    });
+    const data = await new GetSkyDataUseCase(sky).execute('c');
+    expect(data.days).toHaveLength(1);
+  });
+
+  it('solo acepta hoy (con margen de zona horaria) y papeles válidos', async () => {
+    const sky = new InMemorySky();
+    const mark = new MarkSkyDayUseCase(sky, new FakeClock(new Date('2026-11-08T15:00:00Z')));
+    await expectCode(mark.execute('c', '2026-10-01', {}), 'sky.invalid_day');
+    await expectCode(mark.execute('c', '2026-11-20', {}), 'sky.invalid_day');
+    await expectCode(mark.execute('c', 'ayer', {}), 'sky.invalid_day');
+    await expectCode(
+      mark.execute('c', '2026-11-08', {
+        fortune: { level: 'mala', verseIndex: 0, stoneId: 'jade' },
+      }),
+      'input.invalid',
+    );
+    await expectCode(
+      mark.execute('c', '2026-11-08', {
+        fortune: { level: 'good', verseIndex: 0, stoneId: '../x' },
+      }),
+      'input.invalid',
+    );
+    await mark.execute('c', '2026-11-07', { rankingSeen: true });
   });
 });

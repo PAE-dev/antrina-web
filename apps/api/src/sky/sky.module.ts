@@ -6,6 +6,7 @@ import {
   DeleteSkyBondUseCase,
   DeleteSkyDataUseCase,
   GetSkyDataUseCase,
+  MarkSkyDayUseCase,
   SaveSkyProfileUseCase,
 } from '@antrina/application';
 import { type Clock, type SkyOracle, type SkyRepository } from '@antrina/domain';
@@ -52,6 +53,7 @@ const skyClockUseCase = <T>(UseCase: new (sky: SkyRepository, clock: Clock) => T
     skyClockUseCase(SaveSkyProfileUseCase),
     skyClockUseCase(AddSkyQuestionUseCase),
     skyClockUseCase(AddSkyBondUseCase),
+    skyClockUseCase(MarkSkyDayUseCase),
   ],
 })
 export class SkyModule {}

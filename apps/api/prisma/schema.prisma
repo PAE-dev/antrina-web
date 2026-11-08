@@ -227,6 +227,7 @@ model Customer {
   skyProfile       SkyProfile?
   skyQuestions     SkyQuestion[]
   skyBonds         SkyBond[]
+  skyDays          SkyDay[]
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 
@@ -472,4 +473,23 @@ model SkyBond {
   createdAt  DateTime @default(now())
 
   @@index([customerId])
+}
+
+/// Un día en "Tu cielo": racha, ranking visto, ritual y papel de la fortuna (galleta de cuarzo).
+model SkyDay {
+  id            String   @id @default(cuid())
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  /// YYYY-MM-DD (día de Lima)
+  day           String
+  rankingSeen   Boolean  @default(false)
+  ritualDone    Boolean  @default(false)
+  fortuneLevel  String?
+  fortuneVerse  Int?
+  fortuneStone  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([customerId, day])
+  @@index([customerId, day])
 }

@@ -22,6 +22,7 @@ const SEGMENTS = {
     account: 'cuenta',
     cart: 'carrito',
     sky: 'tu-cielo',
+    ranking: 'ranking-de-hoy',
   },
   en: {
     catalog: 'trees',
@@ -42,6 +43,7 @@ const SEGMENTS = {
     account: 'account',
     cart: 'cart',
     sky: 'your-sky',
+    ranking: 'todays-ranking',
   },
 } as const satisfies Record<LocaleCode, Record<string, string>>;
 
@@ -73,6 +75,7 @@ export const routes = {
   account: page('account'),
   cart: page('cart'),
   sky: page('sky'),
+  ranking: page('ranking'),
   /** Prototipo: la app de los mundos solo existe en español. El establo es el mundo del torito. */
   stable: () => '/mundos/torito',
   /** El bosque de las puertas: de aquí se entra a cada mundo. */
