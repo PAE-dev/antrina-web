@@ -14,6 +14,7 @@ import {
   AddSkyBondUseCase,
   AddSkyQuestionUseCase,
   AskSkyUseCase,
+  BondReadingUseCase,
   DeleteSkyBondUseCase,
   DeleteSkyDataUseCase,
   GetSkyDataUseCase,
@@ -230,6 +231,10 @@ describe('Pregunta al cielo con IA', () => {
         calls.push(input);
         return impl();
       },
+      bondReading: async (input: unknown) => {
+        calls.push(input);
+        return impl();
+      },
     };
   };
 
@@ -305,5 +310,36 @@ describe('Días de Tu cielo (racha, ranking, ritual y papel)', () => {
       'input.invalid',
     );
     await mark.execute('c', '2026-11-07', { rankingSeen: true });
+  });
+});
+
+describe('Lectura de compatibilidad con IA', () => {
+  const body = {
+    locale: 'es',
+    me: { name: 'Tú', sun: 'Tauro', moon: 'Acuario', venus: 'Aries', mars: 'Géminis' },
+    them: { name: 'Ana', sun: 'Leo', moon: 'Piscis', venus: 'Cáncer', mars: 'Virgo' },
+    scores: { moods: 62, talk: 48, love: 81, dreams: 70, overall: 65 },
+    highlights: ['Tu Venus en armonía con su Marte'],
+  };
+  it('pasa la sinastría validada al modelo y devuelve su lectura', async () => {
+    const calls: unknown[] = [];
+    const oracle = {
+      isConfigured: () => true,
+      answer: async () => '',
+      bondReading: async (input: unknown) => {
+        calls.push(input);
+        return ' Una lectura. ';
+      },
+    };
+    expect((await new BondReadingUseCase(oracle).execute(body)).reading).toBe('Una lectura.');
+    expect(calls[0]).toMatchObject({ them: { name: 'Ana' }, scores: { love: 81 } });
+  });
+  it('valida puntajes y responde null sin IA', async () => {
+    const off = { isConfigured: () => false, answer: async () => '', bondReading: async () => 'x' };
+    expect((await new BondReadingUseCase(off).execute(body)).reading).toBeNull();
+    await expectCode(
+      new BondReadingUseCase(off).execute({ ...body, scores: { ...body.scores, love: 140 } }),
+      'input.invalid',
+    );
   });
 });

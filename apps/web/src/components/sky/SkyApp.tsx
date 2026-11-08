@@ -8,7 +8,9 @@ import {
 import { ArrowRightIcon } from '@antrina/ui';
 import { Button } from '@heroui/react';
 import {
+  cloneElement,
   createContext,
+  isValidElement,
   useCallback,
   useContext,
   useEffect,
@@ -20,7 +22,6 @@ import {
 import { createPortal } from 'react-dom';
 import {
   ELEMENT_OF,
-  elementHarmony,
   julianDay,
   MODALITY_OF,
   seededIndex,
@@ -33,7 +34,6 @@ import {
   AREA_CONTENT,
   AREAS,
   COMPAT_ROWS,
-  COMPAT_TEXT,
   ELEMENT_COLOR,
   ELEMENT_LABEL,
   MODALITY_LABEL,
@@ -77,6 +77,9 @@ import { compass, moonView } from '../../sky/moonview';
 import { AREA_STONES, SIGN_STONE, signStone, STONE_LIBRARY } from '../../sky/stones';
 import { LiveMoon } from './LiveMoon';
 import { Orrery } from './Orrery';
+import { dayProfile, type DayTone, moonCycle, toneOf } from '../../sky/daily';
+import { bondFallback, synastry } from '../../sky/synastry';
+import { DO_PREFIX, LUCKY_COLORS, LUCKY_ITEMS, MOON_PHASE_INFO } from '../../sky/daily-content';
 import {
   CollectionCard,
   DailyChecklist,
@@ -234,12 +237,19 @@ function TodayDaily({
       signedIn={account !== null}
       serverDays={days}
     >
-      <DailyChecklist />
-      <RankingCard />
-      {children}
-      <FortuneCookie />
-      <IndicesCard chart={chart} onCompare={onCompare} />
-      <CollectionCard />
+      {isValidElement<{ afterGlance?: ReactNode; end?: ReactNode }>(children)
+        ? cloneElement(children, {
+            afterGlance: (
+              <>
+                <RankingCard />
+                <IndicesCard onCompare={onCompare} />
+                <FortuneCookie />
+                <DailyChecklist />
+              </>
+            ),
+            end: <CollectionCard />,
+          })
+        : children}
     </DailyProvider>
   );
 }
@@ -1253,12 +1263,136 @@ function AppShell({
 /* ------------------------------------------------------------------ hoy */
 
 const NATURE_VERB: Record<LocaleCode, Record<Nature, string>> = {
-  es: { flow: 'se armoniza con', tension: 'pone a prueba', blend: 'se funde con' },
-  en: { flow: 'harmonizes with', tension: 'tests', blend: 'merges with' },
+  es: { flow: 'se armonizan con', tension: 'ponen a prueba', blend: 'se funden con' },
+  en: { flow: 'harmonize with', tension: 'test', blend: 'merge with' },
 };
 
 function bodyName(point: Placement['point'] | Planet, locale: LocaleCode) {
   return BODY_INFO[point].name[locale];
+}
+
+/** Tono del día → textos: luz (flow), camino (blend) o calma (tension). */
+const TONE_NATURE: Record<DayTone, Nature> = { bright: 'flow', steady: 'blend', calm: 'tension' };
+/** Tono → índice de las frases de cada área (0 calma, 1 camino, 2 luz). */
+const TONE_LINE: Record<DayTone, 0 | 1 | 2> = { calm: 0, steady: 1, bright: 2 };
+
+function moonDateFor(selected: Date, today: Date): Date {
+  return selected.getTime() === today.getTime()
+    ? new Date()
+    : new Date(selected.getFullYear(), selected.getMonth(), selected.getDate(), 21);
+}
+
+/** Haz / Evita: dos columnas con filas separadas e iconos discretos. */
+function DoDont({
+  locale,
+  dos,
+  donts,
+  color,
+  doLabel,
+  dontLabel,
+}: {
+  locale: LocaleCode;
+  dos: string[];
+  donts: string[];
+  color: { hex: string; name: Record<LocaleCode, string> };
+  doLabel: string;
+  dontLabel: string;
+}) {
+  return (
+    <div className="sky-glass mt-8 grid grid-cols-2 overflow-hidden rounded-2xl">
+      {[
+        { label: doLabel, items: dos, positive: true },
+        { label: dontLabel, items: donts, positive: false },
+      ].map((column, ci) => (
+        <div key={column.label} className={`p-4 ${ci === 1 ? 'border-l border-white/10' : ''}`}>
+          <p className="type-label !text-white/55">{column.label}</p>
+          <ul className="mt-3 flex flex-col">
+            {column.items.map((item) => (
+              <li
+                key={item}
+                className="flex items-start gap-2.5 border-b border-white/8 py-2.5 text-[15px] leading-snug last:border-b-0"
+              >
+                <span
+                  aria-hidden="true"
+                  className={`mt-[3px] flex size-4 shrink-0 items-center justify-center rounded-full ${
+                    column.positive ? 'bg-[#34d399]/15 text-[#34d399]' : 'bg-white/8 text-white/50'
+                  }`}
+                >
+                  <svg
+                    width="10"
+                    height="10"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                  >
+                    {column.positive ? <path d="M5 12.5l4.5 4.5L19 7.5" /> : <path d="M6 12h12" />}
+                  </svg>
+                </span>
+                <span className={column.positive ? '' : 'text-white/70'}>{item}</span>
+              </li>
+            ))}
+          </ul>
+          {column.positive && (
+            <p className="mt-3 flex items-center gap-2 text-[12px] text-white/55">
+              <span
+                className="size-2.5 rounded-full ring-1 ring-white/25"
+                style={{ backgroundColor: color.hex }}
+              />
+              {DO_PREFIX[locale].color(color.name[locale])}
+            </p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Qué significa el % de la Luna: barra de Nueva a Llena, la fase explicada y cuándo cambia. */
+function MoonMeter({
+  locale,
+  illumination,
+  waxing,
+  phase,
+  daysToFull,
+  daysToNew,
+}: {
+  locale: LocaleCode;
+  illumination: number;
+  waxing: boolean;
+  phase: keyof typeof PHASE_LABEL;
+  daysToFull: number;
+  daysToNew: number;
+}) {
+  const info = MOON_PHASE_INFO[locale];
+  const pct = Math.round(illumination * 100);
+  return (
+    <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+      <div className="flex items-baseline justify-between">
+        <span className="font-display text-[28px] leading-none font-semibold tabular-nums">
+          {pct}%
+        </span>
+        <span className="text-[12px] text-white/55">
+          {waxing ? info.nextFull(daysToFull) : info.nextNew(daysToNew)}
+        </span>
+      </div>
+      <div className="relative mt-3 h-1.5 rounded-full bg-gradient-to-r from-white/10 to-white/60">
+        <span
+          className="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-black bg-white shadow"
+          style={{ left: `${pct}%` }}
+        />
+      </div>
+      <div className="mt-1.5 flex justify-between text-[11px] text-white/45">
+        <span>{info.newLabel} · 0%</span>
+        <span>{info.fullLabel} · 100%</span>
+      </div>
+      <p className="mt-3 text-[13px] leading-relaxed text-white/70">
+        {info.percent(pct)} {info.scale}
+      </p>
+      <p className="mt-2 text-[14px] leading-relaxed">{info.phases[phase]}</p>
+    </div>
+  );
 }
 
 function Today({
@@ -1268,6 +1402,8 @@ function Today({
   openGlossary,
   here,
   onLocate,
+  afterGlance,
+  end,
 }: {
   locale: LocaleCode;
   chart: NatalChart;
@@ -1275,6 +1411,10 @@ function Today({
   openGlossary: (key: GlossaryKey) => void;
   here: Here;
   onLocate: () => void;
+  /** Ranking, energía, cuarzo de la suerte y ritual (van tras el resumen del día). */
+  afterGlance?: ReactNode;
+  /** Colección de piedras (al final). */
+  end?: ReactNode;
 }) {
   const openStone = useContext(StoneContext);
   const ui = SKY_UI[locale];
@@ -1290,7 +1430,9 @@ function Today({
   const sunSign = sunOf(chart).sign;
   const transit: Transit | undefined = transitsFor(chart, selected)[0];
   const nature: Nature = transit ? ASPECT_INFO[transit.aspect].nature : 'blend';
-  const daily = DAILY[nature][locale];
+  // Una sola lectura del día: titular, Haz / Evita y áreas salen de aquí (sin contradicciones).
+  const profile = useMemo(() => dayProfile(chart, key), [chart, key]);
+  const daily = DAILY[TONE_NATURE[profile.tone]][locale];
   const glance = daily[seededIndex(`${key}-${sunSign}-glance`, daily.length)]!;
   const pool = DO_DONT[locale];
   const pickThree = (list: string[], salt: string) => {
@@ -1301,9 +1443,14 @@ function Today({
     }
     return out;
   };
-  const dayStone = signStone(sunSign).name[locale];
-  const dos = pickThree(pool.do, 'do');
-  if (!dos.includes(dayStone)) dos[2] = dayStone;
+  const dayStone = STONE_LIBRARY[profile.rank.stoneId]!;
+  const dos = [
+    pickThree(pool.do, 'do')[0]!,
+    LUCKY_ITEMS[locale][profile.rank.itemIndex]!,
+    DO_PREFIX[locale].stone(dayStone.name[locale]),
+  ];
+  const luckyColor = LUCKY_COLORS[profile.rank.colorIndex]!;
+  const cycle = moonCycle(moonDateFor(selected, today));
   // La Luna de hoy se dibuja en este instante; la de otros días, a medianoche de ese día.
   const isToday = selected.getTime() === today.getTime();
   const moonDate = useMemo(
@@ -1319,7 +1466,6 @@ function Today({
   const days = range(-3, 3).map(
     (o) => new Date(today.getFullYear(), today.getMonth(), today.getDate() + o),
   );
-  const tone = elementHarmony(ELEMENT_OF[sunSign], ELEMENT_OF[sky.moon]);
 
   return (
     <>
@@ -1363,35 +1509,20 @@ function Today({
           {glance.headline}
         </h1>
         <p className="mt-5 text-[17px] leading-relaxed text-on-dark/90">{glance.body}</p>
-        <div className="mt-8 grid grid-cols-2 gap-6">
-          <div>
-            <p className="text-[13px] text-on-dark-muted">{ui.do}</p>
-            {dos.map((item) => (
-              <p key={item} className="font-display mt-2 text-[22px] leading-tight">
-                {item}
-              </p>
-            ))}
-          </div>
-          <div>
-            <p className="text-[13px] text-on-dark-muted">{ui.dont}</p>
-            {donts.map((item) => (
-              <p key={item} className="font-display mt-2 text-[22px] leading-tight text-on-dark/75">
-                {item}
-              </p>
-            ))}
-          </div>
-        </div>
-        <Button
-          onPress={() => deeper.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-          size="lg"
-          className="mt-8 h-12 bg-on-dark px-7 text-[14px] tracking-[0.12em] text-text uppercase"
-        >
-          {ui.deeper}
-          <ArrowRightIcon />
-        </Button>
+        <DoDont
+          locale={locale}
+          dos={dos}
+          donts={donts}
+          color={luckyColor}
+          doLabel={ui.do}
+          dontLabel={ui.dont}
+        />
       </section>
 
-      <div ref={deeper} className="flex scroll-mt-6 flex-col gap-5 pt-6">
+      {afterGlance}
+
+      <div ref={deeper} className="flex scroll-mt-6 flex-col gap-5 pt-2">
+        <p className="type-label mt-4 !text-on-dark-muted">{ui.deeper}</p>
         <Panel>
           <p className="type-label !text-on-dark-muted">{ui.transitTitle}</p>
           {transit ? (
@@ -1439,9 +1570,7 @@ function Today({
           <div className="flex items-center gap-4">
             <LiveMoon size={84} lat={here.lat} lon={here.lon} date={moonDate} />
             <div>
-              <p className="type-label !text-on-dark-muted">
-                {PHASE_LABEL[sky.phase][locale]} · {Math.round(mv.illumination * 100)}%
-              </p>
+              <p className="type-label !text-on-dark-muted">{PHASE_LABEL[sky.phase][locale]}</p>
               <p className="font-display mt-1 text-[22px] leading-tight font-semibold">
                 {ui.moonToday} {signBy.get(sky.moon)?.label}
               </p>
@@ -1464,14 +1593,19 @@ function Today({
               </button>
             )}
           </div>
+          <MoonMeter
+            locale={locale}
+            illumination={mv.illumination}
+            waxing={mv.waxing}
+            phase={sky.phase}
+            daysToFull={cycle.daysToFull}
+            daysToNew={cycle.daysToNew}
+          />
           <p className="mt-4 text-[16px] leading-relaxed text-on-dark/90">
             {MOON_DAY[sky.moon][locale].mood}
           </p>
           <p className="mt-3 text-[15px] leading-relaxed text-[var(--accent)]">
             {MOON_DAY[sky.moon][locale].tip}
-          </p>
-          <p className="mt-3 text-[13px] text-on-dark-muted">
-            {t.todayMoon && TONE_TEXT[locale][tone]}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <InfoButton label={ui.whatMeans} onPress={() => openGlossary('moon')} />
@@ -1484,7 +1618,8 @@ function Today({
 
         {AREAS.map((area) => {
           const content = AREA_CONTENT[area];
-          const lines = content.lines[locale][tone];
+          const energy = area === 'luck' ? profile.score : profile.indices[area];
+          const lines = content.lines[locale][TONE_LINE[toneOf(energy)]];
           const line = lines[seededIndex(`${key}-${sunSign}-${area}`, lines.length)]!;
           const pool2 = AREA_STONES[area];
           const stone =
@@ -1508,23 +1643,11 @@ function Today({
             </Panel>
           );
         })}
+        {end}
       </div>
     </>
   );
 }
-
-const TONE_TEXT: Record<LocaleCode, [string, string, string]> = {
-  es: [
-    'Para tu Sol, esta Luna trae un poco de roce: ve con calma.',
-    'Para tu Sol, esta Luna es neutral: el día depende de ti.',
-    'Para tu Sol, esta Luna fluye: aprovecha la buena sintonía.',
-  ],
-  en: [
-    'For your Sun, this Moon brings some friction: go gently.',
-    'For your Sun, this Moon is neutral: the day is yours to shape.',
-    'For your Sun, this Moon flows: enjoy the good tune.',
-  ],
-};
 
 function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
@@ -2420,8 +2543,15 @@ function Bonds({
     chart: NatalChart;
   } | null>(null);
   const [mixing, setMixing] = useState(false);
+  /** Lectura escrita por la IA (null: se usa la lectura armada con los mismos datos). */
+  const [reading, setReading] = useState<string | null>(null);
+  const bondRun = useRef(0);
   const stage = useRef<HTMLDivElement>(null);
   const mine = { sun: sunOf(chart).sign, moon: moonOf(chart).sign };
+  const syn = useMemo(
+    () => (other ? synastry(chart, other.chart, locale) : null),
+    [chart, other, locale],
+  );
   const cloud = useContext(CloudContext);
   const c = CLOUD_UI[locale];
   const [savedNow, setSavedNow] = useState(false);
@@ -2438,41 +2568,63 @@ function Bonds({
       setD(pd);
     }
     setSavedNow(false);
-    setOther({
-      name: who || (locale === 'es' ? 'Esa persona' : 'That person'),
-      named: who.length > 0,
-      birthDate: date,
-      chart: chartOf({ date, time: null, place: null }),
-    });
+    const otherChart = chartOf({ date, time: null, place: null });
+    const otherName = who || (locale === 'es' ? 'Esa persona' : 'That person');
+    setOther({ name: otherName, named: who.length > 0, birthDate: date, chart: otherChart });
     setMixing(true);
+    setReading(null);
+    // La IA escribe la lectura mientras giran las piedras (mínimo 3 s, máximo 26 s).
+    const run = ++bondRun.current;
+    const result = synastry(chart, otherChart, locale);
+    const person = (c: NatalChart, personName: string) => {
+      const at = (point: string) =>
+        signBy.get(c.placements.find((p) => p.point === point)!.sign)?.label ?? '';
+      return {
+        name: personName,
+        sun: at('sun'),
+        moon: at('moon'),
+        venus: at('venus'),
+        mars: at('mars'),
+      };
+    };
+    const byArea = Object.fromEntries(result.rows.map((row) => [row.area, row.score])) as Record<
+      'moods' | 'talk' | 'love' | 'dreams',
+      number
+    >;
+    const ai = skyApi
+      .bondReading({
+        locale,
+        me: person(chart, locale === 'es' ? 'Tú' : 'You'),
+        them: person(otherChart, otherName),
+        scores: { ...byArea, overall: result.percent },
+        highlights: result.highlights,
+      })
+      .then((response) => response.reading)
+      .catch(() => null);
+    const limit = new Promise<null>((resolve) => window.setTimeout(() => resolve(null), 26_000));
     // Baja a la animación y, al terminar, deja a la vista el resultado.
     window.setTimeout(
       () => stage.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
       60,
     );
-    window.setTimeout(() => setMixing(false), reduce ? 400 : 3000);
+    void Promise.all([
+      Promise.race([ai, limit]),
+      new Promise((resolve) => window.setTimeout(resolve, reduce ? 400 : 3000)),
+    ]).then(([text]) => {
+      if (bondRun.current !== run) return;
+      setReading(text);
+      setMixing(false);
+    });
   };
 
-  const rows = other
-    ? COMPAT_ROWS.map((row) => {
-        const theirs = { sun: sunOf(other.chart).sign, moon: moonOf(other.chart).sign };
-        const pairs: Record<string, [SignCode, SignCode]> = {
-          moods: [mine.moon, theirs.moon],
-          talk: [mine.sun, theirs.sun],
-          love: [mine.moon, theirs.sun],
-          dreams: [mine.sun, theirs.moon],
-        };
-        const [a, b] = pairs[row.key]!;
-        let score = elementHarmony(ELEMENT_OF[a], ELEMENT_OF[b]) as number;
-        if (row.key === 'talk' && MODALITY_OF[a] !== MODALITY_OF[b]) score = Math.min(2, score + 1);
-        return { ...row, a, b, score };
-      })
+  const rows = syn
+    ? syn.rows.map((row) => ({
+        ...row,
+        key: row.area,
+        label: COMPAT_ROWS.find((item) => item.key === row.area)!.label,
+      }))
     : [];
-  const overall = rows.length ? Math.round(rows.reduce((s, r) => s + r.score, 0) / rows.length) : 0;
-  // Porcentaje de afinidad (52–96 %): cada fila suma según su armonía de elementos.
-  const percent = rows.length
-    ? Math.round(52 + (rows.reduce((s, r) => s + r.score, 0) / (rows.length * 2)) * 44)
-    : 0;
+  const percent = syn?.percent ?? 0;
 
   return (
     <>
@@ -2571,23 +2723,40 @@ function Bonds({
                 label={signBy.get(sunOf(other.chart).sign)?.label}
               />
             </div>
-            <p className="font-display mt-6 text-center text-[20px] leading-snug">
-              {COMPAT_TEXT[locale][overall as 0 | 1 | 2]}
-            </p>
+            <div className="mt-6 flex flex-col gap-3 text-[16px] leading-relaxed text-on-dark/90">
+              {(reading ?? (syn ? bondFallback(syn, other.name, locale) : ''))
+                .split(/\n\s*\n/)
+                .filter(Boolean)
+                .map((paragraph, i) => (
+                  <p key={i}>{paragraph}</p>
+                ))}
+            </div>
+            {syn && syn.highlights.length > 0 && (
+              <ul className="mt-4 flex flex-wrap gap-2">
+                {syn.highlights.slice(0, 3).map((h) => (
+                  <li
+                    key={h}
+                    className="rounded-full border border-on-dark/15 px-3 py-1 text-[12px] text-on-dark-muted"
+                  >
+                    {h}
+                  </li>
+                ))}
+              </ul>
+            )}
             <div className="mt-6 flex flex-col gap-4 border-t border-on-dark/10 pt-5">
               {rows.map((row, i) => (
                 <div key={row.key}>
                   <div className="flex items-baseline justify-between gap-3">
                     <p className="type-label !text-on-dark">{row.label[locale]}</p>
                     <p className="text-[12px] text-on-dark-muted">
-                      {signBy.get(row.a)?.label} · {signBy.get(row.b)?.label}
+                      {signBy.get(row.mine)?.label} · {signBy.get(row.theirs)?.label} · {row.score}
                     </p>
                   </div>
                   <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-on-dark/10">
                     <span
                       className="sky-bar block h-full rounded-full bg-[var(--accent)]"
                       style={{
-                        ['--w' as string]: `${34 + row.score * 31}%`,
+                        ['--w' as string]: `${row.score}%`,
                         animationDelay: `${0.35 + i * 0.18}s`,
                       }}
                     />

@@ -1,4 +1,6 @@
 import {
+  moonLongitude,
+  sunLongitude,
   ELEMENT_OF,
   elementHarmony,
   julianDay,
@@ -70,7 +72,7 @@ function separation(a: number, b: number): number {
 }
 
 /** Valor (−1…1) del aspecto entre dos longitudes; 0 si no hay. Más exacto = más fuerte. */
-function aspectValue(a: number, b: number, malefic: boolean): number {
+export function aspectValue(a: number, b: number, malefic: boolean): number {
   const sep = separation(a, b);
   for (const [angle, orb, value] of MAJOR) {
     const off = Math.abs(sep - angle);
@@ -242,16 +244,64 @@ export interface Fortune {
   stoneId: string;
 }
 
-/** El papel del día: igual en cualquier dispositivo para la misma persona (fecha de nacimiento). */
-export function fortuneFor(day: string, seed: string): Fortune {
-  const roll = seededIndex(`${day}-${seed}-fortune`, 100);
-  // Gran luz 15 %, Buena luz 35 %, Luz serena 35 %, Luz que despierta 15 %.
-  const level: FortuneLevel =
-    roll < 15 ? 'great' : roll < 50 ? 'good' : roll < 85 ? 'serene' : 'awakening';
+/**
+ * El cuarzo de la suerte del día. Su nivel de luz sale del perfil del día (no al azar), y su piedra
+ * es la piedra del día de tu signo: la misma del ranking y del ritual.
+ */
+export function fortuneFor(day: string, seed: string, profile: DayProfile): Fortune {
+  const level = fortuneLevelFor(profile.score);
   return {
     level,
     verseIndex: seededIndex(`${day}-${seed}-verse`, FORTUNE_VERSES[level].es.length),
-    stoneId: STONE_IDS[seededIndex(`${day}-${seed}-stone`, STONE_IDS.length)]!,
+    stoneId: profile.rank.stoneId,
+  };
+}
+
+export function fortuneLevelFor(score: number): FortuneLevel {
+  return score >= 74 ? 'great' : score >= 56 ? 'good' : score >= 38 ? 'serene' : 'awakening';
+}
+
+/* ------------------------------------------------------------------ perfil del día */
+
+export type DayTone = 'bright' | 'steady' | 'calm';
+
+/**
+ * Una sola lectura del día por persona, de la que salen todos los textos (titular, Haz / Evita,
+ * áreas, ranking personal y cuarzo de la suerte) para que nunca se contradigan.
+ */
+export interface DayProfile {
+  day: string;
+  /** Puesto de tu signo en el ranking global. */
+  rank: RankedSign;
+  /** Energías personales por área (tránsitos sobre tu carta). */
+  indices: Record<DailyArea, number>;
+  /** 0–100: mitad el cielo de tu signo, mitad tus energías personales. */
+  score: number;
+  tone: DayTone;
+  best: DailyArea;
+  worst: DailyArea;
+}
+
+export function toneOf(value: number): DayTone {
+  return value >= 64 ? 'bright' : value >= 42 ? 'steady' : 'calm';
+}
+
+export function dayProfile(chart: NatalChart, day: string, ranking = rankingFor(day)): DayProfile {
+  const sun = chart.placements.find((p) => p.point === 'sun')!.sign;
+  const rank = ranking.find((item) => item.sign === sun)!;
+  const indices = dailyIndices(chart, day);
+  const areas = Object.keys(indices) as DailyArea[];
+  const average = areas.reduce((sum, area) => sum + indices[area], 0) / areas.length;
+  const score = Math.round(rank.score * 0.5 + average * 0.5);
+  const sorted = [...areas].sort((a, b) => indices[b] - indices[a]);
+  return {
+    day,
+    rank,
+    indices,
+    score,
+    tone: toneOf(score),
+    best: sorted[0]!,
+    worst: sorted[sorted.length - 1]!,
   };
 }
 
@@ -273,3 +323,17 @@ export function streakOf(days: Iterable<string>, today: string): number {
 }
 
 export const STREAK_GOAL = 7;
+
+const SYNODIC = 29.530588;
+
+/** Días que faltan para la próxima luna llena y la próxima luna nueva. */
+export function moonCycle(date: Date): { daysToFull: number; daysToNew: number } {
+  const jd = julianDay(date.getTime());
+  const elongation = (((moonLongitude(jd) - sunLongitude(jd)) % 360) + 360) % 360;
+  const age = (elongation / 360) * SYNODIC;
+  const half = SYNODIC / 2;
+  return {
+    daysToFull: Math.round(age < half ? half - age : SYNODIC - age + half),
+    daysToNew: Math.round(SYNODIC - age),
+  };
+}

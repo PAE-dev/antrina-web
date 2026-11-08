@@ -216,7 +216,7 @@ export const DAILY_UI = {
       left === 0
         ? 'Desbloqueaste el Cuarzo cristal maestro'
         : `${left} ${left === 1 ? 'día' : 'días'} más para el Cuarzo cristal maestro`,
-    steps: { ranking: 'Ranking del día', fortune: 'Galleta de cuarzo', ritual: 'Ritual de luz' },
+    steps: { ranking: 'Ranking del día', fortune: 'Cuarzo de la suerte', ritual: 'Ritual de luz' },
     open: 'Abrir',
     again: 'Ver de nuevo',
     rankingTitle: 'Ranking de hoy',
@@ -237,9 +237,10 @@ export const DAILY_UI = {
     ally: 'Tu aliado de hoy',
     allyText: (sign: string) => `Hoy fluyes especialmente bien con ${sign}.`,
     compare: 'Comparar en Vínculos',
-    fortuneTitle: 'Tu galleta de cuarzo',
-    fortuneHint: 'Toca el cuarzo para romperlo y leer tu papel de hoy.',
-    fortuneAgain: 'Tu papel de hoy',
+    fortuneTitle: 'Tu cuarzo de la suerte',
+    fortuneHint: 'Toca el cuarzo para abrirlo y leer el mensaje que guarda para ti hoy.',
+    fortuneAgain: 'Tu cuarzo de la suerte',
+    fortuneNote: 'Su luz sale de tu cielo de hoy y su piedra es la piedra del día de tu signo.',
     fortuneStone: 'Te acompaña',
     collection: 'Tu colección de piedras',
     collectionHint: (n: number, total: number) => `${n} de ${total} piedras encontradas`,
@@ -269,7 +270,7 @@ export const DAILY_UI = {
       left === 0
         ? 'You unlocked the Master clear quartz'
         : `${left} more ${left === 1 ? 'day' : 'days'} for the Master clear quartz`,
-    steps: { ranking: "Today's ranking", fortune: 'Quartz fortune', ritual: 'Light ritual' },
+    steps: { ranking: "Today's ranking", fortune: 'Lucky quartz', ritual: 'Light ritual' },
     open: 'Open',
     again: 'See again',
     rankingTitle: "Today's ranking",
@@ -290,9 +291,11 @@ export const DAILY_UI = {
     ally: 'Your ally today',
     allyText: (sign: string) => `Today you flow especially well with ${sign}.`,
     compare: 'Compare in Bonds',
-    fortuneTitle: 'Your quartz fortune',
-    fortuneHint: "Tap the quartz to crack it and read today's paper.",
-    fortuneAgain: "Today's paper",
+    fortuneTitle: 'Your lucky quartz',
+    fortuneHint: 'Tap the quartz to open it and read the message it keeps for you today.',
+    fortuneAgain: 'Your lucky quartz',
+    fortuneNote:
+      "Its light comes from your sky today and its stone is your sign's stone of the day.",
     fortuneStone: 'With you',
     collection: 'Your stone collection',
     collectionHint: (n: number, total: number) => `${n} of ${total} stones found`,
@@ -316,3 +319,85 @@ export const DAILY_UI = {
       "The ranking is calculated from the day's real sky and is the same for everyone. It is tradition and play: use it as inspiration, not certainty.",
   },
 } as const;
+
+/** Une el ranking global de tu signo con tu carta personal (para que nada se contradiga). */
+export const PERSONAL_BRIDGE: L<{
+  label: string;
+  areas: Record<'love' | 'money' | 'work' | 'energy', string>;
+  lowButBright: (best: string) => string;
+  highButCalm: (worst: string) => string;
+  aligned: (best: string) => string;
+}> = {
+  es: {
+    label: 'Para ti',
+    areas: { love: 'el amor', money: 'el dinero', work: 'el trabajo', energy: 'tu energía' },
+    lowButBright: (best) =>
+      `Tu signo va con calma hoy, pero tu carta trae luz en ${best}: apóyate ahí y deja lo demás para mañana.`,
+    highButCalm: (worst) =>
+      `Tu signo brilla hoy, aunque tu carta pide cuidar ${worst}: avanza sin apurarte en eso.`,
+    aligned: (best) => `En tu carta, lo que mejor fluye hoy es ${best}.`,
+  },
+  en: {
+    label: 'For you',
+    areas: { love: 'love', money: 'money', work: 'work', energy: 'your energy' },
+    lowButBright: (best) =>
+      `Your sign takes it easy today, but your chart brings light to ${best}: lean on that and leave the rest for tomorrow.`,
+    highButCalm: (worst) =>
+      `Your sign shines today, though your chart asks you to look after ${worst}: do not rush there.`,
+    aligned: (best) => `In your chart, what flows best today is ${best}.`,
+  },
+};
+
+/** Qué significa el porcentaje de la Luna y qué invita a hacer cada fase (tradición). */
+export const MOON_PHASE_INFO: L<{
+  percent: (pct: number) => string;
+  scale: string;
+  newLabel: string;
+  fullLabel: string;
+  nextFull: (days: number) => string;
+  nextNew: (days: number) => string;
+  phases: Record<'new' | 'waxing' | 'full' | 'waning', string>;
+}> = {
+  es: {
+    percent: (pct) =>
+      `${pct}% iluminada: es la parte de la Luna que el Sol alumbra vista desde la Tierra.`,
+    scale: '0% es luna nueva (casi no se ve) y 100% es luna llena (el disco entero brilla).',
+    newLabel: 'Nueva',
+    fullLabel: 'Llena',
+    nextFull: (days) => (days <= 1 ? 'Luna llena mañana' : `Luna llena en ${days} días`),
+    nextNew: (days) => (days <= 1 ? 'Luna nueva mañana' : `Luna nueva en ${days} días`),
+    phases: {
+      new: 'En la tradición, la luna nueva es para sembrar: elige una intención y empieza en silencio.',
+      waxing: 'La Luna crece: buen momento para impulsar lo que empezaste y sumar energía.',
+      full: 'La luna llena ilumina todo: momento de culminar, celebrar y ver con claridad.',
+      waning: 'La Luna mengua: tiempo de soltar, ordenar y descansar antes del nuevo ciclo.',
+    },
+  },
+  en: {
+    percent: (pct) =>
+      `${pct}% illuminated: the part of the Moon lit by the Sun as seen from Earth.`,
+    scale: '0% is a new moon (barely visible) and 100% is a full moon (the whole disc shines).',
+    newLabel: 'New',
+    fullLabel: 'Full',
+    nextFull: (days) => (days <= 1 ? 'Full moon tomorrow' : `Full moon in ${days} days`),
+    nextNew: (days) => (days <= 1 ? 'New moon tomorrow' : `New moon in ${days} days`),
+    phases: {
+      new: 'Traditionally, the new moon is for sowing: choose an intention and begin quietly.',
+      waxing: 'The Moon grows: a good time to push forward what you started.',
+      full: 'The full moon lights everything: time to complete, celebrate and see clearly.',
+      waning: 'The Moon wanes: time to let go, tidy up and rest before the new cycle.',
+    },
+  },
+};
+
+/** Haz: lo que suma hoy (con tu color, objeto y piedra del día). */
+export const DO_PREFIX: L<{ color: (name: string) => string; stone: (name: string) => string }> = {
+  es: {
+    color: (name) => `Algo ${name.toLowerCase()}`,
+    stone: (name) => `Llevar ${name.toLowerCase()}`,
+  },
+  en: {
+    color: (name) => `Something ${name.toLowerCase()}`,
+    stone: (name) => `Carry ${name.toLowerCase()}`,
+  },
+};

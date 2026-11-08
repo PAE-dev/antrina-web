@@ -3,6 +3,8 @@ import {
   type AddSkyQuestionRequest,
   type AskSkyRequest,
   type AskSkyResponse,
+  type BondReadingRequest,
+  type BondReadingResponse,
   type MarkSkyDayRequest,
   CUSTOMER_AUTH_ROUTES,
   CUSTOMER_SIGNED_IN_COOKIE,
@@ -129,6 +131,11 @@ export const skyApi = {
   markDay: (day: string, patch: MarkSkyDayRequest) =>
     call<SkyDayDto>(SKY_ROUTES.day(day), { method: 'PUT', body: JSON.stringify(patch) }),
   /** Respuesta de la IA (o `answer: null` si no está disponible). Sin sesión. */
+  bondReading: (input: BondReadingRequest) =>
+    call<BondReadingResponse>(SKY_ROUTES.bondReading, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
   ask: (input: AskSkyRequest) =>
     call<AskSkyResponse>(SKY_ROUTES.ask, { method: 'POST', body: JSON.stringify(input) }),
 };

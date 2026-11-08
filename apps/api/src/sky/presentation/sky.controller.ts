@@ -16,6 +16,7 @@ import {
   AddSkyBondUseCase,
   AddSkyQuestionUseCase,
   AskSkyUseCase,
+  BondReadingUseCase,
   DeleteSkyBondUseCase,
   DeleteSkyDataUseCase,
   GetCurrentCustomerUseCase,
@@ -25,6 +26,7 @@ import {
 } from '@antrina/application';
 import {
   type AskSkyResponse,
+  type BondReadingResponse,
   type SkyBondDto,
   type SkyDataResponse,
   type SkyDayDto,
@@ -112,7 +114,17 @@ export class SkyController {
  */
 @Controller('cielo-api')
 export class AskSkyController {
-  constructor(@Inject(AskSkyUseCase) private readonly askSky: AskSkyUseCase) {}
+  constructor(
+    @Inject(AskSkyUseCase) private readonly askSky: AskSkyUseCase,
+    @Inject(BondReadingUseCase) private readonly bondReading: BondReadingUseCase,
+  ) {}
+
+  @Post('bond-reading')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(CustomerOriginGuard, AskRateLimitGuard)
+  bond(@Body() body: unknown): Promise<BondReadingResponse> {
+    return this.bondReading.execute(body);
+  }
 
   @Post('ask')
   @HttpCode(HttpStatus.OK)

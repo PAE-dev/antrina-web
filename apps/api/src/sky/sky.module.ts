@@ -3,6 +3,7 @@ import {
   AddSkyBondUseCase,
   AddSkyQuestionUseCase,
   AskSkyUseCase,
+  BondReadingUseCase,
   DeleteSkyBondUseCase,
   DeleteSkyDataUseCase,
   GetSkyDataUseCase,
@@ -43,6 +44,14 @@ const skyClockUseCase = <T>(UseCase: new (sky: SkyRepository, clock: Clock) => T
       useFactory: (oracle: SkyOracle) => {
         const logger = new Logger('AskSky');
         return new AskSkyUseCase(oracle, (message) => logger.warn(message));
+      },
+      inject: [SKY_ORACLE],
+    },
+    {
+      provide: BondReadingUseCase,
+      useFactory: (oracle: SkyOracle) => {
+        const logger = new Logger('BondReading');
+        return new BondReadingUseCase(oracle, (message) => logger.warn(message));
       },
       inject: [SKY_ORACLE],
     },

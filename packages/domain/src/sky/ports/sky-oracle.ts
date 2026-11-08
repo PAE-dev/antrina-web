@@ -15,8 +15,28 @@ export interface SkyOracleQuestion {
   stone: { name: string; meaning: string };
 }
 
-/** Respuesta escrita por un modelo de lenguaje (puerto: el SDK vive en la API). */
+/** Lo que se sabe de una persona en una lectura de compatibilidad (sin fecha de nacimiento). */
+export interface BondPerson {
+  name: string;
+  sun: string;
+  moon: string;
+  venus: string;
+  mars: string;
+}
+
+export interface SkyBondQuestion {
+  locale: 'es' | 'en';
+  me: BondPerson;
+  them: BondPerson;
+  /** Puntajes 0–100 por área, ya calculados con la sinastría. */
+  scores: { moods: number; talk: number; love: number; dreams: number; overall: number };
+  /** Aspectos más fuertes entre las dos cartas, en palabras. */
+  highlights: string[];
+}
+
+/** Respuesta escrita por un modelo de lenguaje (puerto: el proveedor vive en la API). */
 export interface SkyOracle {
   isConfigured(): boolean;
   answer(input: SkyOracleQuestion): Promise<string>;
+  bondReading(input: SkyBondQuestion): Promise<string>;
 }

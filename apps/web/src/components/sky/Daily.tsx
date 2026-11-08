@@ -14,8 +14,9 @@ import { type SignCode } from '../../sky/astrology';
 import { SIGN_SKY } from '../../sky/content';
 import {
   dailyAlly,
-  dailyIndices,
   type DailyArea,
+  dayProfile,
+  type DayProfile,
   fortuneFor,
   limaDay,
   rankingFor,
@@ -29,6 +30,7 @@ import {
   FORTUNE_VERSES,
   LUCKY_COLORS,
   LUCKY_ITEMS,
+  PERSONAL_BRIDGE,
   RANK_NOTE,
   RANK_PHRASES,
 } from '../../sky/daily-content';
@@ -83,6 +85,8 @@ interface DailyState {
   today: string;
   ranking: RankedSign[];
   mine: RankedSign;
+  /** Lectura única del día (de aquí salen todos los textos). */
+  profile: DayProfile;
   sun: SignCode;
   signLabel: (code: SignCode) => string;
   record: SkyDayDto;
@@ -136,6 +140,7 @@ export function DailyProvider({
   const ranking = useMemo(() => rankingFor(today), [today]);
   const sun = chart.placements.find((p) => p.point === 'sun')!.sign;
   const mine = ranking.find((r) => r.sign === sun)!;
+  const profile = useMemo(() => dayProfile(chart, today, ranking), [chart, today, ranking]);
   const [days, setDays] = useState<DayMap>({});
   const [rankingOpen, setRankingOpen] = useState(false);
   const [ritualOpen, setRitualOpen] = useState(false);
@@ -183,6 +188,7 @@ export function DailyProvider({
     today,
     ranking,
     mine,
+    profile,
     sun,
     signLabel: (code) => signLabels.get(code) ?? code,
     record: days[today] ?? empty(today),
@@ -368,6 +374,7 @@ export function RankingCard() {
           <dd className="mt-0.5">{stone.name[d.locale]}</dd>
         </div>
       </dl>
+      <PersonalBridge />
       {note && (
         <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-[14px] leading-relaxed text-white/85">
           {note[d.locale]}
@@ -391,6 +398,27 @@ export function RankingCard() {
         <ArrowRightIcon />
       </button>
     </Panel>
+  );
+}
+
+/** Une el puesto global de tu signo con tu carta: así nada se contradice. */
+function PersonalBridge() {
+  const d = useDaily();
+  const b = PERSONAL_BRIDGE[d.locale];
+  const { rank, indices, best, worst } = d.profile;
+  const text =
+    rank.tier === 'low' && indices[best] >= 64
+      ? b.lowButBright(b.areas[best])
+      : rank.tier === 'high' && indices[worst] < 42
+        ? b.highButCalm(b.areas[worst])
+        : b.aligned(b.areas[best]);
+  return (
+    <p className="mt-3 text-[14px] leading-relaxed text-white/75">
+      <span className="mr-2 text-[11px] font-semibold tracking-[0.2em] text-[var(--accent)] uppercase">
+        {b.label}
+      </span>
+      {text}
+    </p>
   );
 }
 
@@ -487,8 +515,8 @@ export function FortuneCookie() {
   const d = useDaily();
   const t = DAILY_UI[d.locale];
   const fortune = useMemo(
-    () => d.record.fortune ?? fortuneFor(d.today, d.seed),
-    [d.record.fortune, d.today, d.seed],
+    () => d.record.fortune ?? fortuneFor(d.today, d.seed, d.profile),
+    [d.record.fortune, d.today, d.seed, d.profile],
   );
   const opened = d.record.fortune !== null;
   const [phase, setPhase] = useState<'closed' | 'cracking' | 'open'>(opened ? 'open' : 'closed');
@@ -557,6 +585,9 @@ export function FortuneCookie() {
             </span>
           </div>
         </div>
+      )}
+      {phase === 'open' && (
+        <p className="mt-3 text-center text-[12px] text-white/45">{t.fortuneNote}</p>
       )}
       {phase === 'closed' && (
         <p className="mt-2 text-center text-[13px] text-white/55">{t.fortuneHint}</p>
@@ -697,10 +728,10 @@ function RitualSheet({ open, onClose }: { open: boolean; onClose: () => void }) 
 
 /* ------------------------------------------------------------------ índices y aliado */
 
-export function IndicesCard({ chart, onCompare }: { chart: NatalChart; onCompare: () => void }) {
+export function IndicesCard({ onCompare }: { onCompare: () => void }) {
   const d = useDaily();
   const t = DAILY_UI[d.locale];
-  const indices = useMemo(() => dailyIndices(chart, d.today), [chart, d.today]);
+  const indices = d.profile.indices;
   const ally = useMemo(() => dailyAlly(d.sun, d.ranking), [d.sun, d.ranking]);
   const [shown, setShown] = useState(false);
   useEffect(() => {

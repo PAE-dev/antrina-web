@@ -11,6 +11,8 @@ export const SKY_ROUTES = {
   day: (day: string) => `/cielo-api/sky/days/${encodeURIComponent(day)}`,
   /** Pregunta al cielo respondida por IA (sin sesión; limitada por IP). */
   ask: '/cielo-api/ask',
+  /** Lectura de compatibilidad escrita por IA (sin sesión; limitada por IP). */
+  bondReading: '/cielo-api/bond-reading',
 } as const;
 
 export interface SkyPlaceDto {
@@ -94,4 +96,26 @@ export interface AskSkyRequest {
 /** `answer` es null si la IA no está disponible: la app usa entonces sus textos propios. */
 export interface AskSkyResponse {
   answer: string | null;
+}
+
+export interface BondPersonDto {
+  name: string;
+  sun: string;
+  moon: string;
+  venus: string;
+  mars: string;
+}
+
+/** Compatibilidad calculada en el navegador; la IA solo la pone en palabras. */
+export interface BondReadingRequest {
+  locale: 'es' | 'en';
+  me: BondPersonDto;
+  them: BondPersonDto;
+  scores: { moods: number; talk: number; love: number; dreams: number; overall: number };
+  highlights: string[];
+}
+
+/** `reading` es null si la IA no está disponible (la app usa su texto propio). */
+export interface BondReadingResponse {
+  reading: string | null;
 }
