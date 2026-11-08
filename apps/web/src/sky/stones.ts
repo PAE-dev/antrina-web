@@ -74,8 +74,8 @@ export const STONE_LIBRARY: Record<string, ZodiacStone> = {
       en: 'With its fiery flashes, it is associated with creativity, courage and the joy of showing yourself.',
     },
   },
-  'cuarzo-rosado': {
-    id: 'cuarzo-rosado',
+  'cuarzo-rosa': {
+    id: 'cuarzo-rosa',
     image: IMG('cuarzo-rosado'),
     name: { es: 'Cuarzo rosado', en: 'Rose quartz' },
     color: '#f2b8c6',
@@ -164,7 +164,7 @@ export const SIGN_STONE: Record<SignCode, { stone: string; motto: L<string> }> =
   GEMINI: { stone: 'amatista', motto: { es: 'Yo hablo', en: 'I speak' } },
   CANCER: { stone: 'citrino', motto: { es: 'Yo protejo', en: 'I protect' } },
   LEO: { stone: 'agata-de-fuego', motto: { es: 'Yo creo', en: 'I create' } },
-  VIRGO: { stone: 'cuarzo-rosado', motto: { es: 'Yo sirvo', en: 'I serve' } },
+  VIRGO: { stone: 'cuarzo-rosa', motto: { es: 'Yo sirvo', en: 'I serve' } },
   LIBRA: { stone: 'crisocola', motto: { es: 'Yo relaciono', en: 'I relate' } },
   SCORPIO: { stone: 'jade', motto: { es: 'Yo regenero', en: 'I renew' } },
   SAGITTARIUS: { stone: 'agata-fucsia', motto: { es: 'Yo busco', en: 'I seek' } },
@@ -179,7 +179,7 @@ export function signStone(code: SignCode): ZodiacStone {
 
 /** Piedras para cada área de la guía diaria (con foto). */
 export const AREA_STONES: Record<'love' | 'money' | 'work' | 'luck', string[]> = {
-  love: ['cuarzo-rosado', 'amatista', 'angelita'],
+  love: ['cuarzo-rosa', 'amatista', 'angelita'],
   money: ['citrino', 'jade', 'agata-de-fuego'],
   work: ['sodalita', 'onix-negro', 'crisocola', 'serpentina'],
   luck: ['jade', 'cuarzo-cristal', 'agata-fucsia', 'citrino'],

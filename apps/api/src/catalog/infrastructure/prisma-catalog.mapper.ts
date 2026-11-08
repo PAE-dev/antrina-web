@@ -106,6 +106,7 @@ export function toDomainProduct(record: ProductRecord): Product {
     size: record.size,
     intention: isProductIntention(record.intention) ? record.intention : null,
     signs: record.signs.filter(isZodiacSign),
+    stones: record.stones,
     origin: record.origin,
     content,
     updatedAt: record.updatedAt,

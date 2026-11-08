@@ -8,6 +8,8 @@ export const SKY_ROUTES = {
   questions: '/cielo-api/sky/questions',
   bonds: '/cielo-api/sky/bonds',
   bond: (id: string) => `/cielo-api/sky/bonds/${encodeURIComponent(id)}`,
+  /** Pregunta al cielo respondida por IA (sin sesión; limitada por IP). */
+  ask: '/cielo-api/ask',
 } as const;
 
 export interface SkyPlaceDto {
@@ -60,4 +62,21 @@ export interface AddSkyQuestionRequest {
 export interface AddSkyBondRequest {
   name: string;
   birthDate: string;
+}
+
+/** Lo que la app sabe del cielo de quien pregunta (calculado en el navegador). */
+export interface AskSkyRequest {
+  question: string;
+  topic: SkyTopicCode;
+  locale: 'es' | 'en';
+  sun: string;
+  moon: string;
+  ascendant: string | null;
+  transit: string | null;
+  stone: { name: string; meaning: string };
+}
+
+/** `answer` es null si la IA no está disponible: la app usa entonces sus textos propios. */
+export interface AskSkyResponse {
+  answer: string | null;
 }

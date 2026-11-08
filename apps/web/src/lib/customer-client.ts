@@ -1,6 +1,8 @@
 import {
   type AddSkyBondRequest,
   type AddSkyQuestionRequest,
+  type AskSkyRequest,
+  type AskSkyResponse,
   CUSTOMER_AUTH_ROUTES,
   CUSTOMER_SIGNED_IN_COOKIE,
   type CustomerMeDto,
@@ -115,4 +117,7 @@ export const skyApi = {
   addBond: (input: AddSkyBondRequest) =>
     call<SkyBondDto>(SKY_ROUTES.bonds, { method: 'POST', body: JSON.stringify(input) }),
   deleteBond: (id: string) => call<void>(SKY_ROUTES.bond(id), { method: 'DELETE' }),
+  /** Respuesta de la IA (o `answer: null` si no está disponible). Sin sesión. */
+  ask: (input: AskSkyRequest) =>
+    call<AskSkyResponse>(SKY_ROUTES.ask, { method: 'POST', body: JSON.stringify(input) }),
 };

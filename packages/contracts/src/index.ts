@@ -9,3 +9,4 @@ export * from './admin-site.js';
 export * from './customer-auth.js';
 export * from './toritos.js';
 export * from './sky.js';
+export * from './stones.js';

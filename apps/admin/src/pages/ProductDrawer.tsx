@@ -27,6 +27,7 @@ import {
   type StockMovementListResponse,
   type UpsertProductRequest,
   type ZodiacSignCode,
+  PRODUCT_STONES,
 } from '@antrina/contracts';
 import { formatMoney } from '@antrina/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -101,6 +102,7 @@ interface FormState {
   size: ProductSizeCode | 'NONE';
   intention: ProductIntentionCode | 'NONE';
   signs: ZodiacSignCode[];
+  stones: string[];
   origin: string;
   content: Record<Lang, ContentForm>;
   /** Mientras no se edite a mano, el slug sigue al nombre. */
@@ -154,6 +156,7 @@ function initialState(
       size: 'NONE',
       intention: 'NONE',
       signs: [],
+      stones: [],
       origin: 'Taller Antrina, Lima',
       content: { es: { ...EMPTY_CONTENT }, en: { ...EMPTY_CONTENT } },
       slugEdited: { es: false, en: false },
@@ -177,6 +180,7 @@ function initialState(
     size: product.size ?? 'NONE',
     intention: product.intention ?? 'NONE',
     signs: [...product.signs],
+    stones: [...product.stones],
     origin: product.origin ?? '',
     content: { es: contentForm(product.content.es), en: contentForm(product.content.en) },
     slugEdited: { es: true, en: Boolean(product.content.en) },
@@ -226,6 +230,7 @@ function toRequest(state: FormState): UpsertProductRequest | string {
     size: state.size === 'NONE' ? null : state.size,
     intention: state.intention === 'NONE' ? null : state.intention,
     signs: state.signs,
+    stones: state.stones,
     origin: state.origin.trim() || null,
     content: { es: contentRequest(es), en: en.name.trim() ? contentRequest(en) : null },
   };
@@ -954,6 +959,33 @@ function ProductEditor({
                     </Description>
                   </TagGroup>
                 )}
+                <TagGroup
+                  selectionMode="multiple"
+                  selectedKeys={state.stones}
+                  onSelectionChange={(keys) =>
+                    set(
+                      'stones',
+                      PRODUCT_STONES.map((stone) => stone.id)
+                        .filter((id) => (keys === 'all' ? true : keys.has(id)))
+                        .slice(0, 12),
+                    )
+                  }
+                  size="sm"
+                  className="flex flex-col gap-2"
+                >
+                  <Label>Piedras de la pieza</Label>
+                  <TagGroup.List className="flex flex-wrap gap-1.5">
+                    {PRODUCT_STONES.map((stone) => (
+                      <Tag key={stone.id} id={stone.id} textValue={stone.name.es}>
+                        {stone.name.es}
+                      </Tag>
+                    ))}
+                  </TagGroup.List>
+                  <Description>
+                    Las piedras que lleva de verdad (máximo 12). Se muestran en la tienda de "Tu
+                    cielo" y permiten buscar piezas por piedra.
+                  </Description>
+                </TagGroup>
                 <Switch
                   isSelected={state.isFeatured}
                   onChange={(value) => set('isFeatured', value)}

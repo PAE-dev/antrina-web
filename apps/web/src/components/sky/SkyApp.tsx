@@ -799,7 +799,7 @@ function IntroArt({ index }: { index: number }) {
   if (index === 2) return <Orrery points={todayPoints(new Date())} mode="spin" size={260} />;
   return (
     <div className="flex items-end gap-2">
-      {['cuarzo-rosado', 'amatista', 'citrino', 'jade'].map((id) => (
+      {['cuarzo-rosa', 'amatista', 'citrino', 'jade'].map((id) => (
         <StoneImage
           key={id}
           src={STONE_LIBRARY[id]!.image}
@@ -1070,6 +1070,7 @@ function AppShell({
   profile,
   signBy,
   products,
+  stones,
   intentionLabel,
   createTreeHref,
   homeHref,
@@ -1102,6 +1103,8 @@ function AppShell({
   const [product, setProduct] = useState<SkyProduct | null>(null);
   const [stoneSheet, setStoneSheet] = useState<string | null>(null);
   const signInfo = useMemo(() => [...signBy.values()], [signBy]);
+  /** Significados de la tienda (para piedras sin foto propia en "Tu cielo"). */
+  const shop = useMemo(() => new Map(stones.map((s) => [s.id, s])), [stones]);
   useEffect(() => {
     window.scrollTo({ top: 0 });
   }, [tab]);
@@ -1145,7 +1148,7 @@ function AppShell({
             onAddPlace={onAddPlace}
           />
         )}
-        {tab === 'ask' && <Ask locale={locale} chart={chart} />}
+        {tab === 'ask' && <Ask locale={locale} chart={chart} signBy={signBy} />}
         {tab === 'bonds' && <Bonds locale={locale} chart={chart} signBy={signBy} />}
         {tab === 'shop' && (
           <ShopTab
@@ -1153,6 +1156,7 @@ function AppShell({
             chart={chart}
             signs={signInfo}
             products={products}
+            shop={shop}
             intentionLabel={intentionLabel}
             createTreeHref={createTreeHref}
             onProduct={setProduct}
@@ -1166,10 +1170,17 @@ function AppShell({
         stoneId={stoneSheet}
         signs={signInfo}
         products={products}
+        shop={shop}
         onClose={() => setStoneSheet(null)}
         onProduct={setProduct}
       />
-      <ProductSheet locale={locale} product={product} onClose={() => setProduct(null)} />
+      <ProductSheet
+        locale={locale}
+        product={product}
+        shop={shop}
+        onClose={() => setProduct(null)}
+        onStone={setStoneSheet}
+      />
     </StoneContext.Provider>
   );
 }
@@ -1657,49 +1668,77 @@ function ChartView({
         </Panel>
       )}
 
-      <div className="flex items-start gap-2">
-        <span className="type-label mt-3 !text-[10px] [writing-mode:vertical-rl] !text-on-dark-muted">
-          {ui.signs}
-        </span>
-        <div className="flex-1 overflow-hidden rounded-md border border-on-dark/15">
-          {groups.map((group) => (
-            <div
-              key={group.code}
-              className="grid grid-cols-[0.9fr_1.4fr_0.45fr] border-b border-on-dark/10 last:border-b-0"
-            >
-              <div className="border-r border-on-dark/10 px-3 py-3 text-[15px]">
-                {signBy.get(group.code)?.label}
-              </div>
-              <div className="col-span-2 flex flex-col">
-                {group.items.map((p) => (
-                  <button
-                    key={p.point}
-                    type="button"
-                    onClick={() => setDetail(p)}
-                    className="grid grid-cols-[1.4fr_0.45fr] items-center text-left transition-colors hover:bg-on-dark/5"
-                  >
-                    <span className="flex items-center gap-2 bg-on-dark/[0.04] px-3 py-3 text-[13px] tracking-[0.08em] uppercase">
+      {/* Tabla de la carta: una fila por planeta; el signo abarca sus planetas (rowSpan). */}
+      <div className="overflow-hidden rounded-md border border-on-dark/15">
+        <table className="w-full table-fixed border-collapse text-left">
+          <thead>
+            <tr className="border-b border-on-dark/15 text-[10px] tracking-[0.2em] text-on-dark-muted uppercase">
+              <th scope="col" className="w-[36%] px-3 py-2.5 font-medium">
+                {ui.signs}
+              </th>
+              <th scope="col" className="px-3 py-2.5 font-medium">
+                {ui.planets}
+              </th>
+              {chart.ascendant && (
+                <th scope="col" className="w-16 px-3 py-2.5 text-right font-medium">
+                  {ui.houses}
+                </th>
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {groups.map((group) =>
+              group.items.map((p, i) => (
+                <tr
+                  key={p.point}
+                  onClick={() => setDetail(p)}
+                  className={`cursor-pointer transition-colors hover:bg-on-dark/5 ${
+                    i === 0 ? 'border-t border-on-dark/10 first:border-t-0' : ''
+                  }`}
+                >
+                  {i === 0 && (
+                    <th
+                      scope="rowgroup"
+                      rowSpan={group.items.length}
+                      className="border-r border-on-dark/10 px-3 py-3 align-top text-[15px] font-normal"
+                    >
+                      {signBy.get(group.code)?.label}
+                    </th>
+                  )}
+                  <td className="px-3 py-3">
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setDetail(p);
+                      }}
+                      className="flex w-full items-center gap-2.5 text-left text-[13px] tracking-[0.08em] uppercase"
+                    >
                       <span
-                        className="sky-symbol w-4 text-center text-[15px]"
+                        aria-hidden="true"
+                        className="sky-symbol inline-flex w-5 shrink-0 justify-center text-[15px] leading-none"
                         style={{ color: ELEMENT_COLOR[ELEMENT_OF[p.sign]] }}
                       >
                         {BODY_INFO[p.point].glyph}
                       </span>
-                      {bodyName(p.point, locale)}
-                      {p.retrograde && <span className="text-[10px] text-on-dark-muted">R</span>}
-                    </span>
-                    <span className="border-l border-on-dark/10 px-3 py-2 text-right font-display text-[24px] leading-none">
+                      <span className="truncate">{bodyName(p.point, locale)}</span>
+                      {p.retrograde && (
+                        <span className="text-[10px] text-on-dark-muted" title="Retrógrado">
+                          R
+                        </span>
+                      )}
+                    </button>
+                  </td>
+                  {chart.ascendant && (
+                    <td className="border-l border-on-dark/10 px-3 py-3 text-right font-display text-[22px] leading-none tabular-nums">
                       {p.house ?? ''}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-        <span className="type-label mt-auto mb-3 !text-[10px] [writing-mode:vertical-rl] !text-on-dark-muted">
-          {ui.houses}
-        </span>
+                    </td>
+                  )}
+                </tr>
+              )),
+            )}
+          </tbody>
+        </table>
       </div>
       <div className="flex flex-wrap gap-2">
         <InfoButton label={ui.planets} onPress={() => openGlossary('planets')} />
@@ -1906,7 +1945,26 @@ function PlanetImg({
   return <img src={`/world/sky/planets/${planet}.webp`} alt="" className={className} />;
 }
 
-function Ask({ locale, chart }: { locale: LocaleCode; chart: NatalChart }) {
+/** Tránsito y piedra de una pregunta: los usa la respuesta en pantalla y la IA. */
+function askContext(chart: NatalChart, entry: AskEntry) {
+  const transit = transitsFor(chart, new Date(`${entry.day}T12:00`))[0];
+  const stoneIds = AREA_STONES[entry.topic === 'self' ? 'luck' : entry.topic];
+  const stone = STONE_LIBRARY[stoneIds[seededIndex(`${entry.question}-stone`, stoneIds.length)]!]!;
+  return { transit, stone };
+}
+
+const ASK_MIN_MS = 3200;
+const ASK_MAX_MS = 26000;
+
+function Ask({
+  locale,
+  chart,
+  signBy,
+}: {
+  locale: LocaleCode;
+  chart: NatalChart;
+  signBy: Map<SignCode, SkySign>;
+}) {
   const openStone = useContext(StoneContext);
   const ui = SKY_UI[locale];
   const [topic, setTopic] = useState<AskTopic>('self');
@@ -1916,6 +1974,14 @@ function Ask({ locale, chart }: { locale: LocaleCode; chart: NatalChart }) {
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(null);
   const [history, setHistory] = useState<AskEntry[]>(() => readJson<AskEntry[]>(ASK_KEY) ?? []);
   const { recordQuestion } = useContext(CloudContext);
+  /** Respuesta de la IA para la pregunta actual (null: se usan los textos propios). */
+  const [aiAnswer, setAiAnswer] = useState<string | null>(null);
+  const askId = useRef(0);
+
+  const transitLine = (transit: Transit | undefined) =>
+    transit
+      ? `${bodyName(transit.transiting, locale)} ${ui.transiting} ${ASPECT_INFO[transit.aspect].name[locale].toLowerCase()} ${ui.toYour} ${bodyName(transit.natal, locale)} ${ui.natal}`
+      : null;
 
   const ask = (question: string, entryTopic = topic, dayStr = dayKey(new Date())) => {
     const q = question.trim();
@@ -1929,20 +1995,47 @@ function Ask({ locale, chart }: { locale: LocaleCode; chart: NatalChart }) {
     setHistory(next);
     writeJson(ASK_KEY, next);
     recordQuestion(entry);
-    window.setTimeout(() => setPhase('answer'), 3200);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // La animación dura al menos ASK_MIN_MS; la IA tiene hasta ASK_MAX_MS antes de usar los textos propios.
+    const id = ++askId.current;
+    setAiAnswer(null);
+    const { transit, stone } = askContext(chart, entry);
+    const ascendant = chart.ascendant ? (signBy.get(chart.ascendant.sign)?.label ?? null) : null;
+    const ai = skyApi
+      .ask({
+        question: q,
+        topic: entryTopic,
+        locale,
+        sun: signBy.get(sunOf(chart).sign)?.label ?? sunOf(chart).sign,
+        moon: signBy.get(moonOf(chart).sign)?.label ?? moonOf(chart).sign,
+        ascendant,
+        transit: transitLine(transit),
+        stone: { name: stone.name[locale], meaning: stone.meaning[locale] },
+      })
+      .then((response) => response.answer)
+      .catch(() => null);
+    const timeout = new Promise<null>((resolve) =>
+      window.setTimeout(() => resolve(null), ASK_MAX_MS),
+    );
+    void Promise.all([
+      Promise.race([ai, timeout]),
+      new Promise((resolve) => window.setTimeout(resolve, ASK_MIN_MS)),
+    ]).then(([answer]) => {
+      if (askId.current !== id) return;
+      setAiAnswer(answer);
+      setPhase('answer');
+    });
   };
 
   const points = useMemo(() => todayPoints(new Date()), []);
 
   if (phase !== 'idle' && asked) {
-    const transit = transitsFor(chart, new Date(`${asked.day}T12:00`))[0];
+    const { transit, stone } = askContext(chart, asked);
     const nature: Nature = transit ? ASPECT_INFO[transit.aspect].nature : 'blend';
     const answers = ASK_ANSWERS[asked.topic][nature][locale];
-    const answer = answers[seededIndex(`${asked.question}-${asked.day}`, answers.length)]!;
-    const stoneIds = AREA_STONES[asked.topic === 'self' ? 'luck' : asked.topic];
-    const stone =
-      STONE_LIBRARY[stoneIds[seededIndex(`${asked.question}-stone`, stoneIds.length)]!]!;
+    const answer =
+      aiAnswer ?? answers[seededIndex(`${asked.question}-${asked.day}`, answers.length)]!;
     return (
       <section className="flex flex-col gap-0">
         <div className="rounded-t-md border border-on-dark/70 px-6 py-6 text-center">
@@ -1974,7 +2067,14 @@ function Ask({ locale, chart }: { locale: LocaleCode; chart: NatalChart }) {
                   : ui.noTransit}
               </p>
             </div>
-            <p className="px-6 py-7 text-[17px] leading-[1.75] text-on-dark/95">{answer}</p>
+            <div className="flex flex-col gap-4 px-6 py-7 text-[17px] leading-[1.75] text-on-dark/95">
+              {answer
+                .split(/\n\s*\n/)
+                .filter(Boolean)
+                .map((paragraph, i) => (
+                  <p key={i}>{paragraph}</p>
+                ))}
+            </div>
             <button
               type="button"
               onClick={() => openStone(stone.id)}

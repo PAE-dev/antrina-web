@@ -11,6 +11,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   AddSkyBondUseCase,
   AddSkyQuestionUseCase,
+  AskSkyUseCase,
   DeleteSkyBondUseCase,
   DeleteSkyDataUseCase,
   GetSkyDataUseCase,
@@ -178,5 +179,57 @@ describe('Tu cielo guardado en la cuenta', () => {
     expect(await sky.getProfile('a')).toBeNull();
     expect(await sky.getProfile('b')).not.toBeNull();
     expect(sky.bonds).toHaveLength(0);
+  });
+});
+
+describe('Pregunta al cielo con IA', () => {
+  const body = {
+    question: '¿Estoy bien?',
+    topic: 'self',
+    locale: 'es',
+    sun: 'Tauro',
+    moon: 'Acuario',
+    ascendant: null,
+    transit: 'Venus en tránsito trígono a tu Sol natal',
+    stone: { name: 'Jade', meaning: 'Se asocia con la serenidad.' },
+  };
+  const oracle = (impl: () => Promise<string>, configured = true) => {
+    const calls: unknown[] = [];
+    return {
+      calls,
+      isConfigured: () => configured,
+      answer: async (input: unknown) => {
+        calls.push(input);
+        return impl();
+      },
+    };
+  };
+
+  it('devuelve la respuesta del modelo con el contexto validado', async () => {
+    const o = oracle(async () => '  Respira hondo.  ');
+    const result = await new AskSkyUseCase(o).execute(body);
+    expect(result.answer).toBe('Respira hondo.');
+    expect(o.calls[0]).toMatchObject({ sun: 'Tauro', stone: { name: 'Jade' } });
+  });
+
+  it('sin clave o si el modelo falla, responde null (la app usa sus textos)', async () => {
+    const off = oracle(async () => 'x', false);
+    expect((await new AskSkyUseCase(off).execute(body)).answer).toBeNull();
+    expect(off.calls).toHaveLength(0);
+    const logs: string[] = [];
+    const failing = oracle(async () => {
+      throw new Error('timeout');
+    });
+    expect((await new AskSkyUseCase(failing, (m) => logs.push(m)).execute(body)).answer).toBeNull();
+    expect(logs[0]).toContain('timeout');
+  });
+
+  it('valida la pregunta antes de gastar una llamada', async () => {
+    const o = oracle(async () => 'x');
+    const ask = new AskSkyUseCase(o);
+    await expectCode(ask.execute({ ...body, question: '   ' }), 'input.invalid');
+    await expectCode(ask.execute({ ...body, question: 'a'.repeat(141) }), 'input.invalid');
+    await expectCode(ask.execute({ ...body, locale: 'fr' }), 'input.invalid');
+    expect(o.calls).toHaveLength(0);
   });
 });

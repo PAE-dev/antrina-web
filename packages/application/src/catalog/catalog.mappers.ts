@@ -38,6 +38,7 @@ export function toProductSummary(
     badge: product.badge,
     size: product.size,
     signs: [...product.signs],
+    stones: [...product.stones],
     isPurchasable: product.isPurchasable(),
   };
 }

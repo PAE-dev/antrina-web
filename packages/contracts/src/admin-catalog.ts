@@ -77,6 +77,7 @@ export interface AdminProductDto {
   size: ProductSizeCode | null;
   intention: ProductIntentionCode | null;
   signs: ZodiacSignCode[];
+  stones: string[];
   origin: string | null;
   content: ProductContentByLocaleDto;
   images: ProductImageDto[];
@@ -122,6 +123,7 @@ export interface UpsertProductRequest {
   size: ProductSizeCode | null;
   intention: ProductIntentionCode | null;
   signs: ZodiacSignCode[];
+  stones?: string[];
   origin: string | null;
   content: ProductContentByLocaleDto;
 }

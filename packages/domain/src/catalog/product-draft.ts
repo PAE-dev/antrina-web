@@ -27,9 +27,15 @@ export interface ProductDraft {
   size: ProductSize | null;
   intention: ProductIntention | null;
   signs: readonly ZodiacSign[];
+  /** Ids de piedra (slug). El catálogo de nombres vive en contracts (`PRODUCT_STONES`). */
+  stones?: readonly string[];
   origin: string | null;
   content: Localized<ProductContent>;
 }
+
+/** Una pieza lleva como mucho 12 piedras distintas. */
+export const PRODUCT_STONES_MAX = 12;
+const STONE_ID = /^[a-z]+(-[a-z]+)*$/;
 
 /** Límites duros; el panel recomienda ~60 y ~155 caracteres, lo que Google muestra. */
 export const META_TITLE_MAX = 80;
@@ -85,5 +91,10 @@ export function validateProductDraft(draft: ProductDraft): ProductDraft {
     }
   }
   if (new Set(draft.signs).size !== draft.signs.length) invalid('Signos repetidos', 'signs');
+  const stones = draft.stones ?? [];
+  if (stones.length > PRODUCT_STONES_MAX) invalid(`Máximo ${PRODUCT_STONES_MAX} piedras`, 'stones');
+  if (stones.some((id) => id.length > 40 || !STONE_ID.test(id)))
+    invalid('Piedra inválida', 'stones');
+  if (new Set(stones).size !== stones.length) invalid('Piedras repetidas', 'stones');
   return draft;
 }

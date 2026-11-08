@@ -91,6 +91,8 @@ export interface ProductProps {
   size: ProductSize | null;
   intention: ProductIntention | null;
   signs: readonly ZodiacSign[];
+  /** Piedras de la pieza (ids de `PRODUCT_STONES` en contracts); vacío si no se cargaron. */
+  stones?: readonly string[];
   /** Origen artesanal (ej. "Taller Antrina, Lima"). */
   origin: string | null;
   content: Localized<ProductContent>;
@@ -196,6 +198,10 @@ export class Product {
 
   get signs(): readonly ZodiacSign[] {
     return this.props.signs;
+  }
+
+  get stones(): readonly string[] {
+    return this.props.stones ?? [];
   }
 
   /** Locales con traducción propia (no fallback). */

@@ -53,6 +53,7 @@ const products = catalog.map((p) => {
     price: formatMoney(p.price, locale),
     compareAt: p.compareAtPrice ? formatMoney(p.compareAtPrice, locale) : null,
     signs: p.signs,
+    stones: p.stones ?? [],
     intention: p.intention,
     category: p.category.name,
     href,

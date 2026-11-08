@@ -22,6 +22,8 @@ export interface AppEnv {
   storeOrigin: string;
   /** Sin credenciales la API arranca igual y la tienda avisa de que el acceso no está disponible. */
   google: GoogleEnv | null;
+  /** "Pregunta al cielo" con Claude; vacía = la app usa sus textos propios. */
+  anthropicApiKey: string | null;
   s3: S3Env;
 }
 
@@ -84,6 +86,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
     adminEncryptionKey: parseEncryptionKey(required(source, 'ADMIN_ENCRYPTION_KEY')),
     storeOrigin: (source.STORE_ORIGIN?.trim() || 'http://localhost:4321').replace(/\/+$/, ''),
     google: loadGoogleEnv(source),
+    anthropicApiKey: source.ANTHROPIC_API_KEY?.trim() || null,
     s3: {
       endpoint: s3Endpoint,
       region: withDevDefault(source, 'S3_REGION', 'us-east-1', isProduction),

@@ -47,6 +47,7 @@ function scalarData(draft: ProductDraft) {
     size: draft.size,
     intention: draft.intention,
     signs: [...draft.signs],
+    stones: [...(draft.stones ?? [])],
     origin: draft.origin,
   };
 }

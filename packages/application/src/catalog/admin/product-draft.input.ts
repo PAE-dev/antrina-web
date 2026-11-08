@@ -61,6 +61,12 @@ function parseSigns(value: unknown): ZodiacSign[] {
   return value.map((sign) => requireOneOf(sign, ZODIAC_SIGNS, 'signs'));
 }
 
+function parseStones(value: unknown): string[] {
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value)) throw new DomainError('Piedras inválidas', 'input.invalid');
+  return value.map((stone) => requireString(stone, 'stones', 40).trim());
+}
+
 /** Convierte el body HTTP (no confiable) en un borrador de dominio validado. */
 export function toProductDraft(input: UpsertProductRequest): ProductDraft {
   if (typeof input !== 'object' || input === null) {
@@ -97,6 +103,7 @@ export function toProductDraft(input: UpsertProductRequest): ProductDraft {
         ? null
         : requireOneOf(input.intention, PRODUCT_INTENTIONS, 'intention'),
     signs: parseSigns(input.signs),
+    stones: parseStones(input.stones),
     origin: optionalString(input.origin, 'origin', 200)?.trim() || null,
     content: { es: parseContent(rawContent.es, 'es'), ...(en ? { en } : {}) },
   };
@@ -118,6 +125,7 @@ export function draftFromProduct(product: Product): ProductDraft {
     size: product.size,
     intention: product.intention,
     signs: product.signs,
+    stones: product.stones,
     origin: product.origin,
     content: product.content,
   };

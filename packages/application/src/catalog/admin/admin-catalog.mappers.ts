@@ -70,6 +70,7 @@ export function toAdminProductDto(product: Product, imageUrls: ImageUrlResolver)
     size: product.size,
     intention: product.intention,
     signs: [...product.signs],
+    stones: [...product.stones],
     origin: product.origin,
     content: {
       es: { ...product.content.es },

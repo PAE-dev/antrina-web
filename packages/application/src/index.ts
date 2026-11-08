@@ -34,3 +34,4 @@ export * from './admin/totp-enrollment.use-cases.js';
 export * from './admin/verify-totp.use-case.js';
 
 export * from './sky/sky.use-cases.js';
+export * from './sky/ask-sky.use-case.js';

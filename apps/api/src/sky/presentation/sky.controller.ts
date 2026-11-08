@@ -15,6 +15,7 @@ import {
 import {
   AddSkyBondUseCase,
   AddSkyQuestionUseCase,
+  AskSkyUseCase,
   DeleteSkyBondUseCase,
   DeleteSkyDataUseCase,
   GetCurrentCustomerUseCase,
@@ -22,12 +23,14 @@ import {
   SaveSkyProfileUseCase,
 } from '@antrina/application';
 import {
+  type AskSkyResponse,
   type SkyBondDto,
   type SkyDataResponse,
   type SkyProfileDto,
   type SkyQuestionDto,
 } from '@antrina/contracts';
 import { type Request } from 'express';
+import { AskRateLimitGuard } from './ask-rate-limit.guard.js';
 import { CustomerOriginGuard } from '../../customer-auth/presentation/customer-origin.guard.js';
 import { readCustomerSessionToken } from '../../customer-auth/presentation/customer-session.cookie.js';
 
@@ -87,5 +90,21 @@ export class SkyController {
   @UseGuards(CustomerOriginGuard)
   async removeBond(@Req() request: Request, @Param('id') id: string): Promise<void> {
     await this.deleteBond.execute(await this.customerId(request), id);
+  }
+}
+
+/**
+ * "Pregunta al cielo" con IA. Sin sesión (también para invitados), solo desde la tienda y con
+ * límite de 10 preguntas por minuto e IP: cada respuesta cuesta una llamada al modelo.
+ */
+@Controller('cielo-api')
+export class AskSkyController {
+  constructor(@Inject(AskSkyUseCase) private readonly askSky: AskSkyUseCase) {}
+
+  @Post('ask')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(CustomerOriginGuard, AskRateLimitGuard)
+  ask(@Body() body: unknown): Promise<AskSkyResponse> {
+    return this.askSky.execute(body);
   }
 }

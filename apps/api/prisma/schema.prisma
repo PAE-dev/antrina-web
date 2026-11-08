@@ -127,6 +127,8 @@ model Product {
   intention           String?
   /// Códigos de signo zodiacal ('ARIES', 'TAURUS'…). Se validan en el dominio.
   signs               String[]             @default([])
+  /// Piedras de la pieza (ids del catálogo de piedras de contracts).
+  stones              String[]             @default([])
   origin              String?
   translations        ProductTranslation[]
   images              ProductImage[]

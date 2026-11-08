@@ -46,6 +46,8 @@ export interface ProductSummaryDto {
   badge: ProductBadgeCode | null;
   size: ProductSizeCode | null;
   signs: ZodiacSignCode[];
+  /** Ids de `PRODUCT_STONES`. */
+  stones: string[];
   isPurchasable: boolean;
 }
 

@@ -17,6 +17,7 @@
     "admin:create": "tsx scripts/create-admin.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.6.0",
     "@antrina/application": "workspace:*",
     "@antrina/contracts": "workspace:*",
     "@antrina/domain": "workspace:*",
