@@ -3,7 +3,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { type SkyOracle, type SkyOracleQuestion } from '@antrina/domain';
 import { APP_ENV, type AppEnv } from '../../config/env.js';
 
-const MODEL = 'claude-opus-5-5';
+/** Haiku 5.5: rápido y económico (~US$ 0,0004 por respuesta) para respuestas breves. */
+const MODEL = 'claude-haiku-5-5';
 
 /** Voz de Antrina: estable (va primero para que el prompt se pueda cachear). */
 const SYSTEM = `Eres la voz de "Tu cielo", la app de astrología de Antrina, un taller familiar de Lima que hace árboles de cuarzo a mano. Respondes preguntas personales mirando la carta natal de la persona y el cielo del día.
@@ -53,15 +54,12 @@ export class ClaudeSkyOracle implements SkyOracle {
       `Piedra sugerida: ${input.stone.name}: ${input.stone.meaning}`,
     ].join('\n');
 
-    const response = await this.client.beta.messages.create({
+    const response = await this.client.messages.create({
       model: MODEL,
       max_tokens: 2000,
       // Respuesta breve de chat: poco razonamiento y la primera palabra cuanto antes.
       thinking: { type: 'adaptive' },
       output_config: { effort: 'low' },
-      // Si un clasificador de seguridad declina por error, otro modelo responde en la misma llamada.
-      betas: ['server-side-fallback-2026-07-01'],
-      fallbacks: 'default',
       system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
       messages: [
         {
