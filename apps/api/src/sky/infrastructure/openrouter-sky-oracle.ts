@@ -56,7 +56,7 @@ export class OpenRouterSkyOracle implements SkyOracle {
       `Piedra sugerida: ${input.stone.name}: ${input.stone.meaning}`,
     ].join('\n');
 
-    const response = await fetch(ENDPOINT, {
+    const response = (await fetch(ENDPOINT, {
       method: 'POST',
       headers: {
         authorization: `Bearer ${config.apiKey}`,
