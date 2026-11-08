@@ -270,14 +270,14 @@ export function DailyChecklist() {
     <section className="sky-glass rounded-2xl p-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="type-label !text-white/60">{t.ritualTitle}</p>
+          <p className="type-label whitespace-nowrap !text-white/60">{t.ritualTitle}</p>
           <p className="mt-1 text-[15px] font-medium">{t.streak(d.streak)}</p>
         </div>
         <div className="flex items-center gap-1" aria-label={`${doneCount}/3`}>
           {Array.from({ length: STREAK_GOAL }, (_, i) => (
             <span
               key={i}
-              className={`h-1.5 w-4 rounded-full transition-colors ${
+              className={`h-1.5 w-3 rounded-full transition-colors ${
                 i < (d.streak % STREAK_GOAL || (d.streak > 0 ? STREAK_GOAL : 0))
                   ? 'bg-[#34d399]'
                   : 'bg-white/12'
@@ -568,9 +568,14 @@ export function FortuneCookie() {
         </button>
       ) : (
         <div className="sky-paper mx-auto mt-4 max-w-sm rounded-md bg-[#f6f0e4] px-6 py-6 text-center text-[#1b2a41] shadow-[0_20px_50px_rgba(0,0,0,.45)]">
-          <p className="text-[10px] tracking-[0.3em] text-[#9a4f2f] uppercase">
-            Antrina · {d.today}
-          </p>
+          <img
+            src="/brand/antrina-logo.png"
+            alt="Antrina"
+            width={960}
+            height={288}
+            className="mx-auto h-7 w-auto"
+          />
+          <p className="mt-2 text-[10px] tracking-[0.3em] text-[#9a4f2f] uppercase">{d.today}</p>
           <p className="font-display mt-2 text-[30px] leading-tight font-semibold">
             {FORTUNE_LEVEL_LABEL[fortune.level][d.locale]}
           </p>
@@ -905,9 +910,11 @@ async function shareRanking(d: DailyState): Promise<void> {
   const r = d.mine;
   const stone = STONE_LIBRARY[r.stoneId]!;
   const color = LUCKY_COLORS[r.colorIndex]!;
+  const logo = await loadImage('/brand/antrina-logo-negativo.png');
+  if (logo) ctx.drawImage(logo, 82, 60, 300, (logo.height / logo.width) * 300);
   ctx.fillStyle = 'rgba(255,255,255,0.65)';
   ctx.font = '500 30px "DM Sans", sans-serif';
-  ctx.fillText(`ANTRINA · ${t.rankingTitle.toUpperCase()}`, 90, 140);
+  ctx.fillText(t.rankingTitle.toUpperCase(), 90, 205);
   ctx.font = '400 30px "DM Sans", sans-serif';
   ctx.fillText(
     new Date(`${d.today}T12:00:00`).toLocaleDateString(d.locale, {
@@ -916,7 +923,7 @@ async function shareRanking(d: DailyState): Promise<void> {
       month: 'long',
     }),
     90,
-    190,
+    250,
   );
   ctx.fillStyle = '#ffffff';
   ctx.font = '600 260px "Fraunces", serif';

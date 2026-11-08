@@ -559,7 +559,13 @@ export function SkyApp(props: SkyProps) {
           <header className="relative z-10 flex items-center justify-between px-5 pt-5 md:px-10 md:pt-8">
             {step === 'welcome' || step === 'reveal' ? (
               <a href={homeHref} aria-label="Antrina">
-                <img src="/brand/antrina-logo-negativo.svg" alt="Antrina" className="h-9 w-auto" />
+                <img
+                  src="/brand/antrina-logo-negativo.png"
+                  alt="Antrina"
+                  width={960}
+                  height={288}
+                  className="h-9 w-auto"
+                />
               </a>
             ) : (
               <button
@@ -1178,8 +1184,17 @@ function AppShell({
   return (
     <StoneContext.Provider value={setStoneSheet}>
       <header className="flex items-center justify-between pt-5 pb-2">
-        <a href={homeHref} className="type-label !text-on-dark">
-          Antrina · <span className="!text-[var(--accent)]">{SKY_LABELS[locale].title}</span>
+        <a href={homeHref} className="flex items-center gap-3" aria-label="Antrina">
+          <img
+            src="/brand/antrina-logo-negativo.png"
+            alt="Antrina"
+            width={960}
+            height={288}
+            className="h-9 w-auto"
+          />
+          <span className="type-label hidden border-l border-white/20 pl-3 whitespace-nowrap !text-[var(--accent)] sm:inline">
+            {SKY_LABELS[locale].title}
+          </span>
         </a>
         <div className="flex items-center gap-3">
           <button
